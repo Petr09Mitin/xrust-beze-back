@@ -1,7 +1,13 @@
 package main
 
-import "fmt"
+import (
+	"github.com/Petr09Mitin/xrust-beze-back/internal/router"
+)
 
 func main() {
-	fmt.Println("Hello World")
+	c := router.NewChat()
+	err := c.Start()
+	if err != nil {
+		panic(err)
+	}
 }
