@@ -1,6 +1,9 @@
 package main
 
 import (
+	"github.com/Petr09Mitin/xrust-beze-back/internal/router"
+	chat_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/chat"
+
 	"context"
 	"fmt"
 	"log"
@@ -12,6 +15,12 @@ import (
 )
 
 func main() {
+	chatService := chat_service.NewChatService()
+	c := router.NewChat(chatService)
+	err := c.Start()
+	if err != nil {
+		panic(err)
+	}
 	client, err := connectToMongo()
 	if err != nil {
 		log.Fatal("Ошибка подключения к MongoDB:", err)
