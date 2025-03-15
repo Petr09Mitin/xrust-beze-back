@@ -47,6 +47,13 @@ services:
       - mongo_db
       - kafka
 
+  ml_summarizer:
+    build: ml_summarizer
+    ports:
+      - "8091:8091"
+    environment:
+      - API_KEY=${API_KEY}
+
 volumes:
   mongo_data:
   kafka_data:
