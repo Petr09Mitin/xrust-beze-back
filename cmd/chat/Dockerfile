@@ -1,5 +1,5 @@
 # Start from golang base image
-FROM golang:1.22.3-alpine3.20 AS build-stage
+FROM golang:1.24.1-alpine3.20 AS build-stage
 
 # Install git.
 # Git is required for fetching the dependencies.
