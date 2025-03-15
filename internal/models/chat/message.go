@@ -8,4 +8,5 @@ type Message struct {
 	Payload   string `json:"payload"`
 	Seen      bool   `json:"seen"`
 	Time      int64  `json:"time"`
+	Structured string `json:"structured,omitempty"`
 }

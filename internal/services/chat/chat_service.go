@@ -14,5 +14,6 @@ func NewChatService() ChatService {
 }
 
 func (c *ChatServiceImpl) ProcessTextMessage(message chat_models.Message) error {
+	
 	return nil
 }
