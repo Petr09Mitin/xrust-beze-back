@@ -1,87 +1,61 @@
 package router
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
-	"github.com/Petr09Mitin/xrust-beze-back/internal/router/chat"
+	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	chat_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/chat"
 	"github.com/gin-gonic/gin"
 	"github.com/olahol/melody"
 	"net/http"
-	"strings"
-)
-
-const (
-	userIDQueryParam    = "user_id"
-	channelIDQueryParam = "channel_id"
 )
 
 type Chat struct {
-	R             *gin.Engine
-	M             *melody.Melody
-	msgSubscriber *chat.MessageSubscriber
-	ChatService   chat_service.ChatService
+	R           *gin.Engine
+	M           *melody.Melody
+	ChatService chat_service.ChatService
 }
 
-func NewChat(chatService chat_service.ChatService, msgSub *chat.MessageSubscriber, m *melody.Melody) *Chat {
-	ch := &Chat{
-		ChatService:   chatService,
-		msgSubscriber: msgSub,
-		M:             m,
-	}
-	err := ch.InitWS()
-	if err != nil {
-		fmt.Println(err)
-	}
-	ch.InitRouter()
-	return ch
+func (chat *Chat) InitRouter() {
+	chat.R = gin.Default()
+
+	chat.R.GET("/ws", chat.HandleWSConn)
 }
 
-func (ch *Chat) InitRouter() {
-	ch.R = gin.Default()
+func (chat *Chat) InitWS() {
+	chat.M = melody.New()
+	chat.M.HandleConnect(func(s *melody.Session) {
+		s.Keys["user_id"] = s.Request.URL.Query().Get("user_id")
+		fmt.Println(s.Request)
+	})
 
-	chatGroup := ch.R.Group("/chat")
-	{
-		chatGroup.GET("/ws", ch.HandleWSConn)
-		chatGroup.GET("/:channelID", ch.HandleGetMessagesByChannelID)
-	}
-}
-
-func (ch *Chat) InitWS() error {
-	ch.msgSubscriber.RegisterHandler()
-	ch.M.HandleConnect(ch.handleNewChatJoin)
-
-	ch.M.HandleDisconnect(func(s *melody.Session) {
+	chat.M.HandleDisconnect(func(s *melody.Session) {
 		fmt.Println("dis", s.Request)
 	})
 
-	ch.M.HandleMessage(func(s *melody.Session, msg []byte) {
-		err := ch.handleTextMessage(s.Request.Context(), msg)
+	chat.M.HandleMessage(func(s *melody.Session, msg []byte) {
+		err := chat.handleTextMessage(msg)
 		if err != nil {
-			data, err := json.Marshal(map[string]string{"error": err.Error()})
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-			s.Write(data)
+			err := custom_errors.NewCustomError(err.Error())
+			xdd, _ := err.MarshalJSON()
+			s.Write(xdd)
 		}
 	})
-
-	go func() {
-		err := ch.msgSubscriber.Run()
-		if err != nil {
-			fmt.Println(err)
-		}
-	}()
-
-	return nil
 }
 
-func (ch *Chat) Start() error {
+func NewChat(chatService chat_service.ChatService) *Chat {
+	chat := &Chat{
+		ChatService: chatService,
+	}
+	chat.InitWS()
+	chat.InitRouter()
+	return chat
+}
+
+func (chat *Chat) Start() error {
 	fmt.Println("start chat")
-	err := ch.R.Run(":8080")
+	err := chat.R.Run(":8080")
 	if err != nil {
 		return err
 	}
@@ -89,8 +63,8 @@ func (ch *Chat) Start() error {
 	return nil
 }
 
-func (ch *Chat) HandleWSConn(c *gin.Context) {
-	err := ch.M.HandleRequest(c.Writer, c.Request)
+func (chat *Chat) HandleWSConn(c *gin.Context) {
+	err := chat.M.HandleRequest(c.Writer, c.Request)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -99,56 +73,17 @@ func (ch *Chat) HandleWSConn(c *gin.Context) {
 	}
 }
 
-func (ch *Chat) handleNewChatJoin(s *melody.Session) {
-	// TODO: add proper auth
-	userID := strings.TrimSpace(s.Request.URL.Query().Get(userIDQueryParam))
-	channelID := strings.TrimSpace(s.Request.URL.Query().Get(channelIDQueryParam))
-	s.Set(chat.UserIDSessionParam, userID)
-	s.Set(chat.ChannelIDSessionParam, channelID)
-	fmt.Println("conn", s.Request)
-}
-
-func (ch *Chat) handleTextMessage(ctx context.Context, msg []byte) error {
+func (chat *Chat) handleTextMessage(msg []byte) error {
 	parsedMsg := chat_models.Message{}
 	err := json.Unmarshal(msg, &parsedMsg)
 	if err != nil {
 		return err
 	}
-	fmt.Println("msg came to server", parsedMsg)
-	err = ch.ChatService.ProcessTextMessage(ctx, parsedMsg)
+
+	err = chat.ChatService.ProcessTextMessage(parsedMsg)
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (ch *Chat) Stop() error {
-	err := ch.msgSubscriber.GracefulStop()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (ch *Chat) HandleGetMessagesByChannelID(c *gin.Context) {
-	channelID := strings.TrimSpace(c.Param("channelID"))
-	if channelID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid channelID",
-		})
-		return
-	}
-
-	messages, err := ch.ChatService.GetMessagesByChatID(c.Request.Context(), channelID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"messages": messages,
-	})
 }
