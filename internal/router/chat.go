@@ -15,12 +15,35 @@ type Chat struct {
 	R           *gin.Engine
 	M           *melody.Melody
 	ChatService chat_service.ChatService
+
+	mongoRepo   *mongodb.MessageRepository
 }
 
 func (chat *Chat) InitRouter() {
 	chat.R = gin.Default()
-
 	chat.R.GET("/ws", chat.HandleWSConn)
+
+	messageGroup := chat.R.Group("/messages")
+	{
+		messageGroup.GET("", func(c *gin.Context) {
+			messages, err := chat.ChatService.GetAllMessages(c)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(http.StatusOK, messages)
+		})
+
+		messageGroup.GET("/:id", func(c *gin.Context) {
+			id := c.Param("id")
+			message, err := chat.ChatService.GetMessageByID(c, id)
+			if err != nil {
+				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(http.StatusOK, message)
+		})
+	}
 }
 
 func (chat *Chat) InitWS() {
@@ -45,8 +68,24 @@ func (chat *Chat) InitWS() {
 }
 
 func NewChat(chatService chat_service.ChatService) *Chat {
+	mongoConfig := mongodb.Config{
+		URI:        "mongo_db:27017",
+		Database:   "xrust_beze",
+		Username:   "admin",
+		Password:   "admin",
+		AuthSource: "admin",
+	}
+
+	client, err := mongodb.NewConnection(mongoConfig)
+	if err != nil {
+		log.Fatal("Ошибка подключения к MongoDB:", err)
+	}
+
+	messageRepo := mongodb.NewMessageRepository(client, "xrust_beze", "chats")
+
 	chat := &Chat{
 		ChatService: chatService,
+		mongoRepo:   messageRepo,
 	}
 	chat.InitWS()
 	chat.InitRouter()

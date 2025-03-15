@@ -33,7 +33,6 @@ func (r *MessageRepository) Create(ctx context.Context, message *models.Message)
 	return nil
 }
 
-// возвращает все сообщения
 func (r *MessageRepository) FindAll(ctx context.Context) ([]*models.Message, error) {
 	cursor, err := r.collection.Find(ctx, bson.M{})
 	if err != nil {
@@ -49,7 +48,6 @@ func (r *MessageRepository) FindAll(ctx context.Context) ([]*models.Message, err
 	return messages, nil
 }
 
-// находит сообщение по ID
 func (r *MessageRepository) FindByID(ctx context.Context, id string) (*models.Message, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {

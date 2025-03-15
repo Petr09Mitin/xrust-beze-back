@@ -9,7 +9,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// Config содержит настройки подключения к MongoDB
 type Config struct {
 	URI        string
 	Database   string
@@ -18,7 +17,7 @@ type Config struct {
 	Password   string
 }
 
-// NewConnection создает новое подключение к MongoDB
+// создает новое подключение к MongoDB
 func NewConnection(cfg Config) (*mongo.Client, error) {
 	mongoURI := fmt.Sprintf("mongodb://%s:%s@%s/%s?authSource=%s",
 		cfg.Username, cfg.Password, cfg.URI, cfg.Database, cfg.AuthSource)
@@ -32,7 +31,6 @@ func NewConnection(cfg Config) (*mongo.Client, error) {
 		return nil, err
 	}
 
-	// Проверяем подключение
 	err = client.Ping(ctx, nil)
 	if err != nil {
 		return nil, err
