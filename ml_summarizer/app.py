@@ -7,20 +7,21 @@ app = FastAPI()
 
 
 class TextInput(BaseModel):
-    text: str
+    query: str
+    answer: str
 
 
-async def summarize_text(text: str) -> str:
-    summarized_text = await mistral_api.summarize(text)
-    # Здесь будет асинхронная логика для обработки текста
-    # await asyncio.sleep(2)  # Имитация задержки для демонстрации асинхронности
-    return f"Summary: {summarized_text}"  # Простая имитация суммаризации
+# async def summarize_text(text: str) -> str:
+#     summarized_text = await mistral_api.summarize(text)
+#     # Здесь будет асинхронная логика для обработки текста
+#     # await asyncio.sleep(2)  # Имитация задержки для демонстрации асинхронности
+#     return f"Summary: {summarized_text}"  # Простая имитация суммаризации
 
 
 @app.post("/summarize")
 async def summarize(input_data: TextInput):
-    if not input_data.text.strip():
+    if not input_data.answer.strip():
         raise HTTPException(status_code=400, detail="Text field cannot be empty.")
 
-    summary = await summarize_text(input_data.text)
+    summary = await mistral_api.summarize(input_data.query.strip(), input_data.answer)
     return {"summary": summary}
