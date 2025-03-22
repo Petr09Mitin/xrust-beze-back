@@ -56,12 +56,28 @@ services:
       - kafka_xb
       - zookeeper_xb
 
-#  ml_summarizer:
-#    image: ml_summarizer:latest
-#    ports:
-#      - "8091:8091"
-#    environment:
-#      - API_KEY=${API_KEY}
+  # Сервис для AI дополнения ответов эксперта
+  ml_explanator:
+    build: ml_explanator
+    container_name: ml_explanator
+    ports:
+      - "8091:8091"
+    environment:
+      - MODEL_API_KEY=${MODEL_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - GOOGLE_CX=${GOOGLE_CX}
+
+  # WEB интерфейс для взаимодействия с ml_explanator. Но проде - отключить!
+  ml_check:
+    build: ml_check
+    container_name: ml_check
+    ports:
+      - "8501:8501"
+    environment:
+      - EXPLANATION_API_URL=http://ml_explanator:8091/explane
+    depends_on:
+      - ml_explanator
+
 
 volumes:
   mongo_data:
