@@ -11,14 +11,14 @@ ENDPOINT: http://ml_explanator:8091/explane
 Тип: POST  
 ```json
 {  
-  "query": Запрос пользователя (может быть пустым), 
-  "answer": Ответ эксперта.  
+  "query": "Запрос пользователя (может быть пустым)", 
+  "answer": "Ответ эксперта."
 }  
 ```
 Возвращает:
 ```json
 { 
-  "explanation": текст в формате Markdown
+  "explanation": "текст в формате Markdown"
 }
 ```
 
