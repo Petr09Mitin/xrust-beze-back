@@ -45,8 +45,7 @@ func (ch *Chat) InitRouter() {
 	chatGroup := ch.R.Group("/chat")
 	{
 		chatGroup.GET("/ws", ch.HandleWSConn)
-		chatGroup.GET("/dialogs")
-		chatGroup.GET("/{chatID}}")
+		chatGroup.GET("/:channelID", ch.HandleGetMessagesByChannelID)
 	}
 }
 
@@ -131,4 +130,25 @@ func (ch *Chat) Stop() error {
 	}
 
 	return nil
+}
+
+func (ch *Chat) HandleGetMessagesByChannelID(c *gin.Context) {
+	channelID := strings.TrimSpace(c.Param("channelID"))
+	if channelID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid channelID",
+		})
+		return
+	}
+
+	messages, err := ch.ChatService.GetMessagesByChatID(c.Request.Context(), channelID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"messages": messages,
+	})
 }

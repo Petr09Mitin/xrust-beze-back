@@ -11,6 +11,7 @@ import (
 
 type ChatService interface {
 	ProcessTextMessage(ctx context.Context, message chat_models.Message) error
+	GetMessagesByChatID(ctx context.Context, chatID string) ([]chat_models.Message, error)
 }
 
 type ChatServiceImpl struct {
@@ -99,4 +100,9 @@ func (c *ChatServiceImpl) deleteTextMessage(ctx context.Context, msg chat_models
 	}
 	fmt.Printf("message deleted: %+v\n", msg.MessageID)
 	return msg, nil
+}
+
+func (c *ChatServiceImpl) GetMessagesByChatID(ctx context.Context, chatID string) ([]chat_models.Message, error) {
+	// TODO: add pagination
+	return c.msgRepo.GetMessagesByChannelID(ctx, chatID)
 }

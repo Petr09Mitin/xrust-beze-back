@@ -2,11 +2,13 @@ package message_repo
 
 import (
 	"context"
+	"fmt"
 	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 const (
@@ -14,6 +16,7 @@ const (
 )
 
 type MessageRepo interface {
+	GetMessagesByChannelID(ctx context.Context, channelID string) ([]chat_models.Message, error)
 	InsertMessage(ctx context.Context, msg chat_models.Message) (chat_models.Message, error)
 	UpdateMessage(ctx context.Context, msg chat_models.Message) error
 	DeleteMessage(ctx context.Context, msg chat_models.Message) error
@@ -86,4 +89,41 @@ func (m *MessageRepoImpl) getUpdateDocumentFromMsg(msg chat_models.Message) bson
 			"updated_at": msg.UpdatedAt,
 		},
 	}
+}
+
+func (m *MessageRepoImpl) GetMessagesByChannelID(ctx context.Context, channelID string) ([]chat_models.Message, error) {
+	cur, err := m.mongoDB.Find(
+		ctx,
+		bson.M{
+			"channel_id": channelID,
+		},
+		options.Find().SetSort(
+			bson.M{
+				"created_at": -1,
+			},
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		err = cur.Close(ctx)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}()
+	res := make([]chat_models.Message, 0, cur.RemainingBatchLength())
+	for cur.Next(ctx) {
+		curr := chat_models.BSONMessage{}
+		err = cur.Decode(&curr)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, curr.ToMessage())
+	}
+	if err := cur.Err(); err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
