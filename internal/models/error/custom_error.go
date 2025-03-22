@@ -17,5 +17,5 @@ func (e *CustomError) Error() string {
 }
 
 func (e *CustomError) MarshalJSON() ([]byte, error) {
-	return json.Marshal(e)
+	return json.Marshal(map[string]string{"error": e.Error()})
 }

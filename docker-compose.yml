@@ -40,9 +40,9 @@ services:
       - ./dev/mongo:/scripts
       - mongo_data:/data/db
 
-  chat_service:
-    image: xrust_beze_chat:latest
-    container_name: chat_service
+  app:
+    image: xrust_beze:latest
+    container_name: main
     env_file:
       - .env
     tty: true
@@ -55,41 +55,6 @@ services:
       - mongo_db
       - kafka_xb
       - zookeeper_xb
-
-  # Сервис для AI дополнения ответов эксперта
-  ml_explanator:
-    image: ml_explanator:latest
-    container_name: ml_explanator
-    ports:
-      - "8091:8091"
-    environment:
-      - MODEL_API_KEY=${MODEL_API_KEY}
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - GOOGLE_CX=${GOOGLE_CX}
-
-  # WEB интерфейс для взаимодействия с ml_explanator. Но проде - отключить!
-  ml_check:
-    image: ml_check:latest
-    container_name: ml_check
-    ports:
-      - "8501:8501"
-    environment:
-      - EXPLANATION_API_URL=http://ml_explanator:8091/explane
-    depends_on:
-      - ml_explanator
-
-  nginx_xb:
-    image: nginx:1.27.4-perl
-    container_name: nginx_xb
-    ports:
-      - "3001:80"
-      - "3002:443"
-    depends_on:
-      - chat_service
-      - ml_explanator
-      - ml_check
-    volumes:
-      - ./dev/nginx:/etc/nginx
 
   user_service:
     image: xrust_beze_user:latest

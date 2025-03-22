@@ -9,8 +9,7 @@ dev-init:
 
 start:
 	docker build -t xrust_beze:latest -f cmd/chat/Dockerfile . \
-	&& docker build -t xrust_beze_user:latest -f cmd/user/Dockerfile . \
-	&& docker-compose up -d
+	&& docker-compose up
 
 stop:
 	docker-compose down
