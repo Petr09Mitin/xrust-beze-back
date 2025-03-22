@@ -1,4 +1,7 @@
 .idea
+.env
+.venv
+.idea
 .DS_Store
 cmd/.DS_Store
 .env
