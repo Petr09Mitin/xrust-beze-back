@@ -10,6 +10,7 @@ dev-init:
 start:
 	docker build -t xrust_beze:latest -f cmd/chat/Dockerfile . \
 	&& docker-compose up
+#	&& docker build -t ml_summarizer:latest -f ml_summarizer/Dockerfile . \
 
 stop:
 	docker-compose down

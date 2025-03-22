@@ -1,22 +1,30 @@
 version: '3.7'
 services:
-  kafka:
-    image: bitnami/kafka:3.2.1
-    ports:
-      - "9092:9092"
+  zookeeper_xb:
+    container_name: zookeeper_xb
+    image: confluentinc/cp-zookeeper:7.6.0
+    restart: unless-stopped
     environment:
-      - KAFKA_ENABLE_KRAFT=yes
-      - KAFKA_CFG_PROCESS_ROLES=broker,controller
-      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092
-      - KAFKA_BROKER_ID=1
-      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@127.0.0.1:9093
-      - ALLOW_PLAINTEXT_LISTENER=yes
-    volumes:
-      - ./dev/kafka:/scripts
-      - kafka_data:/var/lib/kafka
+      ZOOKEEPER_CLIENT_PORT: 2181
+  kafka_xb:
+    container_name: kafka_xb
+    image: confluentinc/cp-kafka:7.6.0
+    restart: unless-stopped
+    environment:
+      KAFKA_LOG_RETENTION_MINUTES: 1440 # save data for 24hrs
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper_xb:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka_xb:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      # This is required when you are running with a single-node cluster
+      # specify the replication factor for the __consumer_offsets topic
+      # __consumer_offsets topic preserves consumer offsets when consumer group commits offsets to Kafka
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      # when applications attempt to produce, consume, or fetch metadata for a non-existent topic,
+      # Kafka will automatically create the topic with the default replication factor and number of partitions
+      # which is true by default
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    depends_on:
+      - zookeeper_xb
 
   mongo_db:
     image: mongo:4.4.10
@@ -39,20 +47,21 @@ services:
       - .env
     tty: true
     ports:
-      - 8080:8080
+      - "8080:8080"
     restart: always
     volumes:
       - .:/app
     depends_on:
       - mongo_db
-      - kafka
+      - kafka_xb
+      - zookeeper_xb
 
-  ml_summarizer:
-    build: ml_summarizer
-    ports:
-      - "8091:8091"
-    environment:
-      - API_KEY=${API_KEY}
+#  ml_summarizer:
+#    image: ml_summarizer:latest
+#    ports:
+#      - "8091:8091"
+#    environment:
+#      - API_KEY=${API_KEY}
 
 volumes:
   mongo_data:
