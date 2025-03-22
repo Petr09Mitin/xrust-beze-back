@@ -59,16 +59,10 @@ func (s *MessageSubscriber) GracefulStop() error {
 
 func (s *MessageSubscriber) sendMessage(_ context.Context, message *chat_models.Message) error {
 	return s.m.BroadcastFilter(message.Encode(), func(sess *melody.Session) bool {
-		fmt.Println(sess.Keys)
 		channelID, exist := sess.Get(ChannelIDSessionParam)
 		if !exist {
 			return false
 		}
-		userID, exist := sess.Get(UserIDSessionParam)
-		if !exist {
-			return false
-		}
-		fmt.Println(message.ChannelID, channelID)
-		return message.ChannelID == channelID && message.UserID != userID
+		return message.ChannelID == channelID
 	})
 }

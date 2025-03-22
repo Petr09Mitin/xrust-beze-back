@@ -7,6 +7,8 @@ import (
 	"github.com/Petr09Mitin/xrust-beze-back/internal/router/chat"
 	chat_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/chat"
 	"github.com/olahol/melody"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 	"log"
 )
 
@@ -15,7 +17,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	msgRepo := message_repo.NewMessageRepo(kafkaPub)
+	client, err := mongo.Connect(options.Client().ApplyURI("mongodb://admin:admin@mongo_db:27017"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	collection := client.Database("xrust_beze").Collection("chats")
+	msgRepo := message_repo.NewMessageRepo(kafkaPub, collection)
 	chatService := chat_service.NewChatService(msgRepo)
 	m := melody.New()
 	kafkaSub, err := infrakafka.NewKafkaSubscriber()
@@ -31,6 +38,7 @@ func main() {
 
 	err = c.Start()
 	if err != nil {
+		c.Stop()
 		log.Fatal(err)
 	}
 }
