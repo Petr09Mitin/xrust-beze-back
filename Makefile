@@ -6,7 +6,9 @@ dev-init:
 	docker-compose exec mongo_db sh -c "mongo < /scripts/init-db.js"
 
 start:
-	docker build -t xrust_beze:latest -f cmd/chat/Dockerfile . \
+	docker build -t xrust_beze_chat:latest -f cmd/chat/Dockerfile . \
+	&& docker build -t ml_explanator:latest -f ml_explanator/Dockerfile . \
+	&& docker build -t ml_check:latest -f ml_check/Dockerfile . \
 	&& docker-compose up
 
 stop:
