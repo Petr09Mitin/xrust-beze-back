@@ -40,9 +40,9 @@ services:
       - ./dev/mongo:/scripts
       - mongo_data:/data/db
 
-  app:
-    image: xrust_beze:latest
-    container_name: main
+  chat_service:
+    image: xrust_beze_chat:latest
+    container_name: chat_service
     env_file:
       - .env
     tty: true
@@ -58,7 +58,7 @@ services:
 
   # Сервис для AI дополнения ответов эксперта
   ml_explanator:
-    build: ml_explanator
+    image: ml_explanator:latest
     container_name: ml_explanator
     ports:
       - "8091:8091"
@@ -69,7 +69,7 @@ services:
 
   # WEB интерфейс для взаимодействия с ml_explanator. Но проде - отключить!
   ml_check:
-    build: ml_check
+    image: ml_check:latest
     container_name: ml_check
     ports:
       - "8501:8501"
@@ -78,6 +78,18 @@ services:
     depends_on:
       - ml_explanator
 
+  nginx_xb:
+    image: nginx:1.27.4-perl
+    container_name: nginx_xb
+    ports:
+      - "3001:80"
+      - "3002:443"
+    depends_on:
+      - chat_service
+      - ml_explanator
+      - ml_check
+    volumes:
+      - ./dev/nginx:/etc/nginx
 
 volumes:
   mongo_data:

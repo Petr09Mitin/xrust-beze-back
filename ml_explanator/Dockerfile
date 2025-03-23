@@ -4,7 +4,7 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Скопируем файлы проекта в контейнер
-COPY . /app
+COPY ./ml_explanator /app
 
 # Устанавливаем зависимости
 RUN pip install --no-cache-dir -r requirements.txt
