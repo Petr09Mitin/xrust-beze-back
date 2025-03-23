@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package user;
+
+option go_package = "github.com/Petr09Mitin/xrust-beze-back/proto/user";
+
+import "google/protobuf/timestamp.proto";
+
+service UserService {
+  rpc CreateUser(CreateUserRequest) returns (UserResponse);
+  rpc GetUser(GetUserRequest) returns (UserResponse);
+  rpc UpdateUser(UpdateUserRequest) returns (UserResponse);
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+  rpc FindMatchingUsers(FindMatchingUsersRequest) returns (ListUsersResponse);
+}
+
+message Skill {
+  string name = 1;
+  string level = 2;
+  string description = 3;
+}
+
+message User {
+  string id = 1;
+  string username = 2;
+  string email = 3;
+  repeated Skill skills_to_learn = 4;
+  repeated Skill skills_to_share = 5;
+  string bio = 6;
+  string avatar_url = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+  google.protobuf.Timestamp last_active_at = 10;
+  string preferred_format = 11;
+}
+
+message CreateUserRequest {
+  string username = 1;
+  string email = 2;
+  repeated Skill skills_to_learn = 3;
+  repeated Skill skills_to_share = 4;
+  string bio = 5;
+  string avatar_url = 6;
+  string preferred_format = 7;
+}
+
+message GetUserRequest {
+  string id = 1;
+}
+
+message UpdateUserRequest {
+  string id = 1;
+  string username = 2;
+  string email = 3;
+  repeated Skill skills_to_learn = 4;
+  repeated Skill skills_to_share = 5;
+  string bio = 6;
+  string avatar_url = 7;
+  string preferred_format = 8;
+}
+
+message DeleteUserRequest {
+  string id = 1;
+}
+
+message DeleteUserResponse {
+  bool success = 1;
+}
+
+message UserResponse {
+  User user = 1;
+}
+
+message ListUsersRequest {
+  int32 page = 1;
+  int32 limit = 2;
+}
+
+message ListUsersResponse {
+  repeated User users = 1;
+}
+
+message FindMatchingUsersRequest {
+  string user_id = 1;
+} 

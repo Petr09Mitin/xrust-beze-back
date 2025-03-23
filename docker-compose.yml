@@ -47,6 +47,21 @@ services:
       - mongo_db
       - kafka
 
+  user_service:
+    image: xrust_beze_user:latest
+    container_name: user_service
+    environment:
+      - MONGO_URI=mongodb://admin:admin@mongo_db:27017/xrust_beze?authSource=admin
+      - MONGO_DB_NAME=xrust_beze
+      - HTTP_PORT=8080
+      - GRPC_PORT=50051
+    ports:
+      - "8081:8080"  # HTTP порт (изменен, чтобы не конфликтовать с другими сервисами)
+      - "50051:50051"  # gRPC порт
+    restart: always
+    depends_on:
+      - mongo_db
+
 volumes:
   mongo_data:
   kafka_data:
