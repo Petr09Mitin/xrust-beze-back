@@ -1,0 +1,2322 @@
+[
+  {
+    "name": "Java",
+    "category": "backend"
+  },
+  {
+    "name": "Kotlin",
+    "category": "mobile"
+  },
+  {
+    "name": "PostgreSQL",
+    "category": "database"
+  },
+  {
+    "name": "Spring Boot",
+    "category": "backend"
+  },
+  {
+    "name": "Kafka",
+    "category": "other"
+  },
+  {
+    "name": "CI",
+    "category": "devops"
+  },
+  {
+    "name": "MS SQL",
+    "category": "database"
+  },
+  {
+    "name": "Docker",
+    "category": "devops"
+  },
+  {
+    "name": "Spring Framework",
+    "category": "backend"
+  },
+  {
+    "name": "Jenkins",
+    "category": "devops"
+  },
+  {
+    "name": "ELK",
+    "category": "other"
+  },
+  {
+    "name": "Английский — B2",
+    "category": "languages"
+  },
+  {
+    "name": "Android",
+    "category": "mobile"
+  },
+  {
+    "name": "Android Studio",
+    "category": "mobile"
+  },
+  {
+    "name": "MVI",
+    "category": "other"
+  },
+  {
+    "name": "RxRedux",
+    "category": "frontend"
+  },
+  {
+    "name": "MVVM",
+    "category": "other"
+  },
+  {
+    "name": "Dagger 2",
+    "category": "other"
+  },
+  {
+    "name": "RxJava 2",
+    "category": "backend"
+  },
+  {
+    "name": "RxKotlin 2",
+    "category": "mobile"
+  },
+  {
+    "name": "Delphi",
+    "category": "other"
+  },
+  {
+    "name": "C#",
+    "category": "other"
+  },
+  {
+    "name": "Git",
+    "category": "other"
+  },
+  {
+    "name": "MySQL",
+    "category": "database"
+  },
+  {
+    "name": "ООП",
+    "category": "other"
+  },
+  {
+    "name": "Yii",
+    "category": "other"
+  },
+  {
+    "name": "Swift",
+    "category": "mobile"
+  },
+  {
+    "name": "iOS SDK",
+    "category": "mobile"
+  },
+  {
+    "name": "Android SDK",
+    "category": "mobile"
+  },
+  {
+    "name": "Node.js",
+    "category": "backend"
+  },
+  {
+    "name": "Vue.js",
+    "category": "frontend"
+  },
+  {
+    "name": "JS",
+    "category": "frontend"
+  },
+  {
+    "name": "Redis",
+    "category": "database"
+  },
+  {
+    "name": "RabbitMQ",
+    "category": "analytics"
+  },
+  {
+    "name": "MongoDB",
+    "category": "backend"
+  },
+  {
+    "name": "React",
+    "category": "frontend"
+  },
+  {
+    "name": "jQuery",
+    "category": "frontend"
+  },
+  {
+    "name": "Bitrix24",
+    "category": "analytics"
+  },
+  {
+    "name": "1С программирование",
+    "category": "other"
+  },
+  {
+    "name": "go",
+    "category": "backend"
+  },
+  {
+    "name": "JavaScript",
+    "category": "backend"
+  },
+  {
+    "name": "Linux",
+    "category": "design"
+  },
+  {
+    "name": "SQL",
+    "category": "database"
+  },
+  {
+    "name": "SOAP",
+    "category": "other"
+  },
+  {
+    "name": "REST",
+    "category": "other"
+  },
+  {
+    "name": "MS Dynamics 365 CE",
+    "category": "other"
+  },
+  {
+    "name": "Английский — B1",
+    "category": "languages"
+  },
+  {
+    "name": "XML",
+    "category": "ml"
+  },
+  {
+    "name": "xbrl",
+    "category": "other"
+  },
+  {
+    "name": "Python",
+    "category": "other"
+  },
+  {
+    "name": "Lucene",
+    "category": "other"
+  },
+  {
+    "name": "HTML5",
+    "category": "frontend"
+  },
+  {
+    "name": "CSS3",
+    "category": "frontend"
+  },
+  {
+    "name": "Figma",
+    "category": "design"
+  },
+  {
+    "name": "Angular",
+    "category": "frontend"
+  },
+  {
+    "name": "React.js",
+    "category": "frontend"
+  },
+  {
+    "name": "Apache Maven",
+    "category": "infra"
+  },
+  {
+    "name": "Hibernate ORM",
+    "category": "other"
+  },
+  {
+    "name": "webpack",
+    "category": "other"
+  },
+  {
+    "name": "Sass",
+    "category": "design"
+  },
+  {
+    "name": "BEM",
+    "category": "design"
+  },
+  {
+    "name": "Gulp",
+    "category": "design"
+  },
+  {
+    "name": "Ruby On Rails",
+    "category": "backend"
+  },
+  {
+    "name": "Django Framework",
+    "category": "backend"
+  },
+  {
+    "name": "ImageProxy",
+    "category": "other"
+  },
+  {
+    "name": "amoCRM",
+    "category": "other"
+  },
+  {
+    "name": "Jira",
+    "category": "management"
+  },
+  {
+    "name": "TypeScript",
+    "category": "frontend"
+  },
+  {
+    "name": "Redux",
+    "category": "frontend"
+  },
+  {
+    "name": "MobX",
+    "category": "other"
+  },
+  {
+    "name": "SQLAlchemy",
+    "category": "database"
+  },
+  {
+    "name": "Docker-compose",
+    "category": "devops"
+  },
+  {
+    "name": "API",
+    "category": "other"
+  },
+  {
+    "name": "OpenAPI",
+    "category": "other"
+  },
+  {
+    "name": "styled component",
+    "category": "other"
+  },
+  {
+    "name": "TypeScript",
+    "category": "frontend"
+  },
+  {
+    "name": "Vuex",
+    "category": "frontend"
+  },
+  {
+    "name": "Storybook",
+    "category": "other"
+  },
+  {
+    "name": "Styled-components",
+    "category": "other"
+  },
+  {
+    "name": "Retrofit",
+    "category": "other"
+  },
+  {
+    "name": "Pandas",
+    "category": "other"
+  },
+  {
+    "name": "React-Redux",
+    "category": "frontend"
+  },
+  {
+    "name": "D3.js",
+    "category": "frontend"
+  },
+  {
+    "name": "Highcharts",
+    "category": "other"
+  },
+  {
+    "name": "Leaflet.js",
+    "category": "frontend"
+  },
+  {
+    "name": "CMS Wordpress",
+    "category": "other"
+  },
+  {
+    "name": "БЭМ",
+    "category": "other"
+  },
+  {
+    "name": "Formik",
+    "category": "other"
+  },
+  {
+    "name": "Next.js",
+    "category": "frontend"
+  },
+  {
+    "name": "WebSocket",
+    "category": "other"
+  },
+  {
+    "name": "Composition API",
+    "category": "other"
+  },
+  {
+    "name": "Vuetify",
+    "category": "frontend"
+  },
+  {
+    "name": "ESLint",
+    "category": "other"
+  },
+  {
+    "name": "pinia",
+    "category": "other"
+  },
+  {
+    "name": "Aiogram",
+    "category": "other"
+  },
+  {
+    "name": "Bootstrap",
+    "category": "frontend"
+  },
+  {
+    "name": "Less",
+    "category": "other"
+  },
+  {
+    "name": "SCSS",
+    "category": "frontend"
+  },
+  {
+    "name": "MS SQL Server",
+    "category": "database"
+  },
+  {
+    "name": "Transact-SQL",
+    "category": "database"
+  },
+  {
+    "name": "Английский — A1",
+    "category": "languages"
+  },
+  {
+    "name": "asyncio",
+    "category": "devops"
+  },
+  {
+    "name": "Unreal Engine 5",
+    "category": "gamedev"
+  },
+  {
+    "name": "Blueprints",
+    "category": "gamedev"
+  },
+  {
+    "name": "C++",
+    "category": "other"
+  },
+  {
+    "name": "Asana",
+    "category": "other"
+  },
+  {
+    "name": "Telegram",
+    "category": "other"
+  },
+  {
+    "name": "ASP.NET",
+    "category": "backend"
+  },
+  {
+    "name": "LINQ",
+    "category": "other"
+  },
+  {
+    "name": "CRUD",
+    "category": "other"
+  },
+  {
+    "name": "Entity Framework",
+    "category": "other"
+  },
+  {
+    "name": "Nuxt",
+    "category": "frontend"
+  },
+  {
+    "name": "Spring",
+    "category": "backend"
+  },
+  {
+    "name": "Liquebase",
+    "category": "other"
+  },
+  {
+    "name": "Adobe Photoshop",
+    "category": "design"
+  },
+  {
+    "name": "React Native",
+    "category": "frontend"
+  },
+  {
+    "name": "Material UI",
+    "category": "design"
+  },
+  {
+    "name": "WebSockets",
+    "category": "other"
+  },
+  {
+    "name": "Администрирование серверов Linux",
+    "category": "design"
+  },
+  {
+    "name": "Lerna",
+    "category": "other"
+  },
+  {
+    "name": "JSON",
+    "category": "frontend"
+  },
+  {
+    "name": "ES6",
+    "category": "other"
+  },
+  {
+    "name": "MVC",
+    "category": "other"
+  },
+  {
+    "name": "npm",
+    "category": "other"
+  },
+  {
+    "name": "Swagger",
+    "category": "other"
+  },
+  {
+    "name": "Английский — A2",
+    "category": "languages"
+  },
+  {
+    "name": "Lorica",
+    "category": "other"
+  },
+  {
+    "name": "Базовые знания 1С",
+    "category": "other"
+  },
+  {
+    "name": "MS PowerPoint",
+    "category": "other"
+  },
+  {
+    "name": "GraphQL",
+    "category": "other"
+  },
+  {
+    "name": "Jest",
+    "category": "testing"
+  },
+  {
+    "name": "Unit Testing",
+    "category": "testing"
+  },
+  {
+    "name": "crypto",
+    "category": "other"
+  },
+  {
+    "name": "Celery",
+    "category": "other"
+  },
+  {
+    "name": "Django",
+    "category": "backend"
+  },
+  {
+    "name": "Web3",
+    "category": "other"
+  },
+  {
+    "name": "FastAPI",
+    "category": "backend"
+  },
+  {
+    "name": "Unity",
+    "category": "gamedev"
+  },
+  {
+    "name": "Ruby",
+    "category": "backend"
+  },
+  {
+    "name": "RSpec",
+    "category": "other"
+  },
+  {
+    "name": "Bash",
+    "category": "other"
+  },
+  {
+    "name": "VBA",
+    "category": "other"
+  },
+  {
+    "name": "MS Visual Basic",
+    "category": "other"
+  },
+  {
+    "name": "Firebase",
+    "category": "other"
+  },
+  {
+    "name": "Kotlin",
+    "category": "mobile"
+  },
+  {
+    "name": "SSR",
+    "category": "other"
+  },
+  {
+    "name": "JSON RPC API",
+    "category": "frontend"
+  },
+  {
+    "name": "UI/UX",
+    "category": "design"
+  },
+  {
+    "name": "ANTLR",
+    "category": "other"
+  },
+  {
+    "name": "Quartz",
+    "category": "other"
+  },
+  {
+    "name": "SignalR",
+    "category": "other"
+  },
+  {
+    "name": "Ajax",
+    "category": "other"
+  },
+  {
+    "name": "1С-Битрикс",
+    "category": "other"
+  },
+  {
+    "name": "Game Programming",
+    "category": "gamedev"
+  },
+  {
+    "name": "Unity 3D",
+    "category": "gamedev"
+  },
+  {
+    "name": "3D",
+    "category": "gamedev"
+  },
+  {
+    "name": "Kubernetes",
+    "category": "devops"
+  },
+  {
+    "name": "Liquibase",
+    "category": "design"
+  },
+  {
+    "name": "Numpy",
+    "category": "other"
+  },
+  {
+    "name": "CRM",
+    "category": "other"
+  },
+  {
+    "name": "Flask",
+    "category": "backend"
+  },
+  {
+    "name": "aiohttp",
+    "category": "other"
+  },
+  {
+    "name": "Symfony",
+    "category": "other"
+  },
+  {
+    "name": "Laravel",
+    "category": "other"
+  },
+  {
+    "name": "Проектный менеджмент",
+    "category": "other"
+  },
+  {
+    "name": "Innovation Management",
+    "category": "other"
+  },
+  {
+    "name": "Business Management",
+    "category": "other"
+  },
+  {
+    "name": "Управление проектами",
+    "category": "other"
+  },
+  {
+    "name": "Проведение переговоров",
+    "category": "other"
+  },
+  {
+    "name": "Инновационный менеджмент",
+    "category": "other"
+  },
+  {
+    "name": "SQL Server",
+    "category": "database"
+  },
+  {
+    "name": "TDD",
+    "category": "testing"
+  },
+  {
+    "name": "SSH",
+    "category": "other"
+  },
+  {
+    "name": "AWS",
+    "category": "infra"
+  },
+  {
+    "name": "СКД",
+    "category": "other"
+  },
+  {
+    "name": "Bug Tracking Systems",
+    "category": "other"
+  },
+  {
+    "name": "LMS",
+    "category": "other"
+  },
+  {
+    "name": "FlowXO",
+    "category": "other"
+  },
+  {
+    "name": "No-code",
+    "category": "other"
+  },
+  {
+    "name": "Оптимизация запросов",
+    "category": "other"
+  },
+  {
+    "name": "Databases",
+    "category": "other"
+  },
+  {
+    "name": "Agile Project Management",
+    "category": "management"
+  },
+  {
+    "name": "1С: Бухгалтерия предприятия",
+    "category": "other"
+  },
+  {
+    "name": "B2B Продажи",
+    "category": "other"
+  },
+  {
+    "name": "Rust",
+    "category": "other"
+  },
+  {
+    "name": "ORACLE",
+    "category": "database"
+  },
+  {
+    "name": "Elasticsearch",
+    "category": "other"
+  },
+  {
+    "name": "C",
+    "category": "other"
+  },
+  {
+    "name": "Scrum",
+    "category": "management"
+  },
+  {
+    "name": "InfluxDB",
+    "category": "design"
+  },
+  {
+    "name": "Pydantic",
+    "category": "other"
+  },
+  {
+    "name": "Web-socket",
+    "category": "other"
+  },
+  {
+    "name": "Unreal Engine 4",
+    "category": "gamedev"
+  },
+  {
+    "name": "Nest.js",
+    "category": "frontend"
+  },
+  {
+    "name": "Web3.js",
+    "category": "frontend"
+  },
+  {
+    "name": "EVM",
+    "category": "other"
+  },
+  {
+    "name": "Blockchain",
+    "category": "other"
+  },
+  {
+    "name": "Gamedev",
+    "category": "gamedev"
+  },
+  {
+    "name": "Grafana",
+    "category": "devops"
+  },
+  {
+    "name": "Cassandra",
+    "category": "database"
+  },
+  {
+    "name": "Postgres",
+    "category": "database"
+  },
+  {
+    "name": "Unix",
+    "category": "other"
+  },
+  {
+    "name": "Redmine",
+    "category": "other"
+  },
+  {
+    "name": "Java EE",
+    "category": "backend"
+  },
+  {
+    "name": "JSP",
+    "category": "frontend"
+  },
+  {
+    "name": "Копирайтинг",
+    "category": "other"
+  },
+  {
+    "name": "Tilda",
+    "category": "other"
+  },
+  {
+    "name": "Анализ конкурентов",
+    "category": "other"
+  },
+  {
+    "name": "Создание сайтов",
+    "category": "other"
+  },
+  {
+    "name": "Game Design",
+    "category": "gamedev"
+  },
+  {
+    "name": "С#",
+    "category": "other"
+  },
+  {
+    "name": "MS Visual Studio",
+    "category": "other"
+  },
+  {
+    "name": "WCF",
+    "category": "other"
+  },
+  {
+    "name": ".NET Framework",
+    "category": "backend"
+  },
+  {
+    "name": "SEO",
+    "category": "other"
+  },
+  {
+    "name": "Curl",
+    "category": "other"
+  },
+  {
+    "name": "MSSQL",
+    "category": "database"
+  },
+  {
+    "name": "SaaS",
+    "category": "other"
+  },
+  {
+    "name": "MQTT",
+    "category": "other"
+  },
+  {
+    "name": "Vue/Vuex",
+    "category": "frontend"
+  },
+  {
+    "name": "Gradle",
+    "category": "other"
+  },
+  {
+    "name": "Maven",
+    "category": "other"
+  },
+  {
+    "name": "SPA",
+    "category": "other"
+  },
+  {
+    "name": "UX",
+    "category": "design"
+  },
+  {
+    "name": "Yii2",
+    "category": "other"
+  },
+  {
+    "name": "DAX",
+    "category": "other"
+  },
+  {
+    "name": "Power BI",
+    "category": "analytics"
+  },
+  {
+    "name": "Combine",
+    "category": "analytics"
+  },
+  {
+    "name": "RXSwift",
+    "category": "mobile"
+  },
+  {
+    "name": "Английский — C1",
+    "category": "languages"
+  },
+  {
+    "name": "Strapi",
+    "category": "other"
+  },
+  {
+    "name": "Express",
+    "category": "backend"
+  },
+  {
+    "name": "Telegram API",
+    "category": "other"
+  },
+  {
+    "name": "Atlassian Jira",
+    "category": "management"
+  },
+  {
+    "name": "Информационная безопасность",
+    "category": "security"
+  },
+  {
+    "name": "UI",
+    "category": "design"
+  },
+  {
+    "name": "WPF",
+    "category": "other"
+  },
+  {
+    "name": "Room",
+    "category": "mobile"
+  },
+  {
+    "name": "Clean Architecture",
+    "category": "other"
+  },
+  {
+    "name": "Custom View",
+    "category": "other"
+  },
+  {
+    "name": "Dagger",
+    "category": "other"
+  },
+  {
+    "name": "MODX",
+    "category": "other"
+  },
+  {
+    "name": "Photoshop",
+    "category": "design"
+  },
+  {
+    "name": "Apache",
+    "category": "infra"
+  },
+  {
+    "name": "Nginx",
+    "category": "infra"
+  },
+  {
+    "name": "Русский — C2 — В совершенстве",
+    "category": "languages"
+  },
+  {
+    "name": "STL",
+    "category": "other"
+  },
+  {
+    "name": "CI/CD",
+    "category": "devops"
+  },
+  {
+    "name": "Drupal API",
+    "category": "other"
+  },
+  {
+    "name": "JSON API",
+    "category": "frontend"
+  },
+  {
+    "name": "ETL",
+    "category": "analytics"
+  },
+  {
+    "name": "Hadoop",
+    "category": "other"
+  },
+  {
+    "name": "Spark",
+    "category": "other"
+  },
+  {
+    "name": "Airlow",
+    "category": "other"
+  },
+  {
+    "name": "Informatica Data Qualit",
+    "category": "other"
+  },
+  {
+    "name": "dagger2",
+    "category": "other"
+  },
+  {
+    "name": "mockito",
+    "category": "other"
+  },
+  {
+    "name": "JUnit",
+    "category": "testing"
+  },
+  {
+    "name": "BitBucket",
+    "category": "analytics"
+  },
+  {
+    "name": "SolidWorks",
+    "category": "other"
+  },
+  {
+    "name": "3D Моделирование",
+    "category": "gamedev"
+  },
+  {
+    "name": "Unigraphics NX",
+    "category": "other"
+  },
+  {
+    "name": "Objective-C",
+    "category": "mobile"
+  },
+  {
+    "name": "Core Text",
+    "category": "other"
+  },
+  {
+    "name": "Cocoa Touch",
+    "category": "other"
+  },
+  {
+    "name": "Google Maps Api",
+    "category": "backend"
+  },
+  {
+    "name": "Битрикс 24",
+    "category": "other"
+  },
+  {
+    "name": "Xcode",
+    "category": "mobile"
+  },
+  {
+    "name": "Svelte",
+    "category": "frontend"
+  },
+  {
+    "name": "Joomla",
+    "category": "ml"
+  },
+  {
+    "name": "Tensorflow",
+    "category": "ml"
+  },
+  {
+    "name": "ML",
+    "category": "ml"
+  },
+  {
+    "name": "Keras",
+    "category": "ml"
+  },
+  {
+    "name": "PyTorch",
+    "category": "ml"
+  },
+  {
+    "name": "Kit",
+    "category": "other"
+  },
+  {
+    "name": "PWA",
+    "category": "other"
+  },
+  {
+    "name": "Mercurial",
+    "category": "other"
+  },
+  {
+    "name": "Apache Kafka",
+    "category": "infra"
+  },
+  {
+    "name": "Mapbox",
+    "category": "other"
+  },
+  {
+    "name": "Canvas",
+    "category": "other"
+  },
+  {
+    "name": "CoreData",
+    "category": "other"
+  },
+  {
+    "name": "OpenShift",
+    "category": "other"
+  },
+  {
+    "name": "CMake",
+    "category": "other"
+  },
+  {
+    "name": "Математический анализ",
+    "category": "other"
+  },
+  {
+    "name": "Математическое программирование",
+    "category": "other"
+  },
+  {
+    "name": "Математическое моделирование",
+    "category": "other"
+  },
+  {
+    "name": "Математическая статистика",
+    "category": "other"
+  },
+  {
+    "name": "Perl",
+    "category": "other"
+  },
+  {
+    "name": "ЕГИСЗ",
+    "category": "other"
+  },
+  {
+    "name": "GCC",
+    "category": "other"
+  },
+  {
+    "name": "Qt",
+    "category": "other"
+  },
+  {
+    "name": "SMTP/POP3/IMAP",
+    "category": "other"
+  },
+  {
+    "name": "ES5",
+    "category": "other"
+  },
+  {
+    "name": "Spring Security",
+    "category": "backend"
+  },
+  {
+    "name": "ARM",
+    "category": "other"
+  },
+  {
+    "name": "STM32",
+    "category": "other"
+  },
+  {
+    "name": "Machine Learning",
+    "category": "ml"
+  },
+  {
+    "name": "OpenCV",
+    "category": "other"
+  },
+  {
+    "name": "Data Science",
+    "category": "devops"
+  },
+  {
+    "name": "MS Access",
+    "category": "other"
+  },
+  {
+    "name": "Assembler",
+    "category": "other"
+  },
+  {
+    "name": "IDA",
+    "category": "other"
+  },
+  {
+    "name": "Yarn",
+    "category": "other"
+  },
+  {
+    "name": "Yandex Maps API",
+    "category": "other"
+  },
+  {
+    "name": "TIA Portal",
+    "category": "other"
+  },
+  {
+    "name": "SIMATIC",
+    "category": "other"
+  },
+  {
+    "name": "SCADA",
+    "category": "other"
+  },
+  {
+    "name": "Step 7",
+    "category": "other"
+  },
+  {
+    "name": "АСУ ТП",
+    "category": "other"
+  },
+  {
+    "name": "Qml",
+    "category": "ml"
+  },
+  {
+    "name": "Astra Linux SE",
+    "category": "design"
+  },
+  {
+    "name": "Atlassian Confluence",
+    "category": "other"
+  },
+  {
+    "name": "Developer Express",
+    "category": "backend"
+  },
+  {
+    "name": "JDBC",
+    "category": "other"
+  },
+  {
+    "name": "Hibernate",
+    "category": "other"
+  },
+  {
+    "name": "Teamplayer",
+    "category": "other"
+  },
+  {
+    "name": "PHP",
+    "category": "backend"
+  },
+  {
+    "name": "Immutable.JS",
+    "category": "frontend"
+  },
+  {
+    "name": "HOC",
+    "category": "other"
+  },
+  {
+    "name": "Flexbox",
+    "category": "other"
+  },
+  {
+    "name": "Recompose",
+    "category": "other"
+  },
+  {
+    "name": "Reselect",
+    "category": "other"
+  },
+  {
+    "name": "JSX",
+    "category": "frontend"
+  },
+  {
+    "name": "Redux-Saga",
+    "category": "frontend"
+  },
+  {
+    "name": "gRPC",
+    "category": "other"
+  },
+  {
+    "name": "Electron",
+    "category": "other"
+  },
+  {
+    "name": "theia",
+    "category": "other"
+  },
+  {
+    "name": "Flutter",
+    "category": "mobile"
+  },
+  {
+    "name": "Design Patterns",
+    "category": "other"
+  },
+  {
+    "name": "Big Data",
+    "category": "analytics"
+  },
+  {
+    "name": "Spring boot 2",
+    "category": "backend"
+  },
+  {
+    "name": "Spring data",
+    "category": "backend"
+  },
+  {
+    "name": "Java Spring Boot",
+    "category": "backend"
+  },
+  {
+    "name": "Spring MVC",
+    "category": "backend"
+  },
+  {
+    "name": "Spring Data JPA",
+    "category": "backend"
+  },
+  {
+    "name": "Docker-контейнерами",
+    "category": "devops"
+  },
+  {
+    "name": "AndroidX",
+    "category": "mobile"
+  },
+  {
+    "name": "Kanban",
+    "category": "management"
+  },
+  {
+    "name": "1C: Бухгалтерия",
+    "category": "other"
+  },
+  {
+    "name": "Nuxt.js",
+    "category": "frontend"
+  },
+  {
+    "name": "Lighthouse",
+    "category": "other"
+  },
+  {
+    "name": "PageSpeed Insights",
+    "category": "other"
+  },
+  {
+    "name": "ADO.NET",
+    "category": "backend"
+  },
+  {
+    "name": "ASP.NET MVC",
+    "category": "backend"
+  },
+  {
+    "name": "Service Mesh",
+    "category": "other"
+  },
+  {
+    "name": "ExpressJS",
+    "category": "backend"
+  },
+  {
+    "name": "Computer Vision",
+    "category": "other"
+  },
+  {
+    "name": "DWH",
+    "category": "other"
+  },
+  {
+    "name": "SSAS",
+    "category": "other"
+  },
+  {
+    "name": "SSIS",
+    "category": "other"
+  },
+  {
+    "name": "Bubble.io",
+    "category": "other"
+  },
+  {
+    "name": "Testcontainers",
+    "category": "testing"
+  },
+  {
+    "name": "Hazelcast",
+    "category": "other"
+  },
+  {
+    "name": "CrateDB",
+    "category": "other"
+  },
+  {
+    "name": "SeaweedFS",
+    "category": "other"
+  },
+  {
+    "name": "Yandex Cloud",
+    "category": "infra"
+  },
+  {
+    "name": "SQLite",
+    "category": "database"
+  },
+  {
+    "name": "Dart",
+    "category": "other"
+  },
+  {
+    "name": "BLoC",
+    "category": "other"
+  },
+  {
+    "name": "Provider",
+    "category": "other"
+  },
+  {
+    "name": "Web Application Development",
+    "category": "other"
+  },
+  {
+    "name": "Slack",
+    "category": "other"
+  },
+  {
+    "name": "YouTrack",
+    "category": "other"
+  },
+  {
+    "name": "eBPF",
+    "category": "other"
+  },
+  {
+    "name": "NoSQL",
+    "category": "database"
+  },
+  {
+    "name": "Web-дизайн",
+    "category": "other"
+  },
+  {
+    "name": "DI",
+    "category": "other"
+  },
+  {
+    "name": "Spine",
+    "category": "other"
+  },
+  {
+    "name": "UGUI",
+    "category": "design"
+  },
+  {
+    "name": "Visual Studio C#",
+    "category": "other"
+  },
+  {
+    "name": "ORM",
+    "category": "other"
+  },
+  {
+    "name": "React Testing Library",
+    "category": "frontend"
+  },
+  {
+    "name": "Apache Tomcat",
+    "category": "infra"
+  },
+  {
+    "name": "MyBatis",
+    "category": "other"
+  },
+  {
+    "name": "Jetty",
+    "category": "other"
+  },
+  {
+    "name": "JMS",
+    "category": "other"
+  },
+  {
+    "name": "DevOps",
+    "category": "other"
+  },
+  {
+    "name": "Google API",
+    "category": "backend"
+  },
+  {
+    "name": "Low-Code",
+    "category": "other"
+  },
+  {
+    "name": "No-Code",
+    "category": "other"
+  },
+  {
+    "name": "WebGL",
+    "category": "other"
+  },
+  {
+    "name": "CocoaPods",
+    "category": "other"
+  },
+  {
+    "name": "ACDSee",
+    "category": "devops"
+  },
+  {
+    "name": "Agile",
+    "category": "management"
+  },
+  {
+    "name": "SAP Business Objects",
+    "category": "other"
+  },
+  {
+    "name": "ABAP",
+    "category": "other"
+  },
+  {
+    "name": "SAP BI",
+    "category": "analytics"
+  },
+  {
+    "name": "SAP CRM",
+    "category": "other"
+  },
+  {
+    "name": "SAP ERP",
+    "category": "other"
+  },
+  {
+    "name": "Unix Shell Scripts",
+    "category": "other"
+  },
+  {
+    "name": "CUDA",
+    "category": "other"
+  },
+  {
+    "name": "ffmpeg",
+    "category": "other"
+  },
+  {
+    "name": "libav",
+    "category": "other"
+  },
+  {
+    "name": "g-streamer",
+    "category": "other"
+  },
+  {
+    "name": "EF Core",
+    "category": "other"
+  },
+  {
+    "name": "Sequelize",
+    "category": "other"
+  },
+  {
+    "name": "Etherium",
+    "category": "other"
+  },
+  {
+    "name": "Google таблицы",
+    "category": "backend"
+  },
+  {
+    "name": "SpringBoot",
+    "category": "backend"
+  },
+  {
+    "name": "Samba",
+    "category": "other"
+  },
+  {
+    "name": "OpenLDAP",
+    "category": "other"
+  },
+  {
+    "name": "LMDB",
+    "category": "other"
+  },
+  {
+    "name": "EntityFramework",
+    "category": "other"
+  },
+  {
+    "name": "TFS",
+    "category": "other"
+  },
+  {
+    "name": "Composer",
+    "category": "other"
+  },
+  {
+    "name": "Business Process Management",
+    "category": "other"
+  },
+  {
+    "name": "Strategic Planning",
+    "category": "other"
+  },
+  {
+    "name": "People Management",
+    "category": "other"
+  },
+  {
+    "name": "Recruitment",
+    "category": "design"
+  },
+  {
+    "name": "Talent Management",
+    "category": "other"
+  },
+  {
+    "name": "OpenGL",
+    "category": "other"
+  },
+  {
+    "name": "TCP/IP",
+    "category": "other"
+  },
+  {
+    "name": "Prisma ORM",
+    "category": "other"
+  },
+  {
+    "name": "OLAP",
+    "category": "analytics"
+  },
+  {
+    "name": "Rolllup",
+    "category": "other"
+  },
+  {
+    "name": "Pixi.js",
+    "category": "frontend"
+  },
+  {
+    "name": "Microsoft IIS",
+    "category": "other"
+  },
+  {
+    "name": "Crypto API",
+    "category": "other"
+  },
+  {
+    "name": "TypedArray",
+    "category": "other"
+  },
+  {
+    "name": "Flow",
+    "category": "other"
+  },
+  {
+    "name": "Altium Designer",
+    "category": "other"
+  },
+  {
+    "name": "PostrgreSQL",
+    "category": "database"
+  },
+  {
+    "name": "SVN",
+    "category": "other"
+  },
+  {
+    "name": "Qt(PyQt)",
+    "category": "other"
+  },
+  {
+    "name": "Esnext",
+    "category": "frontend"
+  },
+  {
+    "name": "ASM",
+    "category": "other"
+  },
+  {
+    "name": "Boost",
+    "category": "other"
+  },
+  {
+    "name": "JSON-RPC",
+    "category": "frontend"
+  },
+  {
+    "name": "NX",
+    "category": "other"
+  },
+  {
+    "name": "WinAPI",
+    "category": "other"
+  },
+  {
+    "name": "VIPER",
+    "category": "other"
+  },
+  {
+    "name": "Janus",
+    "category": "other"
+  },
+  {
+    "name": "webrtc",
+    "category": "other"
+  },
+  {
+    "name": "UML",
+    "category": "ml"
+  },
+  {
+    "name": "Entity Framework Core",
+    "category": "other"
+  },
+  {
+    "name": "NuxtJS",
+    "category": "frontend"
+  },
+  {
+    "name": "ERP",
+    "category": "other"
+  },
+  {
+    "name": "САПР",
+    "category": "other"
+  },
+  {
+    "name": "InstallShield",
+    "category": "other"
+  },
+  {
+    "name": "CAD",
+    "category": "other"
+  },
+  {
+    "name": "MSI",
+    "category": "other"
+  },
+  {
+    "name": "KiCad",
+    "category": "other"
+  },
+  {
+    "name": "ROS",
+    "category": "other"
+  },
+  {
+    "name": "Smarty",
+    "category": "other"
+  },
+  {
+    "name": "Twig",
+    "category": "other"
+  },
+  {
+    "name": "Jetbrains Phpstorm",
+    "category": "backend"
+  },
+  {
+    "name": "Socket.io",
+    "category": "other"
+  },
+  {
+    "name": "Automotive",
+    "category": "other"
+  },
+  {
+    "name": "Link2db",
+    "category": "other"
+  },
+  {
+    "name": "IoT",
+    "category": "other"
+  },
+  {
+    "name": "ACF",
+    "category": "other"
+  },
+  {
+    "name": "Webflux",
+    "category": "design"
+  },
+  {
+    "name": "Apache mesos",
+    "category": "infra"
+  },
+  {
+    "name": "CockroachDB",
+    "category": "other"
+  },
+  {
+    "name": "Lua",
+    "category": "other"
+  },
+  {
+    "name": "Java Servlets",
+    "category": "backend"
+  },
+  {
+    "name": "MS Office",
+    "category": "other"
+  },
+  {
+    "name": "Prometheus",
+    "category": "devops"
+  },
+  {
+    "name": "SprutCAM",
+    "category": "other"
+  },
+  {
+    "name": "ЕСКД",
+    "category": "other"
+  },
+  {
+    "name": "ANSYS",
+    "category": "other"
+  },
+  {
+    "name": "DriveWorks",
+    "category": "other"
+  },
+  {
+    "name": "LVMlow PoligonSoft",
+    "category": "backend"
+  },
+  {
+    "name": "Компас",
+    "category": "other"
+  },
+  {
+    "name": "DataBinding",
+    "category": "analytics"
+  },
+  {
+    "name": "SwiftUI",
+    "category": "mobile"
+  },
+  {
+    "name": "RTB",
+    "category": "other"
+  },
+  {
+    "name": "Highload",
+    "category": "other"
+  },
+  {
+    "name": "Ant Design",
+    "category": "design"
+  },
+  {
+    "name": "Zipkin",
+    "category": "other"
+  },
+  {
+    "name": "Selenium",
+    "category": "other"
+  },
+  {
+    "name": "OpenID",
+    "category": "security"
+  },
+  {
+    "name": "JPA",
+    "category": "other"
+  },
+  {
+    "name": "Falcon",
+    "category": "other"
+  },
+  {
+    "name": "SqlAlchemy ORM",
+    "category": "database"
+  },
+  {
+    "name": "DOMObject",
+    "category": "other"
+  },
+  {
+    "name": "Memcached",
+    "category": "other"
+  },
+  {
+    "name": "Pilot-BIM",
+    "category": "analytics"
+  },
+  {
+    "name": "XtraReport",
+    "category": "other"
+  },
+  {
+    "name": "API Pilot-BIM",
+    "category": "analytics"
+  },
+  {
+    "name": "TDM365",
+    "category": "other"
+  },
+  {
+    "name": "PMC",
+    "category": "other"
+  },
+  {
+    "name": "FPGA",
+    "category": "other"
+  },
+  {
+    "name": "Modbus",
+    "category": "other"
+  },
+  {
+    "name": "CooCox",
+    "category": "other"
+  },
+  {
+    "name": "ПЛИС",
+    "category": "other"
+  },
+  {
+    "name": "DRF",
+    "category": "other"
+  },
+  {
+    "name": "TortoiseORM",
+    "category": "other"
+  },
+  {
+    "name": "iohttp",
+    "category": "other"
+  },
+  {
+    "name": "Оптимизация бизнес-процессов",
+    "category": "other"
+  },
+  {
+    "name": "Бизнес-анализ",
+    "category": "other"
+  },
+  {
+    "name": "SAP SCM EWM",
+    "category": "other"
+  },
+  {
+    "name": "SAP EWM",
+    "category": "other"
+  },
+  {
+    "name": "SQL запросы",
+    "category": "database"
+  },
+  {
+    "name": "ClickHouse",
+    "category": "database"
+  },
+  {
+    "name": "Fastlane",
+    "category": "other"
+  },
+  {
+    "name": "TypeOrm",
+    "category": "other"
+  },
+  {
+    "name": "Ansible",
+    "category": "devops"
+  },
+  {
+    "name": "OpenStack",
+    "category": "other"
+  },
+  {
+    "name": "MS Excel",
+    "category": "other"
+  },
+  {
+    "name": "CF/K8s",
+    "category": "other"
+  },
+  {
+    "name": "ELMA",
+    "category": "other"
+  },
+  {
+    "name": "BPMN",
+    "category": "management"
+  },
+  {
+    "name": "GCD",
+    "category": "devops"
+  },
+  {
+    "name": "Anchorage",
+    "category": "other"
+  },
+  {
+    "name": "GRDB",
+    "category": "other"
+  },
+  {
+    "name": "XcodeGen",
+    "category": "mobile"
+  },
+  {
+    "name": "SCALA",
+    "category": "other"
+  },
+  {
+    "name": "meson",
+    "category": "other"
+  },
+  {
+    "name": "Doxygen",
+    "category": "other"
+  },
+  {
+    "name": "d3js",
+    "category": "frontend"
+  },
+  {
+    "name": "Three.js",
+    "category": "frontend"
+  },
+  {
+    "name": "Phaser",
+    "category": "other"
+  },
+  {
+    "name": "Apline",
+    "category": "other"
+  },
+  {
+    "name": "AOSP",
+    "category": "other"
+  },
+  {
+    "name": "ADB",
+    "category": "other"
+  },
+  {
+    "name": "DDD",
+    "category": "other"
+  },
+  {
+    "name": "CQRS",
+    "category": "other"
+  },
+  {
+    "name": "Tableau",
+    "category": "analytics"
+  },
+  {
+    "name": "Miro",
+    "category": "other"
+  },
+  {
+    "name": "Groovy",
+    "category": "other"
+  },
+  {
+    "name": "MQ",
+    "category": "other"
+  },
+  {
+    "name": "Русский — C1 — Продвинутый",
+    "category": "languages"
+  },
+  {
+    "name": "Autodesk Revit",
+    "category": "other"
+  },
+  {
+    "name": "Revit",
+    "category": "other"
+  },
+  {
+    "name": "BIM",
+    "category": "analytics"
+  },
+  {
+    "name": "MS Project",
+    "category": "management"
+  },
+  {
+    "name": "gdb",
+    "category": "other"
+  },
+  {
+    "name": "PCS7",
+    "category": "other"
+  },
+  {
+    "name": "Pytest",
+    "category": "testing"
+  },
+  {
+    "name": "Xamarin",
+    "category": "other"
+  },
+  {
+    "name": ".NET MAUI",
+    "category": "backend"
+  },
+  {
+    "name": "Service Broker",
+    "category": "other"
+  },
+  {
+    "name": "render props",
+    "category": "other"
+  },
+  {
+    "name": "Vertica",
+    "category": "other"
+  },
+  {
+    "name": "Oracle 11G",
+    "category": "database"
+  },
+  {
+    "name": "MS Power BI",
+    "category": "analytics"
+  },
+  {
+    "name": "Statistics",
+    "category": "other"
+  },
+  {
+    "name": "Information Technology",
+    "category": "other"
+  },
+  {
+    "name": "AnyLogic",
+    "category": "other"
+  },
+  {
+    "name": "anyLogistix",
+    "category": "other"
+  },
+  {
+    "name": "iRidi",
+    "category": "other"
+  },
+  {
+    "name": "WirenBoard",
+    "category": "other"
+  },
+  {
+    "name": "KNX",
+    "category": "other"
+  },
+  {
+    "name": "AVR",
+    "category": "other"
+  },
+  {
+    "name": "Camunda",
+    "category": "other"
+  },
+  {
+    "name": "ANSI C",
+    "category": "other"
+  },
+  {
+    "name": "Kotlin Multiplatform",
+    "category": "mobile"
+  },
+  {
+    "name": "Quarkus",
+    "category": "backend"
+  },
+  {
+    "name": "Delta",
+    "category": "other"
+  },
+  {
+    "name": "B2B Marketing",
+    "category": "other"
+  },
+  {
+    "name": "mobx SSR",
+    "category": "other"
+  },
+  {
+    "name": "SSG",
+    "category": "other"
+  },
+  {
+    "name": "APM Civil Engineering",
+    "category": "devops"
+  },
+  {
+    "name": "Business Intelligence Systems",
+    "category": "other"
+  },
+  {
+    "name": "GreenPlam",
+    "category": "other"
+  },
+  {
+    "name": "AutoCAD",
+    "category": "other"
+  },
+  {
+    "name": "Excel",
+    "category": "other"
+  },
+  {
+    "name": "Vulcan",
+    "category": "other"
+  },
+  {
+    "name": "HLSL",
+    "category": "other"
+  },
+  {
+    "name": "Moya",
+    "category": "other"
+  },
+  {
+    "name": "Realm",
+    "category": "other"
+  },
+  {
+    "name": "Magento",
+    "category": "other"
+  },
+  {
+    "name": "GCP",
+    "category": "infra"
+  },
+  {
+    "name": "Terraform",
+    "category": "devops"
+  },
+  {
+    "name": "Vite",
+    "category": "other"
+  },
+  {
+    "name": "PostCSS",
+    "category": "frontend"
+  },
+  {
+    "name": "ktor",
+    "category": "backend"
+  },
+  {
+    "name": "tarantool",
+    "category": "other"
+  },
+  {
+    "name": "GUI",
+    "category": "design"
+  },
+  {
+    "name": "Windows API",
+    "category": "infra"
+  },
+  {
+    "name": "COM",
+    "category": "other"
+  },
+  {
+    "name": "Ionic Framework",
+    "category": "other"
+  },
+  {
+    "name": "Deep Learning",
+    "category": "ml"
+  },
+  {
+    "name": "NHibernate",
+    "category": "other"
+  },
+  {
+    "name": "Prisma",
+    "category": "other"
+  },
+  {
+    "name": "ЦОС",
+    "category": "other"
+  },
+  {
+    "name": "DSP",
+    "category": "other"
+  },
+  {
+    "name": "RTL",
+    "category": "other"
+  },
+  {
+    "name": "sklearn",
+    "category": "ml"
+  }
+]

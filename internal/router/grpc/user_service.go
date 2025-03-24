@@ -4,7 +4,9 @@ import (
 	"context"
 
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
+	user_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/user"
 	pb "github.com/Petr09Mitin/xrust-beze-back/proto/user"
+	"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -14,11 +16,11 @@ import (
 // UserService представляет gRPC сервис для пользователей
 type UserService struct {
 	pb.UnimplementedUserServiceServer
-	userService user_model.Service
+	userService user_service.UserService
 }
 
 // NewUserService создает новый gRPC сервис для пользователей
-func NewUserService(userService user_model.Service) *UserService {
+func NewUserService(userService user_service.UserService) *UserService {
 	return &UserService{
 		userService: userService,
 	}
@@ -55,7 +57,11 @@ func (s *UserService) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 		PreferredFormat: req.PreferredFormat,
 	}
 
-	if err := s.userService.Create(u); err != nil {
+	if err := s.userService.Create(ctx, u); err != nil {
+		// Проверяем, является ли ошибка ошибкой валидации
+		if _, ok := err.(validator.ValidationErrors); ok {
+			return nil, status.Errorf(codes.InvalidArgument, "validation error: %v", err)
+		}
 		return nil, status.Errorf(codes.Internal, "failed to create user: %v", err)
 	}
 
@@ -66,7 +72,7 @@ func (s *UserService) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 
 // GetUser получает пользователя по ID
 func (s *UserService) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.UserResponse, error) {
-	u, err := s.userService.GetByID(req.Id)
+	u, err := s.userService.GetByID(ctx, req.Id)
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "user not found: %v", err)
 	}
@@ -113,7 +119,11 @@ func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 		PreferredFormat: req.PreferredFormat,
 	}
 
-	if err := s.userService.Update(u); err != nil {
+	if err := s.userService.Update(ctx, u); err != nil {
+		// Проверяем, является ли ошибка ошибкой валидации
+		if _, ok := err.(validator.ValidationErrors); ok {
+			return nil, status.Errorf(codes.InvalidArgument, "validation error: %v", err)
+		}
 		return nil, status.Errorf(codes.Internal, "failed to update user: %v", err)
 	}
 
@@ -124,7 +134,7 @@ func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 
 // DeleteUser удаляет пользователя
 func (s *UserService) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
-	if err := s.userService.Delete(req.Id); err != nil {
+	if err := s.userService.Delete(ctx, req.Id); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to delete user: %v", err)
 	}
 
@@ -135,35 +145,35 @@ func (s *UserService) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest)
 
 // ListUsers возвращает список пользователей
 func (s *UserService) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.ListUsersResponse, error) {
-	users, err := s.userService.List(int(req.Page), int(req.Limit))
+	users, err := s.userService.List(ctx, int(req.Page), int(req.Limit))
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to list users: %v", err)
 	}
 
-	var protoUsers []*pb.User
+	var pbUsers []*pb.User
 	for _, u := range users {
-		protoUsers = append(protoUsers, convertDomainToProto(u))
+		pbUsers = append(pbUsers, convertDomainToProto(u))
 	}
 
 	return &pb.ListUsersResponse{
-		Users: protoUsers,
+		Users: pbUsers,
 	}, nil
 }
 
 // FindMatchingUsers находит подходящих пользователей
 func (s *UserService) FindMatchingUsers(ctx context.Context, req *pb.FindMatchingUsersRequest) (*pb.ListUsersResponse, error) {
-	users, err := s.userService.FindMatchingUsers(req.UserId)
+	users, err := s.userService.FindMatchingUsers(ctx, req.UserId)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to find matching users: %v", err)
 	}
 
-	var protoUsers []*pb.User
+	var pbUsers []*pb.User
 	for _, u := range users {
-		protoUsers = append(protoUsers, convertDomainToProto(u))
+		pbUsers = append(pbUsers, convertDomainToProto(u))
 	}
 
 	return &pb.ListUsersResponse{
-		Users: protoUsers,
+		Users: pbUsers,
 	}, nil
 }
 
