@@ -1,115 +1,134 @@
 package user
 
 import (
+	"context"
 	"errors"
 	"time"
 
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
+	user_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository"
 )
 
+type UserService interface {
+	Create(ctx context.Context, user *user_model.User) error
+	GetByID(ctx context.Context, id string) (*user_model.User, error)
+	GetByEmail(ctx context.Context, email string) (*user_model.User, error)
+	GetByUsername(ctx context.Context, username string) (*user_model.User, error)
+	Update(ctx context.Context, user *user_model.User) error
+	Delete(ctx context.Context, id string) error
+	List(ctx context.Context, page, limit int) ([]*user_model.User, error)
+	FindMatchingUsers(ctx context.Context, userID string) ([]*user_model.User, error)
+}
+
 type userService struct {
-	userRepo user_model.Repository
+	userRepo user_repo.UserRepo
 	timeout  time.Duration
 }
 
-// NewUserService создает новый сервис для пользователей
-func NewUserService(userRepo user_model.Repository, timeout time.Duration) user_model.Service {
+func NewUserService(userRepo user_repo.UserRepo, timeout time.Duration) UserService {
 	return &userService{
 		userRepo: userRepo,
 		timeout:  timeout,
 	}
 }
 
-// Create создает нового пользователя
-func (s *userService) Create(user *user_model.User) error {
+func (s *userService) Create(ctx context.Context, user *user_model.User) error {
+	// Валидация пользователя
+	if err := user.Validate(); err != nil {
+		return err
+	}
+
 	// Проверка на уникальность email и username
-	existingUser, err := s.userRepo.GetByEmail(user.Email)
+	existingUser, err := s.userRepo.GetByEmail(ctx, user.Email)
 	if err == nil && existingUser != nil {
 		return errors.New("email already exists")
 	}
 
-	existingUser, err = s.userRepo.GetByUsername(user.Username)
+	existingUser, err = s.userRepo.GetByUsername(ctx, user.Username)
 	if err == nil && existingUser != nil {
 		return errors.New("username already exists")
 	}
 
-	// Валидация полей
-	if user.Username == "" {
-		return errors.New("username is required")
+	return s.userRepo.Create(ctx, user)
+}
+
+func (s *userService) GetByID(ctx context.Context, id string) (*user_model.User, error) {
+	return s.userRepo.GetByID(ctx, id)
+}
+
+func (s *userService) GetByEmail(ctx context.Context, email string) (*user_model.User, error) {
+	return s.userRepo.GetByEmail(ctx, email)
+}
+
+func (s *userService) GetByUsername(ctx context.Context, username string) (*user_model.User, error) {
+	return s.userRepo.GetByUsername(ctx, username)
+}
+
+func (s *userService) Update(ctx context.Context, user *user_model.User) error {
+
+	// добавить проверку соответствия id авторизованного пользователя и того, что хотим удалить
+
+	if err := user.Validate(); err != nil {
+		return err
 	}
-	if user.Email == "" {
-		return errors.New("email is required")
-	}
 
-	return s.userRepo.Create(user)
-}
-
-// GetByID получает пользователя по ID
-func (s *userService) GetByID(id string) (*user_model.User, error) {
-	return s.userRepo.GetByID(id)
-}
-
-// GetByEmail получает пользователя по email
-func (s *userService) GetByEmail(email string) (*user_model.User, error) {
-	return s.userRepo.GetByEmail(email)
-}
-
-// GetByUsername получает пользователя по имени пользователя
-func (s *userService) GetByUsername(username string) (*user_model.User, error) {
-	return s.userRepo.GetByUsername(username)
-}
-
-// Update обновляет пользователя
-func (s *userService) Update(user *user_model.User) error {
 	// Проверяем существование пользователя
-	existingUser, err := s.userRepo.GetByID(user.ID.Hex())
+	existingUser, err := s.userRepo.GetByID(ctx, user.ID.Hex())
 	if err != nil {
 		return err
 	}
 
+	// Чтобы эти поля не обновлялись
+	user.CreatedAt = existingUser.CreatedAt
+	user.LastActiveAt = existingUser.LastActiveAt
+
 	// Проверка на уникальность email и username, если они изменились
-	if user.Email != existingUser.Email {
-		checkUser, err := s.userRepo.GetByEmail(user.Email)
-		if err == nil && checkUser != nil {
+	if existingUser.Email != user.Email {
+		userWithEmail, err := s.userRepo.GetByEmail(ctx, user.Email)
+		if err == nil && userWithEmail != nil && userWithEmail.ID != user.ID {
 			return errors.New("email already exists")
 		}
 	}
 
-	if user.Username != existingUser.Username {
-		checkUser, err := s.userRepo.GetByUsername(user.Username)
-		if err == nil && checkUser != nil {
+	if existingUser.Username != user.Username {
+		userWithUsername, err := s.userRepo.GetByUsername(ctx, user.Username)
+		if err == nil && userWithUsername != nil && userWithUsername.ID != user.ID {
 			return errors.New("username already exists")
 		}
 	}
 
-	return s.userRepo.Update(user)
+	user.UpdatedAt = time.Now()
+
+	return s.userRepo.Update(ctx, user)
 }
 
-// Delete удаляет пользователя
-func (s *userService) Delete(id string) error {
+func (s *userService) Delete(ctx context.Context, id string) error {
+
+	// добавить проверку соответствия id авторизованного пользователя и того, что хотим удалить
+
 	// Проверяем существование пользователя
-	_, err := s.userRepo.GetByID(id)
+	_, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	return s.userRepo.Delete(id)
+	return s.userRepo.Delete(ctx, id)
 }
 
-// List возвращает список пользователей с пагинацией
-func (s *userService) List(page, limit int) ([]*user_model.User, error) {
-	return s.userRepo.List(page, limit)
+func (s *userService) List(ctx context.Context, page, limit int) ([]*user_model.User, error) {
+	return s.userRepo.List(ctx, page, limit)
 }
 
-// FindMatchingUsers находит подходящих пользователей для обмена знаниями
-func (s *userService) FindMatchingUsers(userID string) ([]*user_model.User, error) {
-	// Получаем пользователя
-	currentUser, err := s.userRepo.GetByID(userID)
+func (s *userService) FindMatchingUsers(ctx context.Context, userID string) ([]*user_model.User, error) {
+
+	// мб добавить проверку, что уровень навыка учащегося <= уровню навыка учителя
+	// но это очень субъективно, поэтому не факт, что нужно
+
+	currentUser, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Извлекаем навыки пользователя
 	var skillsToLearn []string
 	var skillsToShare []string
 
@@ -122,7 +141,7 @@ func (s *userService) FindMatchingUsers(userID string) ([]*user_model.User, erro
 	}
 
 	// Находим пользователей с подходящими навыками
-	matchingUsers, err := s.userRepo.FindBySkills(skillsToLearn, skillsToShare)
+	matchingUsers, err := s.userRepo.FindBySkills(ctx, skillsToLearn, skillsToShare)
 	if err != nil {
 		return nil, err
 	}
@@ -136,4 +155,4 @@ func (s *userService) FindMatchingUsers(userID string) ([]*user_model.User, erro
 	}
 
 	return filteredUsers, nil
-} 
+}

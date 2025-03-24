@@ -13,9 +13,9 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN --mount=type=cache,target="/go/pkg/mod" \
-    CGO_ENABLED=0 go build -o /build/user ./cmd/user/main.go
-# RUN CGO_ENABLED=0 go build -o /build/user ./cmd/user/main.go
+# RUN --mount=type=cache,target="/go/pkg/mod" \
+#     CGO_ENABLED=0 go build -o /build/user ./cmd/user/main.go
+RUN CGO_ENABLED=0 go build -o /build/user ./cmd/user/main.go
 
 # Use distroless as minimal base image
 FROM gcr.io/distroless/base-debian11 AS build-release-stage

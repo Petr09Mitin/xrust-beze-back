@@ -4,23 +4,24 @@ import (
 	"net/http"
 	"strconv"
 
+	errs "github.com/Petr09Mitin/xrust-beze-back/internal/models/errs"
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
+	user_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/user"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// UserHandler представляет HTTP обработчик для пользователей
 type UserHandler struct {
-	userService user_model.Service
+	userService user_service.UserService
 }
 
-// NewUserHandler создает новый обработчик пользователей
-func NewUserHandler(router *gin.Engine, userService user_model.Service) {
+func NewUserHandler(router *gin.Engine, userService user_service.UserService) {
 	handler := &UserHandler{
 		userService: userService,
 	}
 
-	userGroup := router.Group("/api/users")
+	userGroup := router.Group("/api/v1/users")
 	{
 		userGroup.POST("", handler.Create)
 		userGroup.GET("/:id", handler.GetByID)
@@ -31,15 +32,20 @@ func NewUserHandler(router *gin.Engine, userService user_model.Service) {
 	}
 }
 
-// Create обрабатывает создание нового пользователя
 func (h *UserHandler) Create(c *gin.Context) {
+	ctx := c.Request.Context()
 	var input user_model.User
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := h.userService.Create(&input); err != nil {
+	if err := h.userService.Create(ctx, &input); err != nil {
+		// Проверяем, является ли ошибка ошибкой валидации
+		if _, ok := err.(validator.ValidationErrors); ok {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -47,11 +53,11 @@ func (h *UserHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, input)
 }
 
-// GetByID обрабатывает получение пользователя по ID
 func (h *UserHandler) GetByID(c *gin.Context) {
+	ctx := c.Request.Context()
 	id := c.Param("id")
 
-	user, err := h.userService.GetByID(id)
+	user, err := h.userService.GetByID(ctx, id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -60,8 +66,11 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-// Update обрабатывает обновление пользователя
 func (h *UserHandler) Update(c *gin.Context) {
+
+	// добавить в слой services проверку user id
+
+	ctx := c.Request.Context()
 	id := c.Param("id")
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -77,7 +86,16 @@ func (h *UserHandler) Update(c *gin.Context) {
 
 	input.ID = objectID
 
-	if err := h.userService.Update(&input); err != nil {
+	if err := h.userService.Update(ctx, &input); err != nil {
+		if err == errs.ErrNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		// Проверяем, является ли ошибка ошибкой валидации
+		if _, ok := err.(validator.ValidationErrors); ok {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -85,20 +103,29 @@ func (h *UserHandler) Update(c *gin.Context) {
 	c.JSON(http.StatusOK, input)
 }
 
-// Delete обрабатывает удаление пользователя
 func (h *UserHandler) Delete(c *gin.Context) {
+
+	// добавить в слой services проверку user id
+
+	ctx := c.Request.Context()
 	id := c.Param("id")
 
-	if err := h.userService.Delete(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	err := h.userService.Delete(ctx, id)
+
+	if err == errs.ErrNotFound {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User successfully deleted"})
+	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
 }
 
-// List обрабатывает получение списка пользователей
+// Получение списка пользователей
 func (h *UserHandler) List(c *gin.Context) {
+	ctx := c.Request.Context()
 	pageStr := c.DefaultQuery("page", "1")
 	limitStr := c.DefaultQuery("limit", "10")
 
@@ -112,7 +139,7 @@ func (h *UserHandler) List(c *gin.Context) {
 		limit = 10
 	}
 
-	users, err := h.userService.List(page, limit)
+	users, err := h.userService.List(ctx, page, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -121,15 +148,16 @@ func (h *UserHandler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
-// FindMatchingUsers обрабатывает поиск подходящих пользователей
+// Поиск подходящих пользователей
 func (h *UserHandler) FindMatchingUsers(c *gin.Context) {
+	ctx := c.Request.Context()
 	id := c.Param("id")
 
-	users, err := h.userService.FindMatchingUsers(id)
+	users, err := h.userService.FindMatchingUsers(ctx, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, users)
-} 
+}

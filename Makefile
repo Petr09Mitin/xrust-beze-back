@@ -15,9 +15,12 @@ start:
 stop:
 	docker-compose down
 
+proto:
+	protoc --go_out=. --go-grpc_out=. proto/user/user.proto
+
+# микросервис user
 build-user:
 	docker build -t xrust_beze_user:latest -f cmd/user/Dockerfile .
 
-# Команда для запуска только микросервиса пользователей (опционально)
 start-user-only: build-user
 	docker-compose up -d mongo_db user_service

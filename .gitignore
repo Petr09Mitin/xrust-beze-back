@@ -1,2 +1,5 @@
 .DS_Store
 cmd/.DS_Store
+.env
+competensy.csv
+scripts/convert_skills.go
