@@ -2,9 +2,9 @@ package main
 
 import (
 	infrakafka "github.com/Petr09Mitin/xrust-beze-back/internal/pkg/kafka"
-	message_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository"
-	"github.com/Petr09Mitin/xrust-beze-back/internal/router"
-	"github.com/Petr09Mitin/xrust-beze-back/internal/router/chat"
+	channelrepo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/channel"
+	message_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/chat"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/router/http/chat"
 	chat_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/chat"
 	"github.com/olahol/melody"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -21,9 +21,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	collection := client.Database("xrust_beze").Collection("chats")
-	msgRepo := message_repo.NewMessageRepo(kafkaPub, collection)
-	chatService := chat_service.NewChatService(msgRepo)
+	msgsCollection := client.Database("xrust_beze").Collection("messages")
+	chanCollection := client.Database("xrust_beze").Collection("channels")
+	msgRepo := message_repo.NewMessageRepo(kafkaPub, msgsCollection)
+	chanRepo := channelrepo.NewChannelRepository(chanCollection)
+	chatService := chat_service.NewChatService(msgRepo, chanRepo)
 	m := melody.New()
 	kafkaSub, err := infrakafka.NewKafkaSubscriber()
 	if err != nil {
@@ -34,7 +36,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	c := router.NewChat(chatService, msgSub, m)
+	c := chat.NewChat(chatService, msgSub, m)
 
 	err = c.Start()
 	if err != nil {

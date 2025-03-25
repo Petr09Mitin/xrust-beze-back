@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
-	"github.com/olahol/melody"
-
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/olahol/melody"
 )
 
 const (
@@ -31,12 +30,12 @@ func NewMessageSubscriber(router *message.Router, sub message.Subscriber, m *mel
 }
 
 func (s *MessageSubscriber) HandleMessage(msg *message.Message) error {
-	fmt.Println("sub got the msg", msg)
 	decodedMsg, err := chat_models.DecodeToMessage(msg.Payload)
 	if err != nil {
 		fmt.Println(err)
 		return err
 	}
+	fmt.Println("sub got the msg", msg)
 	return s.sendMessage(context.Background(), decodedMsg)
 }
 
@@ -59,10 +58,15 @@ func (s *MessageSubscriber) GracefulStop() error {
 
 func (s *MessageSubscriber) sendMessage(_ context.Context, message *chat_models.Message) error {
 	return s.m.BroadcastFilter(message.Encode(), func(sess *melody.Session) bool {
-		channelID, exist := sess.Get(ChannelIDSessionParam)
+		userIDData, exist := sess.Get(UserIDSessionParam)
 		if !exist {
 			return false
 		}
-		return message.ChannelID == channelID
+		userID, ok := userIDData.(string)
+		if !ok {
+			return false
+		}
+		_, ok = message.ReceiverIDs[userID]
+		return ok
 	})
 }

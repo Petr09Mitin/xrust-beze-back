@@ -88,7 +88,7 @@ services:
     ports:
       - "8501:8501"
     environment:
-      - EXPLANATION_API_URL=http://ml_explanator:8091/explane
+      - EXPLANATION_API_URL=httpparser://ml_explanator:8091/explane
     depends_on:
       - ml_explanator
 

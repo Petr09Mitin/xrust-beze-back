@@ -61,7 +61,7 @@ func main() {
 		}
 
 		log.Printf("HTTP server starting on port %s...", httpPort)
-		// if err := router.Run(":" + httpPort); err != nil && err != http.ErrServerClosed {
+		// if err := router.Run(":" + httpPort); err != nil && err != httpparser.ErrServerClosed {
 		// 	errChan <- fmt.Errorf("failed to run HTTP server: %v", err)
 		// }
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
