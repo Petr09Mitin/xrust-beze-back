@@ -33,7 +33,6 @@ func NewUserService(userRepo user_repo.UserRepo, timeout time.Duration) UserServ
 }
 
 func (s *userService) Create(ctx context.Context, user *user_model.User) error {
-	// Валидация пользователя
 	if err := user.Validate(); err != nil {
 		return err
 	}

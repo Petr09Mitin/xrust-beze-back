@@ -37,8 +37,12 @@ func main() {
 	grpcPort := getEnv("GRPC_PORT", "50051")
 
 	db := initMongo()
+
 	userRepo := user_repo.NewUserRepository(db, 10*time.Second)
 	userService := user_service.NewUserService(userRepo, 10*time.Second)
+
+	skillRepo := user_repo.NewSkillRepository(db, 10*time.Second)
+	skillService := user_service.NewSkillService(skillRepo, 10*time.Second)
 
 	// Создание каналов для сигналов завершения
 	errChan := make(chan error)
@@ -49,6 +53,7 @@ func main() {
 	go func() {
 		router := gin.Default()
 		http_handler.NewUserHandler(router, userService)
+		http_handler.NewSkillHandler(router, skillService)
 
 		httpServer = &http.Server{
 			Addr:    ":" + httpPort,
