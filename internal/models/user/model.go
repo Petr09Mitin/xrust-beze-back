@@ -39,6 +39,12 @@ type Skill struct {
 	Description string `json:"description" bson:"description" validate:"max=500"`
 }
 
+// Категория + навыки (в БД)
+type SkillsByCategory struct {
+	Category string   `json:"category" bson:"category" validate:"required"`
+	Skills   []string `json:"skills" bson:"skills"`
+}
+
 // Проверяет валидность модели пользователя
 func (u *User) Validate() error {
 	if err := validate.Struct(u); err != nil {
