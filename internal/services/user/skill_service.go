@@ -1,11 +1,11 @@
-package user
+package user_service
 
 import (
 	"context"
 	"time"
 
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
-	user_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository"
+	user_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/user"
 )
 
 type SkillService interface {

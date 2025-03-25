@@ -11,9 +11,9 @@ import (
 	"syscall"
 	"time"
 
-	user_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository"
-	grpc_handler "github.com/Petr09Mitin/xrust-beze-back/internal/router/grpc"
-	http_handler "github.com/Petr09Mitin/xrust-beze-back/internal/router/http"
+	user_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/user"
+	grpc_handler "github.com/Petr09Mitin/xrust-beze-back/internal/router/grpc/user"
+	http_handler "github.com/Petr09Mitin/xrust-beze-back/internal/router/http/user"
 	user_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/user"
 	pb "github.com/Petr09Mitin/xrust-beze-back/proto/user"
 	"github.com/gin-gonic/gin"
