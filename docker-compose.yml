@@ -70,35 +70,6 @@ services:
     depends_on:
       - mongo_db
 
-  mongo_db:
-    image: mongo:4.4.10
-    ports:
-      - "27017:27017"
-    container_name: mongo_db
-    restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: root
-      MONGO_INITDB_DATABASE: xrust_beze
-    volumes:
-      - ./dev/mongo:/scripts
-      - mongo_data:/data/db
-
-  app:
-    image: xrust_beze:latest
-    container_name: main
-    env_file:
-      - .env
-    tty: true
-    ports:
-      - 8080:8080
-    restart: always
-    volumes:
-      - .:/app
-    depends_on:
-      - mongo_db
-      - kafka
-
   # Сервис для AI дополнения ответов эксперта
   ml_explanator:
     image: ml_explanator:latest

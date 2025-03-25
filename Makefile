@@ -9,6 +9,7 @@ start:
 	docker build -t xrust_beze_chat:latest -f cmd/chat/Dockerfile . \
 	&& docker build -t ml_explanator:latest -f ml_explanator/Dockerfile . \
 	&& docker build -t ml_check:latest -f ml_check/Dockerfile . \
+	&& docker build -t xrust_beze_user:latest -f cmd/user/Dockerfile . \
 	&& docker-compose up
 
 stop:
