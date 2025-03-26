@@ -7,6 +7,15 @@ dev-init:
 	# init kafka
 	docker-compose exec kafka sh -c "sh /scripts/setup.sh"
 
+# скиллы можно добавить вот так:
+# docker-compose exec user_service sh -c \
+# 	"[ $$(mongo xrust_beze --quiet --eval 'db.skills.countDocuments()') -eq 0 ] && \
+# 	 go run scripts/load_skills_to_mongo.go || echo 'Skills already loaded'"
+
+# или так: загрузка навыков в mongo (только в случае, если коллекция skills пуста)
+load-skills:
+	go run scripts/load_skills_to_mongo.go
+
 start:
 	docker build -t xrust_beze:latest -f cmd/chat/Dockerfile . \
 	&& docker build -t xrust_beze_user:latest -f cmd/user/Dockerfile . \
