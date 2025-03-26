@@ -146,7 +146,7 @@ func (s *userService) FindMatchingUsers(ctx context.Context, userID string) ([]*
 	}
 
 	// Фильтруем текущего пользователя из результатов
-	var filteredUsers []*user_model.User
+	filteredUsers := make([]*user_model.User, 0)
 	for _, u := range matchingUsers {
 		if u.ID != currentUser.ID {
 			filteredUsers = append(filteredUsers, u)
