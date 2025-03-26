@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	ErrNotFound = errors.New("element not found")
+	ErrorNotFound = errors.New("element not found")
 )

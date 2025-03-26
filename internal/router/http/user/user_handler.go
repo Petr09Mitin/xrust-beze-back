@@ -87,7 +87,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 	input.ID = objectID
 
 	if err := h.userService.Update(ctx, &input); err != nil {
-		if err == errs.ErrNotFound {
+		if err == errs.ErrorNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
@@ -112,7 +112,7 @@ func (h *UserHandler) Delete(c *gin.Context) {
 
 	err := h.userService.Delete(ctx, id)
 
-	if err == errs.ErrNotFound {
+	if err == errs.ErrorNotFound {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}

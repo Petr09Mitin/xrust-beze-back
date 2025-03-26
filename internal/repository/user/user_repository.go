@@ -64,7 +64,7 @@ func (r *userRepository) GetByID(ctx context.Context, id string) (*user_model.Us
 	var u user_model.User
 	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&u)
 	if err == mongo.ErrNoDocuments {
-		return nil, errs.ErrNotFound
+		return nil, errs.ErrorNotFound
 	}
 	if err != nil {
 		return nil, err
@@ -80,7 +80,7 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*user_mo
 	var u user_model.User
 	err := r.collection.FindOne(ctx, bson.M{"email": email}).Decode(&u)
 	if err == mongo.ErrNoDocuments {
-		return nil, errs.ErrNotFound
+		return nil, errs.ErrorNotFound
 	}
 	if err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func (r *userRepository) GetByUsername(ctx context.Context, username string) (*u
 	var u user_model.User
 	err := r.collection.FindOne(ctx, bson.M{"username": username}).Decode(&u)
 	if err == mongo.ErrNoDocuments {
-		return nil, errs.ErrNotFound
+		return nil, errs.ErrorNotFound
 	}
 	if err != nil {
 		return nil, err
