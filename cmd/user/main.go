@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/router/middleware"
 	"log"
 	"net"
 	"net/http"
@@ -52,6 +53,7 @@ func main() {
 	// Запуск HTTP сервера
 	go func() {
 		router := gin.Default()
+		router.Use(middleware.CORSMiddleware())
 		http_handler.NewUserHandler(router, userService)
 		http_handler.NewSkillHandler(router, skillService)
 

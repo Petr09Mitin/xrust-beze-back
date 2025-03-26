@@ -7,6 +7,9 @@ import (
 	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
 	channelrepo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/channel"
 	message_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/chat"
+	user_grpc "github.com/Petr09Mitin/xrust-beze-back/internal/router/grpc/user"
+	pb "github.com/Petr09Mitin/xrust-beze-back/proto/user"
+	"google.golang.org/grpc"
 	"time"
 )
 
@@ -16,15 +19,21 @@ type ChatService interface {
 	GetChannelsByUserID(ctx context.Context, userID string, limit, offset int64) ([]chat_models.Channel, error)
 }
 
+type UserService interface {
+	GetUser(ctx context.Context, in *pb.GetUserRequest, opts ...grpc.CallOption) (*pb.UserResponse, error)
+}
+
 type ChatServiceImpl struct {
 	msgRepo     message_repo.MessageRepo
 	channelRepo channelrepo.ChannelRepository
+	userService UserService
 }
 
-func NewChatService(msgRepo message_repo.MessageRepo, channelRepo channelrepo.ChannelRepository) ChatService {
+func NewChatService(msgRepo message_repo.MessageRepo, channelRepo channelrepo.ChannelRepository, userService UserService) ChatService {
 	return &ChatServiceImpl{
 		msgRepo:     msgRepo,
 		channelRepo: channelRepo,
+		userService: userService,
 	}
 }
 
@@ -170,10 +179,27 @@ func (c *ChatServiceImpl) GetChannelsByUserID(ctx context.Context, userID string
 	for i, channel := range channels {
 		msgs, err := c.msgRepo.GetMessagesByChannelID(ctx, channel.ID, 1, 0)
 		if err != nil {
-			return nil, err
+			fmt.Println(err)
+			continue
 		}
 		if len(msgs) > 0 {
 			channels[i].LastMessage = &msgs[0]
+		}
+
+		for _, userID := range channel.UserIDs {
+			res, err := c.userService.GetUser(ctx, &pb.GetUserRequest{
+				Id: userID,
+			})
+			if err != nil {
+				fmt.Println("err getting user:", err)
+				continue
+			}
+			user, err := user_grpc.ConvertProtoToDomain(res.GetUser())
+			if err != nil {
+				fmt.Println("err converting user:", err)
+				continue
+			}
+			channels[i].Users = append(channels[i].Users, *user)
 		}
 	}
 

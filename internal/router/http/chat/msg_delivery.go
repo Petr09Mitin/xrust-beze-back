@@ -9,8 +9,7 @@ import (
 )
 
 const (
-	ChannelIDSessionParam = "channel_id_session"
-	UserIDSessionParam    = "user_id_session"
+	UserIDSessionParam = "user_id_session"
 )
 
 type MessageSubscriber struct {
@@ -36,7 +35,7 @@ func (s *MessageSubscriber) HandleMessage(msg *message.Message) error {
 		return err
 	}
 	fmt.Println("sub got the msg", msg)
-	return s.sendMessage(context.Background(), decodedMsg)
+	return s.sendMessage(context.Background(), *decodedMsg)
 }
 
 func (s *MessageSubscriber) RegisterHandler() {
@@ -56,8 +55,10 @@ func (s *MessageSubscriber) GracefulStop() error {
 	return s.router.Close()
 }
 
-func (s *MessageSubscriber) sendMessage(_ context.Context, message *chat_models.Message) error {
-	return s.m.BroadcastFilter(message.Encode(), func(sess *melody.Session) bool {
+func (s *MessageSubscriber) sendMessage(_ context.Context, message chat_models.Message) error {
+	messageWithoutReceivers := message
+	messageWithoutReceivers.ReceiverIDs = nil
+	return s.m.BroadcastFilter(messageWithoutReceivers.Encode(), func(sess *melody.Session) bool {
 		userIDData, exist := sess.Get(UserIDSessionParam)
 		if !exist {
 			return false

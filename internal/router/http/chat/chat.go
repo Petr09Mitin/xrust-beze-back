@@ -6,6 +6,7 @@ import (
 	"fmt"
 	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
 	httpparser "github.com/Petr09Mitin/xrust-beze-back/internal/pkg/httpparser"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/router/middleware"
 	chat_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/chat"
 	"github.com/gin-gonic/gin"
 	"github.com/olahol/melody"
@@ -14,8 +15,7 @@ import (
 )
 
 const (
-	userIDQueryParam    = "user_id"
-	channelIDQueryParam = "channel_id"
+	userIDQueryParam = "user_id"
 )
 
 type Chat struct {
@@ -41,6 +41,7 @@ func NewChat(chatService chat_service.ChatService, msgSub *MessageSubscriber, m 
 
 func (ch *Chat) InitRouter() {
 	ch.R = gin.Default()
+	ch.R.Use(middleware.CORSMiddleware())
 
 	chatGroup := ch.R.Group("/chat")
 	{

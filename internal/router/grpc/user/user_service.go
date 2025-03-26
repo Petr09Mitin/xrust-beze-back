@@ -2,7 +2,7 @@ package user_grpc
 
 import (
 	"context"
-
+	"fmt"
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
 	user_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/user"
 	pb "github.com/Petr09Mitin/xrust-beze-back/proto/user"
@@ -211,4 +211,45 @@ func convertDomainToProto(u *user_model.User) *pb.User {
 		LastActiveAt:    timestamppb.New(u.LastActiveAt),
 		PreferredFormat: u.PreferredFormat,
 	}
+}
+
+func ConvertProtoToDomain(u *pb.User) (*user_model.User, error) {
+	skillsToLearn := make([]user_model.Skill, 0)
+	skillsToShare := make([]user_model.Skill, 0)
+
+	for _, skill := range u.GetSkillsToLearn() {
+		skillsToLearn = append(skillsToLearn, user_model.Skill{
+			Name:        skill.Name,
+			Level:       skill.Level,
+			Description: skill.Description,
+		})
+	}
+
+	for _, skill := range u.GetSkillsToShare() {
+		skillsToShare = append(skillsToShare, user_model.Skill{
+			Name:        skill.Name,
+			Level:       skill.Level,
+			Description: skill.Description,
+		})
+	}
+
+	id, err := primitive.ObjectIDFromHex(u.Id)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	return &user_model.User{
+		ID:              id,
+		Username:        u.GetUsername(),
+		Email:           u.GetEmail(),
+		SkillsToLearn:   skillsToLearn,
+		SkillsToShare:   skillsToShare,
+		Bio:             u.GetBio(),
+		AvatarURL:       u.GetAvatarUrl(),
+		CreatedAt:       u.GetCreatedAt().AsTime(),
+		UpdatedAt:       u.GetUpdatedAt().AsTime(),
+		LastActiveAt:    u.GetLastActiveAt().AsTime(),
+		PreferredFormat: u.GetPreferredFormat(),
+	}, nil
 }

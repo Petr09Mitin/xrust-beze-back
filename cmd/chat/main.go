@@ -6,9 +6,12 @@ import (
 	message_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/chat"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/router/http/chat"
 	chat_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/chat"
+	pb "github.com/Petr09Mitin/xrust-beze-back/proto/user"
 	"github.com/olahol/melody"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"log"
 )
 
@@ -25,7 +28,12 @@ func main() {
 	chanCollection := client.Database("xrust_beze").Collection("channels")
 	msgRepo := message_repo.NewMessageRepo(kafkaPub, msgsCollection)
 	chanRepo := channelrepo.NewChannelRepository(chanCollection)
-	chatService := chat_service.NewChatService(msgRepo, chanRepo)
+	userGRPCConn, err := grpc.NewClient("user_service:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatal(err)
+	}
+	userGRPCClient := pb.NewUserServiceClient(userGRPCConn)
+	chatService := chat_service.NewChatService(msgRepo, chanRepo, userGRPCClient)
 	m := melody.New()
 	kafkaSub, err := infrakafka.NewKafkaSubscriber()
 	if err != nil {

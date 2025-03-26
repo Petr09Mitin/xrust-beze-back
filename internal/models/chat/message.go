@@ -6,10 +6,10 @@ import (
 )
 
 type MsgType string
-type MsgEvent int
+type MsgEvent string
 
 const (
-	TextMsgEvent = MsgEvent(iota)
+	TextMsgEvent = MsgEvent("EventText")
 
 	SendMessageType   = MsgType("send_message")
 	UpdateMessageType = MsgType("update_message")
