@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
+	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	channelrepo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/channel"
 	message_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/chat"
 	user_grpc "github.com/Petr09Mitin/xrust-beze-back/internal/router/grpc/user"
@@ -70,19 +71,28 @@ func (c *ChatServiceImpl) ProcessTextMessage(ctx context.Context, msg chat_model
 func (c *ChatServiceImpl) createTextMessage(ctx context.Context, msg chat_models.Message) (chat_models.Message, error) {
 	var channel chat_models.Channel
 	var err error
-	// TODO: fix empty channelID abuse (different channels creation for same (userID, peerID))
 	if msg.ChannelID == "" {
-		created := time.Now().Unix()
-		channel, err = c.channelRepo.InsertChannel(ctx, chat_models.Channel{
-			UserIDs: []string{
-				msg.UserID,
-				msg.PeerID,
-			},
-			Created: created,
-			Updated: created,
-		})
+		if msg.UserID == "" || msg.PeerID == "" {
+			return chat_models.Message{}, custom_errors.ErrInvalidMessage
+		}
+		channel, err = c.channelRepo.GetByUserIDs(ctx, []string{msg.UserID, msg.PeerID})
 		if err != nil {
-			return msg, err
+			if errors.Is(err, custom_errors.ErrNotFound) {
+				created := time.Now().Unix()
+				channel, err = c.channelRepo.InsertChannel(ctx, chat_models.Channel{
+					UserIDs: []string{
+						msg.UserID,
+						msg.PeerID,
+					},
+					Created: created,
+					Updated: created,
+				})
+				if err != nil {
+					return msg, err
+				}
+			} else {
+				return msg, err
+			}
 		}
 	} else {
 		channel, err = c.channelRepo.GetChannelByID(ctx, msg.ChannelID)
