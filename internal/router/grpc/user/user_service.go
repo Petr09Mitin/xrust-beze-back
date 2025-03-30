@@ -7,6 +7,7 @@ import (
 	user_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/user"
 	pb "github.com/Petr09Mitin/xrust-beze-back/proto/user"
 	"github.com/go-playground/validator/v10"
+	"github.com/rs/zerolog"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -17,12 +18,14 @@ import (
 type UserService struct {
 	pb.UnimplementedUserServiceServer
 	userService user_service.UserService
+	logger      zerolog.Logger
 }
 
 // NewUserService создает новый gRPC сервис для пользователей
-func NewUserService(userService user_service.UserService) *UserService {
+func NewUserService(userService user_service.UserService, logger zerolog.Logger) *UserService {
 	return &UserService{
 		userService: userService,
+		logger:      logger,
 	}
 }
 
@@ -60,8 +63,10 @@ func (s *UserService) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 	if err := s.userService.Create(ctx, u); err != nil {
 		// Проверяем, является ли ошибка ошибкой валидации
 		if _, ok := err.(validator.ValidationErrors); ok {
+			s.logger.Error().Err(err).Msg("validation err")
 			return nil, status.Errorf(codes.InvalidArgument, "validation error: %v", err)
 		}
+		s.logger.Error().Err(err).Msg("create user err")
 		return nil, status.Errorf(codes.Internal, "failed to create user: %v", err)
 	}
 
@@ -74,6 +79,7 @@ func (s *UserService) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 func (s *UserService) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.UserResponse, error) {
 	u, err := s.userService.GetByID(ctx, req.Id)
 	if err != nil {
+		s.logger.Error().Err(err).Msg("get user err")
 		return nil, status.Errorf(codes.NotFound, "user not found: %v", err)
 	}
 
@@ -86,6 +92,7 @@ func (s *UserService) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UserResponse, error) {
 	objectID, err := primitive.ObjectIDFromHex(req.Id)
 	if err != nil {
+		s.logger.Error().Err(err).Msg("invalid ID format")
 		return nil, status.Errorf(codes.InvalidArgument, "invalid ID format: %v", err)
 	}
 
@@ -122,8 +129,10 @@ func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 	if err := s.userService.Update(ctx, u); err != nil {
 		// Проверяем, является ли ошибка ошибкой валидации
 		if _, ok := err.(validator.ValidationErrors); ok {
+			s.logger.Error().Err(err).Msg("validation err")
 			return nil, status.Errorf(codes.InvalidArgument, "validation error: %v", err)
 		}
+		s.logger.Error().Err(err).Msg("update user err")
 		return nil, status.Errorf(codes.Internal, "failed to update user: %v", err)
 	}
 
@@ -135,6 +144,7 @@ func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 // DeleteUser удаляет пользователя
 func (s *UserService) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
 	if err := s.userService.Delete(ctx, req.Id); err != nil {
+		s.logger.Error().Err(err).Msg("delete user err")
 		return nil, status.Errorf(codes.Internal, "failed to delete user: %v", err)
 	}
 
@@ -147,6 +157,7 @@ func (s *UserService) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest)
 func (s *UserService) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.ListUsersResponse, error) {
 	users, err := s.userService.List(ctx, int(req.Page), int(req.Limit))
 	if err != nil {
+		s.logger.Error().Err(err).Msg("list users err")
 		return nil, status.Errorf(codes.Internal, "failed to list users: %v", err)
 	}
 
@@ -164,6 +175,7 @@ func (s *UserService) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (
 func (s *UserService) FindMatchingUsers(ctx context.Context, req *pb.FindMatchingUsersRequest) (*pb.ListUsersResponse, error) {
 	users, err := s.userService.FindMatchingUsers(ctx, req.UserId)
 	if err != nil {
+		s.logger.Error().Err(err).Msg("failed to find matching users")
 		return nil, status.Errorf(codes.Internal, "failed to find matching users: %v", err)
 	}
 

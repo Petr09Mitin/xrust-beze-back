@@ -2,10 +2,10 @@ package message_repo
 
 import (
 	"context"
-	"fmt"
 	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/rs/zerolog"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -26,12 +26,14 @@ type MessageRepo interface {
 type MessageRepoImpl struct {
 	p       message.Publisher
 	mongoDB *mongo.Collection
+	logger  zerolog.Logger
 }
 
-func NewMessageRepo(p message.Publisher, mongoDB *mongo.Collection) MessageRepo {
+func NewMessageRepo(p message.Publisher, mongoDB *mongo.Collection, logger zerolog.Logger) MessageRepo {
 	return &MessageRepoImpl{
 		p:       p,
 		mongoDB: mongoDB,
+		logger:  logger,
 	}
 }
 
@@ -109,7 +111,7 @@ func (m *MessageRepoImpl) GetMessagesByChannelID(ctx context.Context, channelID 
 	defer func() {
 		err = cur.Close(ctx)
 		if err != nil {
-			fmt.Println(err)
+			m.logger.Err(err)
 			return
 		}
 	}()

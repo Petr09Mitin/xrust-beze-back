@@ -1,10 +1,11 @@
 package user_http
 
 import (
+	"errors"
+	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	"net/http"
 	"strconv"
 
-	errs "github.com/Petr09Mitin/xrust-beze-back/internal/models/errs"
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
 	user_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/user"
 	"github.com/gin-gonic/gin"
@@ -87,7 +88,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 	input.ID = objectID
 
 	if err := h.userService.Update(ctx, &input); err != nil {
-		if err == errs.ErrNotFound {
+		if errors.Is(err, custom_errors.ErrNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
@@ -111,8 +112,7 @@ func (h *UserHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
 
 	err := h.userService.Delete(ctx, id)
-
-	if err == errs.ErrNotFound {
+	if errors.Is(err, custom_errors.ErrNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}

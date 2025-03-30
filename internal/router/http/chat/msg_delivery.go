@@ -2,10 +2,10 @@ package chat
 
 import (
 	"context"
-	"fmt"
 	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/olahol/melody"
+	"github.com/rs/zerolog"
 )
 
 const (
@@ -17,24 +17,26 @@ type MessageSubscriber struct {
 	router       *message.Router
 	sub          message.Subscriber
 	m            *melody.Melody
+	logger       zerolog.Logger
 }
 
-func NewMessageSubscriber(router *message.Router, sub message.Subscriber, m *melody.Melody) (*MessageSubscriber, error) {
+func NewMessageSubscriber(router *message.Router, sub message.Subscriber, m *melody.Melody, logger zerolog.Logger) (*MessageSubscriber, error) {
 	return &MessageSubscriber{
 		subscriberID: "xb.msg.pub",
 		router:       router,
 		sub:          sub,
 		m:            m,
+		logger:       logger,
 	}, nil
 }
 
 func (s *MessageSubscriber) HandleMessage(msg *message.Message) error {
 	decodedMsg, err := chat_models.DecodeToMessage(msg.Payload)
 	if err != nil {
-		fmt.Println(err)
+		s.logger.Err(err).Msg("failed to decode message")
 		return err
 	}
-	fmt.Println("sub got the msg", msg)
+	s.logger.Printf("sub got the message: %+v\n", decodedMsg)
 	return s.sendMessage(context.Background(), *decodedMsg)
 }
 

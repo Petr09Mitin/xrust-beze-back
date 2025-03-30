@@ -3,13 +3,13 @@ package chat_service
 import (
 	"context"
 	"errors"
-	"fmt"
 	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	channelrepo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/channel"
 	message_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/chat"
 	user_grpc "github.com/Petr09Mitin/xrust-beze-back/internal/router/grpc/user"
 	pb "github.com/Petr09Mitin/xrust-beze-back/proto/user"
+	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
 	"time"
 )
@@ -28,13 +28,15 @@ type ChatServiceImpl struct {
 	msgRepo     message_repo.MessageRepo
 	channelRepo channelrepo.ChannelRepository
 	userService UserService
+	logger      zerolog.Logger
 }
 
-func NewChatService(msgRepo message_repo.MessageRepo, channelRepo channelrepo.ChannelRepository, userService UserService) ChatService {
+func NewChatService(msgRepo message_repo.MessageRepo, channelRepo channelrepo.ChannelRepository, userService UserService, logger zerolog.Logger) ChatService {
 	return &ChatServiceImpl{
 		msgRepo:     msgRepo,
 		channelRepo: channelRepo,
 		userService: userService,
+		logger:      logger,
 	}
 }
 
@@ -59,11 +61,12 @@ func (c *ChatServiceImpl) ProcessTextMessage(ctx context.Context, msg chat_model
 			return err
 		}
 	default:
-		return errors.New("invalid msg type")
+		return custom_errors.ErrInvalidMessageType
 	}
 
 	if err := c.msgRepo.PublishMessage(ctx, newMsg); err != nil {
-		return fmt.Errorf("error broadcast text message: %w", err)
+		c.logger.Err(err)
+		return custom_errors.ErrBroadcastingTextMessage
 	}
 	return nil
 }
@@ -115,9 +118,10 @@ func (c *ChatServiceImpl) createTextMessage(ctx context.Context, msg chat_models
 	newMsg.SetReceiverIDs(channel.UserIDs)
 	newMsg, err = c.msgRepo.InsertMessage(ctx, newMsg)
 	if err != nil {
-		return msg, fmt.Errorf("error broadcast text message: %w", err)
+		c.logger.Err(err)
+		return msg, custom_errors.ErrBroadcastingTextMessage
 	}
-	fmt.Printf("new message saved: %+v\n", newMsg)
+	c.logger.Printf("new message saved: %+v\n", newMsg)
 	return newMsg, nil
 }
 
@@ -125,7 +129,7 @@ func (c *ChatServiceImpl) updateTextMessage(ctx context.Context, msg chat_models
 	var channel chat_models.Channel
 	var err error
 	if msg.ChannelID == "" {
-		return msg, fmt.Errorf("no channel id provided")
+		return msg, custom_errors.ErrNoChannelID
 	}
 	channel, err = c.channelRepo.GetChannelByID(ctx, msg.ChannelID)
 	if err != nil {
@@ -144,10 +148,10 @@ func (c *ChatServiceImpl) updateTextMessage(ctx context.Context, msg chat_models
 	}
 	err = c.msgRepo.UpdateMessage(ctx, newMsg)
 	if err != nil {
-		return msg, fmt.Errorf("error broadcast text message: %w", err)
+		return msg, custom_errors.ErrBroadcastingTextMessage
 	}
 	newMsg.SetReceiverIDs(channel.UserIDs)
-	fmt.Printf("message updated: %+v\n", msg.MessageID)
+	c.logger.Printf("message updated: %+v\n", newMsg)
 	return newMsg, nil
 }
 
@@ -155,7 +159,7 @@ func (c *ChatServiceImpl) deleteTextMessage(ctx context.Context, msg chat_models
 	var channel chat_models.Channel
 	var err error
 	if msg.ChannelID == "" {
-		return msg, fmt.Errorf("no channel id provided")
+		return msg, custom_errors.ErrNoChannelID
 	}
 	channel, err = c.channelRepo.GetChannelByID(ctx, msg.ChannelID)
 	if err != nil {
@@ -163,15 +167,15 @@ func (c *ChatServiceImpl) deleteTextMessage(ctx context.Context, msg chat_models
 	}
 	err = c.msgRepo.DeleteMessage(ctx, msg)
 	if err != nil {
-		return msg, fmt.Errorf("error broadcast text message: %w", err)
+		return msg, custom_errors.ErrBroadcastingTextMessage
 	}
-	fmt.Printf("message deleted: %+v\n", msg.MessageID)
+	c.logger.Printf("message deleted: %+v\n", msg)
 	msg.SetReceiverIDs(channel.UserIDs)
 	return msg, nil
 }
 
 func (c *ChatServiceImpl) GetMessagesByChatID(ctx context.Context, chatID string, limit, offset int64) ([]chat_models.Message, error) {
-	if limit == 0 {
+	if limit == 0 || limit > 1000 {
 		limit = 1000
 	}
 	if offset < 0 {
@@ -189,7 +193,7 @@ func (c *ChatServiceImpl) GetChannelsByUserID(ctx context.Context, userID string
 	for i, channel := range channels {
 		msgs, err := c.msgRepo.GetMessagesByChannelID(ctx, channel.ID, 1, 0)
 		if err != nil {
-			fmt.Println(err)
+			c.logger.Err(err)
 			continue
 		}
 		if len(msgs) > 0 {
@@ -201,12 +205,12 @@ func (c *ChatServiceImpl) GetChannelsByUserID(ctx context.Context, userID string
 				Id: userID,
 			})
 			if err != nil {
-				fmt.Println("err getting user:", err)
+				c.logger.Err(err)
 				continue
 			}
 			user, err := user_grpc.ConvertProtoToDomain(res.GetUser())
 			if err != nil {
-				fmt.Println("err converting user:", err)
+				c.logger.Err(err)
 				continue
 			}
 			channels[i].Users = append(channels[i].Users, *user)

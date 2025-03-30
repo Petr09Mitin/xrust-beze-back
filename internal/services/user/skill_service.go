@@ -2,6 +2,7 @@ package user_service
 
 import (
 	"context"
+	"github.com/rs/zerolog"
 	"time"
 
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
@@ -17,12 +18,14 @@ type SkillService interface {
 type skillService struct {
 	skillRepo user_repo.SkillRepo
 	timeout   time.Duration
+	logger    zerolog.Logger
 }
 
-func NewSkillService(skillRepo user_repo.SkillRepo, timeout time.Duration) *skillService {
+func NewSkillService(skillRepo user_repo.SkillRepo, timeout time.Duration, logger zerolog.Logger) SkillService {
 	return &skillService{
 		skillRepo: skillRepo,
 		timeout:   timeout,
+		logger:    logger,
 	}
 }
 

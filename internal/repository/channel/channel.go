@@ -3,9 +3,9 @@ package channelrepo
 import (
 	"context"
 	"errors"
-	"fmt"
 	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
+	"github.com/rs/zerolog"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -21,11 +21,13 @@ type ChannelRepository interface {
 
 type ChannelRepositoryImpl struct {
 	mongoDB *mongo.Collection
+	logger  zerolog.Logger
 }
 
-func NewChannelRepository(mongoDB *mongo.Collection) ChannelRepository {
+func NewChannelRepository(mongoDB *mongo.Collection, logger zerolog.Logger) ChannelRepository {
 	return &ChannelRepositoryImpl{
 		mongoDB: mongoDB,
+		logger:  logger,
 	}
 }
 
@@ -78,7 +80,7 @@ func (r *ChannelRepositoryImpl) GetChannelsByUserID(ctx context.Context, userID 
 	defer func() {
 		err = cur.Close(ctx)
 		if err != nil {
-			fmt.Println(err)
+			r.logger.Err(err)
 			return
 		}
 	}()

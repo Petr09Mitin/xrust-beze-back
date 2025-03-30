@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/logger"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/router/middleware"
-	"log"
+	"github.com/rs/zerolog"
 	"net"
 	"net/http"
 	"os"
@@ -29,21 +30,22 @@ var (
 )
 
 func main() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile) // настройка поведения логгера
+	log := logger.NewLogger()
 	log.Println("Starting user microservice...")
 
-	// mongoURI := getEnv("MONGO_URI", "mongodb://admin:admin@mongo_db:27017/xrust_beze?authSource=admin")
-	// mongoDBName := getEnv("MONGO_DB_NAME", "xrust_beze")
 	httpPort := getEnv("HTTP_PORT", "8080")
 	grpcPort := getEnv("GRPC_PORT", "50051")
 
-	db := initMongo()
+	db, err := initMongo(log)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to init mongo db")
+	}
 
-	userRepo := user_repo.NewUserRepository(db, 10*time.Second)
-	userService := user_service.NewUserService(userRepo, 10*time.Second)
+	userRepo := user_repo.NewUserRepository(db, 10*time.Second, log)
+	userService := user_service.NewUserService(userRepo, 10*time.Second, log)
 
-	skillRepo := user_repo.NewSkillRepository(db, 10*time.Second)
-	skillService := user_service.NewSkillService(skillRepo, 10*time.Second)
+	skillRepo := user_repo.NewSkillRepository(db, 10*time.Second, log)
+	skillService := user_service.NewSkillService(skillRepo, 10*time.Second, log)
 
 	// Создание каналов для сигналов завершения
 	errChan := make(chan error)
@@ -80,7 +82,7 @@ func main() {
 		}
 
 		grpcServer = grpc.NewServer()
-		userGrpcService := grpc_handler.NewUserService(userService)
+		userGrpcService := grpc_handler.NewUserService(userService, log)
 		pb.RegisterUserServiceServer(grpcServer, userGrpcService)
 
 		log.Printf("gRPC server starting on port %s...", grpcPort)
@@ -110,7 +112,7 @@ func main() {
 	log.Println("User microservice stopped")
 }
 
-func initMongo() *mongo.Database {
+func initMongo(log zerolog.Logger) (*mongo.Database, error) {
 	log.Println("Connecting to MongoDB...")
 
 	uri := getEnv("MONGO_URI", "mongodb://admin:admin@mongo_db:27017/xrust_beze?authSource=admin")
@@ -121,15 +123,17 @@ func initMongo() *mongo.Database {
 
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB: %v", err)
+		log.Err(err)
+		return nil, err
 	}
 
 	if err := client.Ping(ctx, nil); err != nil {
-		log.Fatalf("Failed to ping MongoDB: %v", err)
+		log.Err(err)
+		return nil, err
 	}
 
 	log.Println("Connected to MongoDB successfully")
-	return client.Database(dbName)
+	return client.Database(dbName), nil
 }
 
 func getEnv(key, defaultValue string) string {

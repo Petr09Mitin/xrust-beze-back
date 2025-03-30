@@ -2,9 +2,11 @@ package user_repo
 
 import (
 	"context"
+	"errors"
+	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
+	"github.com/rs/zerolog"
 	"time"
 
-	errs "github.com/Petr09Mitin/xrust-beze-back/internal/models/errs"
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -26,12 +28,14 @@ type UserRepo interface {
 type userRepository struct {
 	collection *mongo.Collection
 	timeout    time.Duration
+	logger     zerolog.Logger
 }
 
-func NewUserRepository(db *mongo.Database, timeout time.Duration) UserRepo {
+func NewUserRepository(db *mongo.Database, timeout time.Duration, logger zerolog.Logger) UserRepo {
 	return &userRepository{
 		collection: db.Collection("users"),
 		timeout:    timeout,
+		logger:     logger,
 	}
 }
 
@@ -63,8 +67,8 @@ func (r *userRepository) GetByID(ctx context.Context, id string) (*user_model.Us
 
 	var u user_model.User
 	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&u)
-	if err == mongo.ErrNoDocuments {
-		return nil, errs.ErrNotFound
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, custom_errors.ErrNotFound
 	}
 	if err != nil {
 		return nil, err
@@ -79,8 +83,8 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*user_mo
 
 	var u user_model.User
 	err := r.collection.FindOne(ctx, bson.M{"email": email}).Decode(&u)
-	if err == mongo.ErrNoDocuments {
-		return nil, errs.ErrNotFound
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, custom_errors.ErrNotFound
 	}
 	if err != nil {
 		return nil, err
@@ -95,8 +99,8 @@ func (r *userRepository) GetByUsername(ctx context.Context, username string) (*u
 
 	var u user_model.User
 	err := r.collection.FindOne(ctx, bson.M{"username": username}).Decode(&u)
-	if err == mongo.ErrNoDocuments {
-		return nil, errs.ErrNotFound
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, custom_errors.ErrNotFound
 	}
 	if err != nil {
 		return nil, err
@@ -148,7 +152,12 @@ func (r *userRepository) List(ctx context.Context, page, limit int) ([]*user_mod
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(ctx)
+	defer func() {
+		err = cursor.Close(ctx)
+		if err != nil {
+			r.logger.Error().Err(err).Msg("failed to close cursor")
+		}
+	}()
 
 	var users []*user_model.User
 	if err = cursor.All(ctx, &users); err != nil {
@@ -174,7 +183,12 @@ func (r *userRepository) FindBySkills(ctx context.Context, skillsToLearn, skills
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(ctx)
+	defer func() {
+		err = cursor.Close(ctx)
+		if err != nil {
+			r.logger.Error().Err(err).Msg("failed to close cursor")
+		}
+	}()
 
 	var users []*user_model.User
 	if err = cursor.All(ctx, &users); err != nil {

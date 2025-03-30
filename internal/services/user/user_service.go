@@ -2,7 +2,8 @@ package user_service
 
 import (
 	"context"
-	"errors"
+	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
+	"github.com/rs/zerolog"
 	"time"
 
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
@@ -23,12 +24,14 @@ type UserService interface {
 type userService struct {
 	userRepo user_repo.UserRepo
 	timeout  time.Duration
+	logger   zerolog.Logger
 }
 
-func NewUserService(userRepo user_repo.UserRepo, timeout time.Duration) UserService {
+func NewUserService(userRepo user_repo.UserRepo, timeout time.Duration, logger zerolog.Logger) UserService {
 	return &userService{
 		userRepo: userRepo,
 		timeout:  timeout,
+		logger:   logger,
 	}
 }
 
@@ -40,12 +43,12 @@ func (s *userService) Create(ctx context.Context, user *user_model.User) error {
 	// Проверка на уникальность email и username
 	existingUser, err := s.userRepo.GetByEmail(ctx, user.Email)
 	if err == nil && existingUser != nil {
-		return errors.New("email already exists")
+		return custom_errors.ErrEmailAlreadyExists
 	}
 
 	existingUser, err = s.userRepo.GetByUsername(ctx, user.Username)
 	if err == nil && existingUser != nil {
-		return errors.New("username already exists")
+		return custom_errors.ErrUsernameAlreadyExists
 	}
 
 	return s.userRepo.Create(ctx, user)
@@ -85,14 +88,14 @@ func (s *userService) Update(ctx context.Context, user *user_model.User) error {
 	if existingUser.Email != user.Email {
 		userWithEmail, err := s.userRepo.GetByEmail(ctx, user.Email)
 		if err == nil && userWithEmail != nil && userWithEmail.ID != user.ID {
-			return errors.New("email already exists")
+			return custom_errors.ErrEmailAlreadyExists
 		}
 	}
 
 	if existingUser.Username != user.Username {
 		userWithUsername, err := s.userRepo.GetByUsername(ctx, user.Username)
 		if err == nil && userWithUsername != nil && userWithUsername.ID != user.ID {
-			return errors.New("username already exists")
+			return custom_errors.ErrUsernameAlreadyExists
 		}
 	}
 

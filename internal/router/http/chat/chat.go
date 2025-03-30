@@ -3,13 +3,13 @@ package chat
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
 	httpparser "github.com/Petr09Mitin/xrust-beze-back/internal/pkg/httpparser"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/router/middleware"
 	chat_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/chat"
 	"github.com/gin-gonic/gin"
 	"github.com/olahol/melody"
+	"github.com/rs/zerolog"
 	"net/http"
 	"strings"
 )
@@ -23,20 +23,23 @@ type Chat struct {
 	M             *melody.Melody
 	msgSubscriber *MessageSubscriber
 	ChatService   chat_service.ChatService
+	logger        zerolog.Logger
 }
 
-func NewChat(chatService chat_service.ChatService, msgSub *MessageSubscriber, m *melody.Melody) *Chat {
+func NewChat(chatService chat_service.ChatService, msgSub *MessageSubscriber, m *melody.Melody, logger zerolog.Logger) (*Chat, error) {
 	ch := &Chat{
 		ChatService:   chatService,
 		msgSubscriber: msgSub,
 		M:             m,
+		logger:        logger,
 	}
 	err := ch.InitWS()
 	if err != nil {
-		fmt.Println(err)
+		ch.logger.Err(err)
+		return nil, err
 	}
 	ch.InitRouter()
-	return ch
+	return ch, nil
 }
 
 func (ch *Chat) InitRouter() {
@@ -56,7 +59,7 @@ func (ch *Chat) InitWS() error {
 	ch.M.HandleConnect(ch.handleNewChatJoin)
 
 	ch.M.HandleDisconnect(func(s *melody.Session) {
-		fmt.Println("dis", s.Request)
+		ch.logger.Println("dis", s.Request)
 	})
 
 	ch.M.HandleMessage(func(s *melody.Session, msg []byte) {
@@ -64,7 +67,7 @@ func (ch *Chat) InitWS() error {
 		if err != nil {
 			data, err := json.Marshal(map[string]string{"error": err.Error()})
 			if err != nil {
-				fmt.Println(err)
+				ch.logger.Err(err)
 				return
 			}
 			s.Write(data)
@@ -74,7 +77,8 @@ func (ch *Chat) InitWS() error {
 	go func() {
 		err := ch.msgSubscriber.Run()
 		if err != nil {
-			fmt.Println(err)
+			ch.logger.Err(err)
+			return
 		}
 	}()
 
@@ -82,7 +86,7 @@ func (ch *Chat) InitWS() error {
 }
 
 func (ch *Chat) Start() error {
-	fmt.Println("start chat")
+	ch.logger.Println("start chat")
 	err := ch.R.Run(":8080")
 	if err != nil {
 		return err
@@ -94,7 +98,7 @@ func (ch *Chat) Start() error {
 func (ch *Chat) HandleWSConn(c *gin.Context) {
 	err := ch.M.HandleRequest(c.Writer, c.Request)
 	if err != nil {
-		fmt.Println(err)
+		ch.logger.Err(err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"err": err.Error(),
 		})
@@ -110,9 +114,10 @@ func (ch *Chat) handleTextMessage(ctx context.Context, msg []byte) error {
 	parsedMsg := chat_models.Message{}
 	err := json.Unmarshal(msg, &parsedMsg)
 	if err != nil {
+
 		return err
 	}
-	fmt.Println("msg came to server", parsedMsg)
+	ch.logger.Println("msg came to server", parsedMsg)
 	err = ch.ChatService.ProcessTextMessage(ctx, parsedMsg)
 	if err != nil {
 		return err
