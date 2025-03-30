@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/config"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/logger"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/router/middleware"
 	"github.com/rs/zerolog"
@@ -33,10 +35,15 @@ func main() {
 	log := logger.NewLogger()
 	log.Println("Starting user microservice...")
 
-	httpPort := getEnv("HTTP_PORT", "8080")
-	grpcPort := getEnv("GRPC_PORT", "50051")
+	cfg, err := config.NewUser()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to load user config")
+	}
 
-	db, err := initMongo(log)
+	httpPort := cfg.HTTP.Port
+	grpcPort := cfg.GRPC.Port
+
+	db, err := initMongo(log, cfg.Mongo)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to init mongo db")
 	}
@@ -60,7 +67,7 @@ func main() {
 		http_handler.NewSkillHandler(router, skillService)
 
 		httpServer = &http.Server{
-			Addr:    ":" + httpPort,
+			Addr:    fmt.Sprintf(":%d", httpPort),
 			Handler: router,
 		}
 
@@ -68,14 +75,14 @@ func main() {
 		// if err := router.Run(":" + httpPort); err != nil && err != httpparser.ErrServerClosed {
 		// 	errChan <- fmt.Errorf("failed to run HTTP server: %v", err)
 		// }
-		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errChan <- fmt.Errorf("failed to run HTTP server: %v", err)
 		}
 	}()
 
 	// Запуск gRPC сервера
 	go func() {
-		lis, err := net.Listen("tcp", ":"+grpcPort)
+		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
 		if err != nil {
 			errChan <- fmt.Errorf("failed to listen on port %s: %v", grpcPort, err)
 			return
@@ -105,30 +112,36 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := httpServer.Shutdown(ctx); err != nil {
-		log.Printf("HTTP server shutdown error: %v", err)
+		log.Fatal().Err(err).Msg("failed to shutdown http server")
 	}
 	grpcServer.GracefulStop()
 
 	log.Println("User microservice stopped")
 }
 
-func initMongo(log zerolog.Logger) (*mongo.Database, error) {
+func initMongo(log zerolog.Logger, cfg *config.Mongo) (*mongo.Database, error) {
 	log.Println("Connecting to MongoDB...")
 
-	uri := getEnv("MONGO_URI", "mongodb://admin:admin@mongo_db:27017/xrust_beze?authSource=admin")
-	dbName := getEnv("MONGO_DB_NAME", "xrust_beze")
+	uri := fmt.Sprintf(
+		"mongodb://%s:%s@%s:%d",
+		cfg.Username,
+		cfg.Password,
+		cfg.Host,
+		cfg.Port,
+	)
+	dbName := cfg.Database
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {
-		log.Err(err)
+		log.Fatal().Err(err).Msg("failed to connect to MongoDB")
 		return nil, err
 	}
 
 	if err := client.Ping(ctx, nil); err != nil {
-		log.Err(err)
+		log.Fatal().Err(err).Msg("failed to ping MongoDB")
 		return nil, err
 	}
 

@@ -1,6 +1,8 @@
 package infrakafka
 
 import (
+	"errors"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/config"
 	"time"
 
 	"github.com/ThreeDotsLabs/watermill"
@@ -16,10 +18,13 @@ var (
 	)
 )
 
-func NewKafkaPublisher() (message.Publisher, error) {
+func NewKafkaPublisher(cfg *config.Kafka) (message.Publisher, error) {
+	if cfg == nil {
+		return nil, errors.New("kafka publisher config is nil")
+	}
 	kafkaPublisher, err := kafka.NewPublisher(
 		kafka.PublisherConfig{
-			Brokers:   []string{kafkaAdress},
+			Brokers:   cfg.Addresses,
 			Marshaler: kafka.DefaultMarshaler{},
 		},
 		logger,

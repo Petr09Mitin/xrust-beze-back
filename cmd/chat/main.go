@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/config"
 	infrakafka "github.com/Petr09Mitin/xrust-beze-back/internal/pkg/kafka"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/logger"
 	channelrepo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/channel"
@@ -17,48 +19,62 @@ import (
 
 func main() {
 	log := logger.NewLogger()
-	kafkaPub, err := infrakafka.NewKafkaPublisher()
+	cfg, err := config.NewChat()
 	if err != nil {
-		log.Err(err)
+		log.Fatal().Msg(fmt.Sprintf("failed to load config: %v", err))
 		return
 	}
-	client, err := mongo.Connect(options.Client().ApplyURI("mongodb://admin:admin@mongo_db:27017"))
+	kafkaPub, err := infrakafka.NewKafkaPublisher(cfg.Kafka)
 	if err != nil {
-		log.Err(err)
+		log.Fatal().Msg(fmt.Sprintf("failed to create kafka publisher: %v", err))
 		return
 	}
-	msgsCollection := client.Database("xrust_beze").Collection("messages")
-	chanCollection := client.Database("xrust_beze").Collection("channels")
+	client, err := mongo.Connect(options.Client().ApplyURI(fmt.Sprintf(
+		"mongodb://%s:%s@%s:%d",
+		cfg.Mongo.Username,
+		cfg.Mongo.Password,
+		cfg.Mongo.Host,
+		cfg.Mongo.Port,
+	)))
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to connect to mongodb")
+		return
+	}
+	msgsCollection := client.Database(cfg.Mongo.Database).Collection("messages")
+	chanCollection := client.Database(cfg.Mongo.Database).Collection("channels")
 	msgRepo := message_repo.NewMessageRepo(kafkaPub, msgsCollection, log)
 	chanRepo := channelrepo.NewChannelRepository(chanCollection, log)
-	userGRPCConn, err := grpc.NewClient("user_service:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	userGRPCConn, err := grpc.NewClient(
+		fmt.Sprintf("%s:%d", cfg.Services.UserService.Host, cfg.Services.UserService.Port),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
 	if err != nil {
-		log.Err(err)
+		log.Fatal().Err(err).Msg("failed to connect to user_service")
 		return
 	}
 	userGRPCClient := pb.NewUserServiceClient(userGRPCConn)
 	chatService := chat_service.NewChatService(msgRepo, chanRepo, userGRPCClient, log)
 	m := melody.New()
-	kafkaSub, err := infrakafka.NewKafkaSubscriber()
+	kafkaSub, err := infrakafka.NewKafkaSubscriber(cfg.Kafka)
 	if err != nil {
-		log.Err(err)
+		log.Err(err).Msg("failed to connect to kafka sub")
 		return
 	}
 	msgRouter, err := infrakafka.NewBrokerRouter()
 	msgSub, err := chat.NewMessageSubscriber(msgRouter, kafkaSub, m, log)
 	if err != nil {
-		log.Err(err)
+		log.Fatal().Err(err).Msg("failed to connect to kafka msg_sub")
 		return
 	}
-	c, err := chat.NewChat(chatService, msgSub, m, log)
+	c, err := chat.NewChat(chatService, msgSub, m, log, cfg)
 	if err != nil {
-		log.Err(err)
+		log.Fatal().Err(err).Msg("failed to create chat")
 		return
 	}
 	err = c.Start()
 	if err != nil {
 		c.Stop()
-		log.Err(err)
+		log.Fatal().Err(err).Msg("failed to start chat")
 		return
 	}
 }

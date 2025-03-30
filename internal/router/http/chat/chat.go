@@ -3,7 +3,9 @@ package chat
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/config"
 	httpparser "github.com/Petr09Mitin/xrust-beze-back/internal/pkg/httpparser"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/router/middleware"
 	chat_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/chat"
@@ -24,14 +26,16 @@ type Chat struct {
 	msgSubscriber *MessageSubscriber
 	ChatService   chat_service.ChatService
 	logger        zerolog.Logger
+	cfg           *config.Chat
 }
 
-func NewChat(chatService chat_service.ChatService, msgSub *MessageSubscriber, m *melody.Melody, logger zerolog.Logger) (*Chat, error) {
+func NewChat(chatService chat_service.ChatService, msgSub *MessageSubscriber, m *melody.Melody, logger zerolog.Logger, cfg *config.Chat) (*Chat, error) {
 	ch := &Chat{
 		ChatService:   chatService,
 		msgSubscriber: msgSub,
 		M:             m,
 		logger:        logger,
+		cfg:           cfg,
 	}
 	err := ch.InitWS()
 	if err != nil {
@@ -46,7 +50,7 @@ func (ch *Chat) InitRouter() {
 	ch.R = gin.Default()
 	ch.R.Use(middleware.CORSMiddleware())
 
-	chatGroup := ch.R.Group("/chat")
+	chatGroup := ch.R.Group("/chatconfig")
 	{
 		chatGroup.GET("/ws", ch.HandleWSConn)
 		chatGroup.GET("/:channelID", ch.HandleGetMessagesByChannelID)
@@ -86,8 +90,8 @@ func (ch *Chat) InitWS() error {
 }
 
 func (ch *Chat) Start() error {
-	ch.logger.Println("start chat")
-	err := ch.R.Run(":8080")
+	ch.logger.Println("start chat http")
+	err := ch.R.Run(fmt.Sprintf(":%d", ch.cfg.HTTP.Port))
 	if err != nil {
 		return err
 	}

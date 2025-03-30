@@ -31,10 +31,8 @@ services:
       - "27025:27017"
     container_name: mongo_db
     restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: root
-      MONGO_INITDB_DATABASE: xrust_beze
+    env_file:
+      - ./.env
     volumes:
       - ./dev/mongo:/scripts
       - mongo_data:/data/db
@@ -42,8 +40,6 @@ services:
   chat_service:
     image: xrust_beze_chat:latest
     container_name: chat_service
-    env_file:
-      - .env
     tty: true
     ports:
       - "8085:8080"
@@ -58,14 +54,13 @@ services:
   user_service:
     image: xrust_beze_user:latest
     container_name: user_service
-    environment:
-      - MONGO_URI=mongodb://admin:admin@mongo_db:27017/xrust_beze?authSource=admin
-      - MONGO_DB_NAME=xrust_beze
-      - HTTP_PORT=8080
-      - GRPC_PORT=50051
+    env_file:
+      - ./user_service.env
     ports:
       - "8083:8080"  # HTTP порт (изменен, чтобы не конфликтовать с другими сервисами)
       - "50051:50051"  # gRPC порт
+    volumes:
+      - .:/app
     restart: always
     depends_on:
       - mongo_db
@@ -76,10 +71,8 @@ services:
     container_name: ml_explanator
     ports:
       - "8091:8091"
-    environment:
-      - MODEL_API_KEY=${MODEL_API_KEY}
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - GOOGLE_CX=${GOOGLE_CX}
+    env_file:
+      - ./ml_explanator.env
 
   # WEB интерфейс для взаимодействия с ml_explanator. Но проде - отключить!
   ml_check:
