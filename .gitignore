@@ -6,3 +6,4 @@
 cmd/.DS_Store
 competensy.csv
 scripts/convert_skills.go
+tempfiles/*

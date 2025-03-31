@@ -1,0 +1,11 @@
+http:
+  port: 8080
+
+grpc:
+  port: 50051
+
+minio:
+  endpoint: "minio-xb:9000"
+  username: "admin"
+  password: "adminadmin"
+  use_ssl: false

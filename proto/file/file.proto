@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package file;
+
+option go_package = "proto/file";
+
+service FileService {
+  rpc MoveTempFileToAvatars(MoveTempFileToAvatarsRequest) returns (MoveTempFileToAvatarsResponse);
+  rpc DeleteAvatar(DeleteAvatarRequest) returns (DeleteAvatarResponse);
+}
+
+message MoveTempFileToAvatarsRequest {
+  string filename = 1;
+}
+
+message MoveTempFileToAvatarsResponse {
+  string filename = 1;
+}
+
+message DeleteAvatarRequest {
+  string filename = 1;
+}
+
+message DeleteAvatarResponse{}

@@ -148,11 +148,3 @@ func initMongo(log zerolog.Logger, cfg *config.Mongo) (*mongo.Database, error) {
 	log.Println("Connected to MongoDB successfully")
 	return client.Database(dbName), nil
 }
-
-func getEnv(key, defaultValue string) string {
-	value := os.Getenv(key)
-	if value == "" {
-		return defaultValue
-	}
-	return value
-}
