@@ -130,6 +130,7 @@ services:
       - file_service
     volumes:
       - ./dev/nginx:/etc/nginx
+      - /etc/letsencrypt:/etc/letsencrypt
 
 volumes:
   mongo_data:
