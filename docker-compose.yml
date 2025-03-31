@@ -120,8 +120,8 @@ services:
     image: nginx:1.27.4-perl
     container_name: nginx_xb
     ports:
-      - "3001:80"
-      - "3002:443"
+      - "80:80"
+      - "443:443"
     depends_on:
       - chat_service
       - ml_explanator
