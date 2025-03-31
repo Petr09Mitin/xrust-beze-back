@@ -8,6 +8,7 @@ import (
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/logger"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/router/middleware"
 	"github.com/rs/zerolog"
+	"google.golang.org/grpc/credentials/insecure"
 	"net"
 	"net/http"
 	"os"
@@ -19,6 +20,7 @@ import (
 	grpc_handler "github.com/Petr09Mitin/xrust-beze-back/internal/router/grpc/user"
 	http_handler "github.com/Petr09Mitin/xrust-beze-back/internal/router/http/user"
 	user_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/user"
+	filepb "github.com/Petr09Mitin/xrust-beze-back/proto/file"
 	pb "github.com/Petr09Mitin/xrust-beze-back/proto/user"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -48,8 +50,17 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to init mongo db")
 	}
 
+	fileGRPCConn, err := grpc.NewClient(
+		fmt.Sprintf("%s:%d", cfg.Services.File.Host, cfg.Services.File.Port),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to connect to file_service")
+		return
+	}
+	fileGRPCClient := filepb.NewFileServiceClient(fileGRPCConn)
 	userRepo := user_repo.NewUserRepository(db, 10*time.Second, log)
-	userService := user_service.NewUserService(userRepo, 10*time.Second, log)
+	userService := user_service.NewUserService(userRepo, fileGRPCClient, 10*time.Second, log)
 
 	skillRepo := user_repo.NewSkillRepository(db, 10*time.Second, log)
 	skillService := user_service.NewSkillService(skillRepo, 10*time.Second, log)

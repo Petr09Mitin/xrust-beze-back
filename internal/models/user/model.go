@@ -25,7 +25,7 @@ type User struct {
 	SkillsToLearn   []Skill            `json:"skills_to_learn" bson:"skills_to_learn"`
 	SkillsToShare   []Skill            `json:"skills_to_share" bson:"skills_to_share"`
 	Bio             string             `json:"bio" bson:"bio" validate:"max=1000"`
-	AvatarURL       string             `json:"avatar_url" bson:"avatar_url"`
+	Avatar          string             `json:"avatar" bson:"avatar"`
 	CreatedAt       time.Time          `json:"created_at" bson:"created_at"`
 	UpdatedAt       time.Time          `json:"updated_at" bson:"updated_at"`
 	LastActiveAt    time.Time          `json:"last_active_at" bson:"last_active_at"`

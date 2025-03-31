@@ -2,10 +2,15 @@ package config
 
 import "github.com/spf13/viper"
 
+type UserServiceServices struct {
+	File *GRPCService `mapstructure:"file_service"`
+}
+
 type User struct {
-	Mongo *Mongo `mapstructure:"mongo"`
-	HTTP  *HTTP  `mapstructure:"http"`
-	GRPC  *GRPC  `mapstructure:"grpc"`
+	Mongo    *Mongo               `mapstructure:"mongo"`
+	HTTP     *HTTP                `mapstructure:"http"`
+	GRPC     *GRPC                `mapstructure:"grpc"`
+	Services *UserServiceServices `mapstructure:"services"`
 }
 
 func NewUser() (*User, error) {

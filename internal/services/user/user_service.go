@@ -3,6 +3,7 @@ package user_service
 import (
 	"context"
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
+	filepb "github.com/Petr09Mitin/xrust-beze-back/proto/file"
 	"github.com/rs/zerolog"
 	"time"
 
@@ -23,13 +24,15 @@ type UserService interface {
 
 type userService struct {
 	userRepo user_repo.UserRepo
+	fileGRPC filepb.FileServiceClient
 	timeout  time.Duration
 	logger   zerolog.Logger
 }
 
-func NewUserService(userRepo user_repo.UserRepo, timeout time.Duration, logger zerolog.Logger) UserService {
+func NewUserService(userRepo user_repo.UserRepo, fileGRPC filepb.FileServiceClient, timeout time.Duration, logger zerolog.Logger) UserService {
 	return &userService{
 		userRepo: userRepo,
+		fileGRPC: fileGRPC,
 		timeout:  timeout,
 		logger:   logger,
 	}
@@ -49,6 +52,13 @@ func (s *userService) Create(ctx context.Context, user *user_model.User) error {
 	existingUser, err = s.userRepo.GetByUsername(ctx, user.Username)
 	if err == nil && existingUser != nil {
 		return custom_errors.ErrUsernameAlreadyExists
+	}
+
+	_, err = s.fileGRPC.MoveTempFileToAvatars(ctx, &filepb.MoveTempFileToAvatarsRequest{
+		Filename: user.Avatar,
+	})
+	if err != nil {
+		return err
 	}
 
 	return s.userRepo.Create(ctx, user)
@@ -99,6 +109,22 @@ func (s *userService) Update(ctx context.Context, user *user_model.User) error {
 		}
 	}
 
+	if existingUser.Avatar != user.Avatar {
+		_, err = s.fileGRPC.MoveTempFileToAvatars(ctx, &filepb.MoveTempFileToAvatarsRequest{
+			Filename: user.Avatar,
+		})
+		if err != nil {
+			return err
+		}
+
+		_, err = s.fileGRPC.DeleteAvatar(ctx, &filepb.DeleteAvatarRequest{
+			Filename: existingUser.Avatar,
+		})
+		if err != nil {
+			s.logger.Error().Err(err).Msg("failed to delete avatar") // not crit, still can return 200
+		}
+	}
+
 	user.UpdatedAt = time.Now()
 
 	return s.userRepo.Update(ctx, user)
@@ -109,7 +135,14 @@ func (s *userService) Delete(ctx context.Context, id string) error {
 	// добавить проверку соответствия id авторизованного пользователя и того, что хотим удалить
 
 	// Проверяем существование пользователя
-	_, err := s.userRepo.GetByID(ctx, id)
+	user, err := s.userRepo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.fileGRPC.DeleteAvatar(ctx, &filepb.DeleteAvatarRequest{
+		Filename: user.Avatar,
+	})
 	if err != nil {
 		return err
 	}

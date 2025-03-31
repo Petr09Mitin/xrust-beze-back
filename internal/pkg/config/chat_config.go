@@ -4,17 +4,12 @@ import (
 	"github.com/spf13/viper"
 )
 
-type UserService struct {
-	Host string `mapstructure:"host"`
-	Port int    `mapstructure:"port"`
-}
-
 type HTTP struct {
 	Port int `mapstructure:"port"`
 }
 
 type Services struct {
-	UserService *UserService `mapstructure:"user_service"`
+	UserService *GRPCService `mapstructure:"user_service"`
 }
 
 type Chat struct {

@@ -56,7 +56,7 @@ func (s *UserService) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 		SkillsToLearn:   skillsToLearn,
 		SkillsToShare:   skillsToShare,
 		Bio:             req.Bio,
-		AvatarURL:       req.AvatarUrl,
+		Avatar:          req.AvatarUrl,
 		PreferredFormat: req.PreferredFormat,
 	}
 
@@ -122,7 +122,7 @@ func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 		SkillsToLearn:   skillsToLearn,
 		SkillsToShare:   skillsToShare,
 		Bio:             req.Bio,
-		AvatarURL:       req.AvatarUrl,
+		Avatar:          req.AvatarUrl,
 		PreferredFormat: req.PreferredFormat,
 	}
 
@@ -217,7 +217,7 @@ func convertDomainToProto(u *user_model.User) *pb.User {
 		SkillsToLearn:   skillsToLearn,
 		SkillsToShare:   skillsToShare,
 		Bio:             u.Bio,
-		AvatarUrl:       u.AvatarURL,
+		AvatarUrl:       u.Avatar,
 		CreatedAt:       timestamppb.New(u.CreatedAt),
 		UpdatedAt:       timestamppb.New(u.UpdatedAt),
 		LastActiveAt:    timestamppb.New(u.LastActiveAt),
@@ -258,7 +258,7 @@ func ConvertProtoToDomain(u *pb.User) (*user_model.User, error) {
 		SkillsToLearn:   skillsToLearn,
 		SkillsToShare:   skillsToShare,
 		Bio:             u.GetBio(),
-		AvatarURL:       u.GetAvatarUrl(),
+		Avatar:          u.GetAvatarUrl(),
 		CreatedAt:       u.GetCreatedAt().AsTime(),
 		UpdatedAt:       u.GetUpdatedAt().AsTime(),
 		LastActiveAt:    u.GetLastActiveAt().AsTime(),

@@ -10,3 +10,8 @@ mongo:
   username: "admin"
   password: "admin"
   database: "xrust_beze"
+
+services:
+  file_service:
+    host: file_service
+    port: 50051
