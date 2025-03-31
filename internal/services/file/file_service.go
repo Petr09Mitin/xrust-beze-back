@@ -3,6 +3,7 @@ package file
 import (
 	"context"
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/validation"
 	filerepo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/file"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
@@ -33,6 +34,10 @@ func (f *FileServiceImpl) UploadTempFile(ctx context.Context, filepath string) (
 }
 
 func (f *FileServiceImpl) MoveTempFileToAvatars(ctx context.Context, filename string) (err error) {
+	valid := validation.IsValidImageFilepath(filename)
+	if !valid {
+		return custom_errors.ErrInvalidFileFormat
+	}
 	exists, err := f.fileRepo.CheckIfTempExists(ctx, filename)
 	if err != nil {
 		return err
