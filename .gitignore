@@ -7,3 +7,4 @@ competensy.csv
 scripts/convert_skills.go
 tempfiles/*
 *.pem
+load_skills_to_mongo.go
