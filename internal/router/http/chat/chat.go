@@ -39,7 +39,7 @@ func NewChat(chatService chat_service.ChatService, msgSub *MessageSubscriber, m 
 	}
 	err := ch.InitWS()
 	if err != nil {
-		ch.logger.Err(err)
+		ch.logger.Error().Err(err).Msg("init websocket error")
 		return nil, err
 	}
 	ch.InitRouter()
@@ -50,7 +50,7 @@ func (ch *Chat) InitRouter() {
 	ch.R = gin.Default()
 	ch.R.Use(middleware.CORSMiddleware())
 
-	chatGroup := ch.R.Group("/chatconfig")
+	chatGroup := ch.R.Group("/api/v1/chat")
 	{
 		chatGroup.GET("/ws", ch.HandleWSConn)
 		chatGroup.GET("/:channelID", ch.HandleGetMessagesByChannelID)
