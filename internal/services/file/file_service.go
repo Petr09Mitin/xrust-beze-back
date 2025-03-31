@@ -33,7 +33,7 @@ func (f *FileServiceImpl) UploadTempFile(ctx context.Context, filepath string) (
 	return filename, f.fileRepo.UploadTemp(ctx, filepath, filename)
 }
 
-func (f *FileServiceImpl) MoveTempFileToAvatars(ctx context.Context, filename string) (err error) {
+func (f *FileServiceImpl) MoveTempFileToAvatars(ctx context.Context, filename string) error {
 	valid := validation.IsValidImageFilepath(filename)
 	if !valid {
 		return custom_errors.ErrInvalidFileFormat
@@ -56,7 +56,7 @@ func (f *FileServiceImpl) MoveTempFileToAvatars(ctx context.Context, filename st
 	return nil
 }
 
-func (f *FileServiceImpl) DeleteAvatar(ctx context.Context, filename string) (err error) {
+func (f *FileServiceImpl) DeleteAvatar(ctx context.Context, filename string) error {
 	exists, err := f.fileRepo.CheckIfAvatarExists(ctx, filename)
 	if err != nil {
 		return err
