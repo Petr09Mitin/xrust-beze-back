@@ -17,6 +17,7 @@ const (
 
 type MessageRepo interface {
 	GetMessagesByChannelID(ctx context.Context, channelID string, limit, offset int64) ([]chat_models.Message, error)
+	GetMessageByID(ctx context.Context, id string) (*chat_models.Message, error)
 	InsertMessage(ctx context.Context, msg chat_models.Message) (chat_models.Message, error)
 	UpdateMessage(ctx context.Context, msg chat_models.Message) error
 	DeleteMessage(ctx context.Context, msg chat_models.Message) error
@@ -35,6 +36,23 @@ func NewMessageRepo(p message.Publisher, mongoDB *mongo.Collection, logger zerol
 		mongoDB: mongoDB,
 		logger:  logger,
 	}
+}
+
+func (m *MessageRepoImpl) GetMessageByID(ctx context.Context, id string) (*chat_models.Message, error) {
+	objID, err := bson.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+	res := m.mongoDB.FindOne(ctx, bson.M{
+		"_id": objID,
+	})
+	msg := &chat_models.Message{}
+	err = res.Decode(msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return msg, nil
 }
 
 func (m *MessageRepoImpl) InsertMessage(ctx context.Context, msg chat_models.Message) (chat_models.Message, error) {

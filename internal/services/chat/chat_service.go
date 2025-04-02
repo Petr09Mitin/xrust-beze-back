@@ -135,6 +135,10 @@ func (c *ChatServiceImpl) updateTextMessage(ctx context.Context, msg chat_models
 	if err != nil {
 		return msg, err
 	}
+	oldMsg, err := c.msgRepo.GetMessageByID(ctx, msg.MessageID)
+	if err != nil {
+		return msg, err
+	}
 	updatedAt := time.Now().Unix()
 	newMsg := chat_models.Message{
 		MessageID: msg.MessageID,
@@ -143,7 +147,7 @@ func (c *ChatServiceImpl) updateTextMessage(ctx context.Context, msg chat_models
 		ChannelID: channel.ID,
 		UserID:    msg.UserID,
 		Payload:   msg.Payload,
-		CreatedAt: msg.CreatedAt,
+		CreatedAt: oldMsg.CreatedAt,
 		UpdatedAt: updatedAt,
 	}
 	err = c.msgRepo.UpdateMessage(ctx, newMsg)
