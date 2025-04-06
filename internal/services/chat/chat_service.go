@@ -7,6 +7,7 @@ import (
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	channelrepo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/channel"
 	message_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/chat"
+	structurization_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/structurization"
 	user_grpc "github.com/Petr09Mitin/xrust-beze-back/internal/router/grpc/user"
 	pb "github.com/Petr09Mitin/xrust-beze-back/proto/user"
 	"github.com/rs/zerolog"
@@ -16,6 +17,7 @@ import (
 
 type ChatService interface {
 	ProcessTextMessage(ctx context.Context, message chat_models.Message) error
+	ProcessStructurizationRequest(ctx context.Context, message chat_models.Message) error
 	GetMessagesByChatID(ctx context.Context, chatID string, limit, offset int64) ([]chat_models.Message, error)
 	GetChannelsByUserID(ctx context.Context, userID string, limit, offset int64) ([]chat_models.Channel, error)
 }
@@ -25,18 +27,20 @@ type UserService interface {
 }
 
 type ChatServiceImpl struct {
-	msgRepo     message_repo.MessageRepo
-	channelRepo channelrepo.ChannelRepository
-	userService UserService
-	logger      zerolog.Logger
+	msgRepo             message_repo.MessageRepo
+	channelRepo         channelrepo.ChannelRepository
+	structurizationRepo structurization_repo.StructurizationRepository
+	userService         UserService
+	logger              zerolog.Logger
 }
 
-func NewChatService(msgRepo message_repo.MessageRepo, channelRepo channelrepo.ChannelRepository, userService UserService, logger zerolog.Logger) ChatService {
+func NewChatService(msgRepo message_repo.MessageRepo, channelRepo channelrepo.ChannelRepository, structurizationRepo structurization_repo.StructurizationRepository, userService UserService, logger zerolog.Logger) ChatService {
 	return &ChatServiceImpl{
-		msgRepo:     msgRepo,
-		channelRepo: channelRepo,
-		userService: userService,
-		logger:      logger,
+		msgRepo:             msgRepo,
+		channelRepo:         channelRepo,
+		structurizationRepo: structurizationRepo,
+		userService:         userService,
+		logger:              logger,
 	}
 }
 
@@ -68,6 +72,45 @@ func (c *ChatServiceImpl) ProcessTextMessage(ctx context.Context, msg chat_model
 		c.logger.Err(err)
 		return custom_errors.ErrBroadcastingTextMessage
 	}
+	return nil
+}
+
+func (c *ChatServiceImpl) ProcessStructurizationRequest(ctx context.Context, message chat_models.Message) error {
+	oldMessage, err := c.msgRepo.GetMessageByID(ctx, message.MessageID)
+	if err != nil {
+		return err
+	}
+	channel, err := c.channelRepo.GetChannelByID(ctx, oldMessage.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	prevMessages, err := c.msgRepo.GetPreviousMessagesByMessageCreatedAt(ctx, oldMessage.ChannelID, oldMessage.CreatedAt, 10)
+	if err != nil {
+		return err
+	}
+	question := c.concatenateMessages(ctx, prevMessages)
+	newCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+	structurized, err := c.structurizationRepo.SendStructRequest(newCtx, question, oldMessage.Payload)
+	if err != nil {
+		return err
+	}
+	newMsg := *oldMessage
+	newMsg.Structurized = structurized.Explanation
+	newMsg.UpdatedAt = time.Now().Unix()
+	err = c.msgRepo.UpdateMessage(ctx, newMsg)
+	if err != nil {
+		return err
+	}
+
+	newMsg.SetReceiverIDs(channel.UserIDs)
+
+	err = c.msgRepo.PublishMessage(ctx, newMsg)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -222,4 +265,12 @@ func (c *ChatServiceImpl) GetChannelsByUserID(ctx context.Context, userID string
 	}
 
 	return channels, nil
+}
+
+func (c *ChatServiceImpl) concatenateMessages(ctx context.Context, messages []chat_models.Message) string {
+	res := ""
+	for _, msg := range messages {
+		res += msg.Payload + " \n"
+	}
+	return res
 }

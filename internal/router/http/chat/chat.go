@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
+	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/config"
 	httpparser "github.com/Petr09Mitin/xrust-beze-back/internal/pkg/httpparser"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/router/middleware"
@@ -122,7 +123,14 @@ func (ch *Chat) handleTextMessage(ctx context.Context, msg []byte) error {
 		return err
 	}
 	ch.logger.Println("msg came to server", parsedMsg)
-	err = ch.ChatService.ProcessTextMessage(ctx, parsedMsg)
+	switch parsedMsg.Event {
+	case chat_models.TextMsgEvent:
+		err = ch.ChatService.ProcessTextMessage(ctx, parsedMsg)
+	case chat_models.StructurizationEvent:
+		err = ch.ChatService.ProcessStructurizationRequest(ctx, parsedMsg)
+	default:
+		err = custom_errors.ErrInvalidMessageEvent
+	}
 	if err != nil {
 		return err
 	}

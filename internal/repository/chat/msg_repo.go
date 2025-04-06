@@ -17,6 +17,7 @@ const (
 
 type MessageRepo interface {
 	GetMessagesByChannelID(ctx context.Context, channelID string, limit, offset int64) ([]chat_models.Message, error)
+	GetPreviousMessagesByMessageCreatedAt(ctx context.Context, channelID string, createdAt, limit int64) ([]chat_models.Message, error)
 	GetMessageByID(ctx context.Context, id string) (*chat_models.Message, error)
 	InsertMessage(ctx context.Context, msg chat_models.Message) (chat_models.Message, error)
 	UpdateMessage(ctx context.Context, msg chat_models.Message) error
@@ -46,13 +47,14 @@ func (m *MessageRepoImpl) GetMessageByID(ctx context.Context, id string) (*chat_
 	res := m.mongoDB.FindOne(ctx, bson.M{
 		"_id": objID,
 	})
-	msg := &chat_models.Message{}
-	err = res.Decode(msg)
+	bsonMsg := &chat_models.BSONMessage{}
+	err = res.Decode(bsonMsg)
 	if err != nil {
 		return nil, err
 	}
+	msg := bsonMsg.ToMessage()
 
-	return msg, nil
+	return &msg, nil
 }
 
 func (m *MessageRepoImpl) InsertMessage(ctx context.Context, msg chat_models.Message) (chat_models.Message, error) {
@@ -122,6 +124,47 @@ func (m *MessageRepoImpl) GetMessagesByChannelID(ctx context.Context, channelID 
 				"created_at": -1,
 			},
 		).SetLimit(limit).SetSkip(offset),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		err = cur.Close(ctx)
+		if err != nil {
+			m.logger.Err(err)
+			return
+		}
+	}()
+	res := make([]chat_models.Message, 0, cur.RemainingBatchLength())
+	for cur.Next(ctx) {
+		curr := chat_models.BSONMessage{}
+		err = cur.Decode(&curr)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, curr.ToMessage())
+	}
+	if err := cur.Err(); err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (m *MessageRepoImpl) GetPreviousMessagesByMessageCreatedAt(ctx context.Context, channelID string, createdAt, limit int64) ([]chat_models.Message, error) {
+	cur, err := m.mongoDB.Find(
+		ctx,
+		bson.M{
+			"channel_id": channelID,
+			"created": bson.M{
+				"$lt": createdAt,
+			},
+		},
+		options.Find().SetSort(
+			bson.M{
+				"created_at": -1,
+			},
+		).SetLimit(limit),
 	)
 	if err != nil {
 		return nil, err

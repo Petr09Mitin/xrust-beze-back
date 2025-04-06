@@ -26,7 +26,7 @@ async def summarize(input_data: TextInput):
     try:
         explanation = await mistral_api.summarize(input_data.query.strip(), input_data.answer.strip())
     except Exception as e:
-        return HTTPException(status_code=500, detail="Can't explain by api.")
+        raise HTTPException(status_code=500, detail="Can't explain by api.")
 
     # logging.info(f'Explanation of {explanation}.')
 
@@ -34,7 +34,7 @@ async def summarize(input_data: TextInput):
         # Данные вернулись в формате json
         data = json.loads(explanation)
     except json.decoder.JSONDecodeError:
-        return HTTPException(status_code=500, detail="Json decode error.")
+        raise HTTPException(status_code=500, detail="Json decode error.")
 
     explanation_text = data["addition"]
     search_keywords = data["keywords"]

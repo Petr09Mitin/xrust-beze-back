@@ -5,6 +5,9 @@ services:
   user_service:
     host: "user_service"
     port: 50051
+  structurization_service:
+    host: "ml_explanator"
+    port: 8091
 
 mongo:
   host: "mongo_db"
