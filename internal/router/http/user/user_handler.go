@@ -3,8 +3,10 @@ package user_http
 import (
 	"errors"
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/httpparser"
 	"net/http"
 	"strconv"
+	"strings"
 
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
 	user_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/user"
@@ -30,6 +32,7 @@ func NewUserHandler(router *gin.Engine, userService user_service.UserService) {
 		userGroup.DELETE("/:id", handler.Delete)
 		userGroup.GET("", handler.List)
 		userGroup.GET("/match/:id", handler.FindMatchingUsers)
+		userGroup.GET("/by-name", handler.FindByUsername)
 	}
 }
 
@@ -160,4 +163,19 @@ func (h *UserHandler) FindMatchingUsers(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, users)
+}
+
+func (h *UserHandler) FindByUsername(c *gin.Context) {
+	username := strings.TrimSpace(c.Query("username"))
+	if username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "username is required"})
+		return
+	}
+	limit, offset := httpparser.GetLimitAndOffset(c)
+	users, err := h.userService.FindUsersByUsername(c.Request.Context(), username, limit, offset)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"users": users})
 }

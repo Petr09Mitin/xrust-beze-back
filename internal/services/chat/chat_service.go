@@ -23,6 +23,7 @@ type ChatService interface {
 	GetMessagesByChatID(ctx context.Context, chatID string, limit, offset int64) ([]chat_models.Message, error)
 	GetChannelsByUserID(ctx context.Context, userID string, limit, offset int64) ([]chat_models.Channel, error)
 	GetChannelByUserAndPeerIDs(ctx context.Context, userID, peerID string) (*chat_models.Channel, []chat_models.Message, error)
+	GetMessageByID(ctx context.Context, messageID string) (*chat_models.Message, error)
 }
 
 type UserService interface {
@@ -328,4 +329,8 @@ func (c *ChatServiceImpl) GetChannelByUserAndPeerIDs(ctx context.Context, userID
 		return nil, nil, err
 	}
 	return &channel, msgs, nil
+}
+
+func (c *ChatServiceImpl) GetMessageByID(ctx context.Context, messageID string) (*chat_models.Message, error) {
+	return c.msgRepo.GetMessageByID(ctx, messageID)
 }

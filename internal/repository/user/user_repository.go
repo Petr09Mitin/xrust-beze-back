@@ -23,6 +23,7 @@ type UserRepo interface {
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, page, limit int) ([]*user_model.User, error)
 	FindBySkills(ctx context.Context, skillsToLearn, skillsToShare []string) ([]*user_model.User, error)
+	FindByUsername(ctx context.Context, name string, limit, offset int64) ([]*user_model.User, error)
 }
 
 type userRepository struct {
@@ -191,6 +192,52 @@ func (r *userRepository) FindBySkills(ctx context.Context, skillsToLearn, skills
 	}()
 
 	var users []*user_model.User
+	if err = cursor.All(ctx, &users); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+func (r *userRepository) FindByUsername(ctx context.Context, name string, limit, offset int64) ([]*user_model.User, error) {
+	ctx, cancel := context.WithTimeout(ctx, r.timeout)
+	defer cancel()
+
+	filter := mongo.Pipeline{
+		{{
+			"$match", bson.D{
+				{"$text", bson.D{
+					{"$search", name},
+				}}},
+		}},
+		{{
+			"$project", bson.M{
+				"username": 1,
+				"score": bson.D{
+					{"$meta", "textScore"},
+				},
+			},
+		}},
+		{{
+			"$sort", bson.D{
+				{"score", 1},
+			},
+		}},
+		{{"$limit", limit + offset}},
+		{{"$skip", offset}},
+	}
+	cursor, err := r.collection.Aggregate(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		err = cursor.Close(ctx)
+		if err != nil {
+			r.logger.Error().Err(err).Msg("failed to close cursor")
+		}
+	}()
+
+	users := make([]*user_model.User, 0)
 	if err = cursor.All(ctx, &users); err != nil {
 		return nil, err
 	}

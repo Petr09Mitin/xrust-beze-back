@@ -20,6 +20,7 @@ type UserService interface {
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, page, limit int) ([]*user_model.User, error)
 	FindMatchingUsers(ctx context.Context, userID string) ([]*user_model.User, error)
+	FindUsersByUsername(ctx context.Context, username string, limit, offset int64) ([]*user_model.User, error)
 }
 
 type userService struct {
@@ -190,4 +191,14 @@ func (s *userService) FindMatchingUsers(ctx context.Context, userID string) ([]*
 	}
 
 	return filteredUsers, nil
+}
+
+func (s *userService) FindUsersByUsername(ctx context.Context, username string, limit, offset int64) ([]*user_model.User, error) {
+	if limit > 1000 || limit <= 0 {
+		limit = 1000
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	return s.userRepo.FindByUsername(ctx, username, limit, offset)
 }
