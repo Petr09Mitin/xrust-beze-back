@@ -200,30 +200,22 @@ func (r *userRepository) FindByUsername(ctx context.Context, name string, limit,
 	ctx, cancel := context.WithTimeout(ctx, r.timeout)
 	defer cancel()
 
-	filter := mongo.Pipeline{
-		{{
-			"$match", bson.D{
-				{"$text", bson.D{
-					{"$search", name},
-				}}},
-		}},
-		{{
-			"$project", bson.M{
-				"username": 1,
-				"score": bson.D{
-					{"$meta", "textScore"},
-				},
+	filter := bson.D{
+		{
+			"$text", bson.D{
+				{"$search", name},
 			},
-		}},
-		{{
-			"$sort", bson.D{
-				{"score", 1},
-			},
-		}},
-		{{"$limit", limit + offset}},
-		{{"$skip", offset}},
+		},
 	}
-	cursor, err := r.collection.Aggregate(ctx, filter)
+	cursor, err := r.collection.Find(
+		ctx,
+		filter,
+		options.
+			Find().
+			SetSort(bson.D{{"score", bson.D{{"$meta", "textScore"}}}}).
+			SetSkip(offset).
+			SetLimit(limit),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +226,7 @@ func (r *userRepository) FindByUsername(ctx context.Context, name string, limit,
 		}
 	}()
 
-	users := make([]*user_model.User, 0)
+	var users []*user_model.User
 	if err = cursor.All(ctx, &users); err != nil {
 		return nil, err
 	}
