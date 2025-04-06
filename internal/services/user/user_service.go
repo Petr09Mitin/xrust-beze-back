@@ -166,18 +166,13 @@ func (s *userService) FindMatchingUsers(ctx context.Context, userID string) ([]*
 	}
 
 	var skillsToLearn []string
-	var skillsToShare []string
 
 	for _, skill := range currentUser.SkillsToLearn {
 		skillsToLearn = append(skillsToLearn, skill.Name)
 	}
 
-	for _, skill := range currentUser.SkillsToShare {
-		skillsToShare = append(skillsToShare, skill.Name)
-	}
-
 	// Находим пользователей с подходящими навыками
-	matchingUsers, err := s.userRepo.FindBySkills(ctx, skillsToLearn, skillsToShare)
+	matchingUsers, err := s.userRepo.FindBySkills(ctx, skillsToLearn)
 	if err != nil {
 		return nil, err
 	}

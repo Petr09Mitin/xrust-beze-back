@@ -119,6 +119,7 @@ services:
   nginx_xb:
     image: nginx:1.27.4-perl
     container_name: nginx_xb
+    restart: on-failure
     ports:
       - "80:80"
       - "443:443"

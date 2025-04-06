@@ -22,7 +22,7 @@ type UserRepo interface {
 	Update(ctx context.Context, user *user_model.User) error
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, page, limit int) ([]*user_model.User, error)
-	FindBySkills(ctx context.Context, skillsToLearn, skillsToShare []string) ([]*user_model.User, error)
+	FindBySkills(ctx context.Context, skillsToLearn []string) ([]*user_model.User, error)
 	FindByUsername(ctx context.Context, name string, limit, offset int64) ([]*user_model.User, error)
 }
 
@@ -168,16 +168,13 @@ func (r *userRepository) List(ctx context.Context, page, limit int) ([]*user_mod
 	return users, nil
 }
 
-func (r *userRepository) FindBySkills(ctx context.Context, skillsToLearn, skillsToShare []string) ([]*user_model.User, error) {
+func (r *userRepository) FindBySkills(ctx context.Context, skillsToLearn []string) ([]*user_model.User, error) {
 	ctx, cancel := context.WithTimeout(ctx, r.timeout)
 	defer cancel()
 
 	filter := bson.M{}
 	if len(skillsToLearn) > 0 {
 		filter["skills_to_share.name"] = bson.M{"$in": skillsToLearn}
-	}
-	if len(skillsToShare) > 0 {
-		filter["skills_to_learn.name"] = bson.M{"$in": skillsToShare}
 	}
 
 	cursor, err := r.collection.Find(ctx, filter)
