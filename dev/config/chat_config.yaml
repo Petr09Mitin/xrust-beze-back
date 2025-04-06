@@ -8,6 +8,8 @@ services:
   structurization_service:
     host: "ml_explanator"
     port: 8091
+    timeout: 45
+    max_retries: 3
 
 mongo:
   host: "mongo_db"

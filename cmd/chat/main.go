@@ -55,7 +55,7 @@ func main() {
 	}
 	userGRPCClient := pb.NewUserServiceClient(userGRPCConn)
 	structurizationRepo := structurization_repo.NewStructurizationRepository(cfg.Services.StructurizationService, log)
-	chatService := chat_service.NewChatService(msgRepo, chanRepo, structurizationRepo, userGRPCClient, log)
+	chatService := chat_service.NewChatService(msgRepo, chanRepo, structurizationRepo, userGRPCClient, log, cfg)
 	m := melody.New()
 	kafkaSub, err := infrakafka.NewKafkaSubscriber(cfg.Kafka)
 	if err != nil {

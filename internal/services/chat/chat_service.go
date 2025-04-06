@@ -3,8 +3,10 @@ package chat_service
 import (
 	"context"
 	"errors"
+	"fmt"
 	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/config"
 	channelrepo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/channel"
 	message_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/chat"
 	structurization_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/structurization"
@@ -31,15 +33,17 @@ type ChatServiceImpl struct {
 	channelRepo         channelrepo.ChannelRepository
 	structurizationRepo structurization_repo.StructurizationRepository
 	userService         UserService
+	cfg                 *config.Chat
 	logger              zerolog.Logger
 }
 
-func NewChatService(msgRepo message_repo.MessageRepo, channelRepo channelrepo.ChannelRepository, structurizationRepo structurization_repo.StructurizationRepository, userService UserService, logger zerolog.Logger) ChatService {
+func NewChatService(msgRepo message_repo.MessageRepo, channelRepo channelrepo.ChannelRepository, structurizationRepo structurization_repo.StructurizationRepository, userService UserService, logger zerolog.Logger, cfg *config.Chat) ChatService {
 	return &ChatServiceImpl{
 		msgRepo:             msgRepo,
 		channelRepo:         channelRepo,
 		structurizationRepo: structurizationRepo,
 		userService:         userService,
+		cfg:                 cfg,
 		logger:              logger,
 	}
 }
@@ -89,15 +93,13 @@ func (c *ChatServiceImpl) ProcessStructurizationRequest(ctx context.Context, mes
 	if err != nil {
 		return err
 	}
-	question := c.concatenateMessages(ctx, prevMessages)
-	newCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
-	structurized, err := c.structurizationRepo.SendStructRequest(newCtx, question, oldMessage.Payload)
+	question := c.concatenateMessages(prevMessages)
+	structurized, err := c.trySendStructurizationRequest(ctx, question, oldMessage.Payload)
 	if err != nil {
 		return err
 	}
 	newMsg := *oldMessage
-	newMsg.Structurized = structurized.Explanation
+	newMsg.Structurized = structurized
 	newMsg.UpdatedAt = time.Now().Unix()
 	err = c.msgRepo.UpdateMessage(ctx, newMsg)
 	if err != nil {
@@ -267,10 +269,36 @@ func (c *ChatServiceImpl) GetChannelsByUserID(ctx context.Context, userID string
 	return channels, nil
 }
 
-func (c *ChatServiceImpl) concatenateMessages(ctx context.Context, messages []chat_models.Message) string {
+func (c *ChatServiceImpl) concatenateMessages(messages []chat_models.Message) string {
 	res := ""
 	for _, msg := range messages {
 		res += msg.Payload + " \n"
 	}
 	return res
+}
+
+func (c *ChatServiceImpl) trySendStructurizationRequest(ctx context.Context, question, answer string) (string, error) {
+	newCtx, cancel := context.WithTimeout(
+		ctx,
+		time.Duration(c.cfg.Services.StructurizationService.Timeout)*time.Second,
+	)
+	defer cancel()
+	i := c.cfg.Services.StructurizationService.MaxRetries
+loop:
+	for i > 0 {
+		select {
+		case <-newCtx.Done():
+			return "", custom_errors.ErrRequestTimeout
+		default:
+			i--
+			structurized, err := c.structurizationRepo.SendStructRequest(newCtx, question, answer)
+			if err != nil {
+				c.logger.Error().Err(err).Msg(fmt.Sprintf("trySendStructurizationRequest failed, %d retries remaining", i))
+				continue loop
+			}
+			return structurized.Explanation, nil
+		}
+	}
+
+	return "", custom_errors.ErrMaxRetriesExceeded
 }
