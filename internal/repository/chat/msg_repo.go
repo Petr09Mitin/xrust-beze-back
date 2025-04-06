@@ -107,8 +107,9 @@ func (m *MessageRepoImpl) PublishMessage(_ context.Context, msg chat_models.Mess
 func (m *MessageRepoImpl) getUpdateDocumentFromMsg(msg chat_models.Message) bson.M {
 	return bson.M{
 		"$set": bson.M{
-			"payload":    msg.Payload,
-			"updated_at": msg.UpdatedAt,
+			"payload":      msg.Payload,
+			"structurized": msg.Structurized,
+			"updated_at":   msg.UpdatedAt,
 		},
 	}
 }

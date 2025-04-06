@@ -22,7 +22,7 @@ type ChatService interface {
 	ProcessStructurizationRequest(ctx context.Context, message chat_models.Message) error
 	GetMessagesByChatID(ctx context.Context, chatID string, limit, offset int64) ([]chat_models.Message, error)
 	GetChannelsByUserID(ctx context.Context, userID string, limit, offset int64) ([]chat_models.Channel, error)
-	GetChannelByUserAndPeerIDs(ctx context.Context, userID, peerID string) (*chat_models.Channel, error)
+	GetChannelByUserAndPeerIDs(ctx context.Context, userID, peerID string) (*chat_models.Channel, []chat_models.Message, error)
 }
 
 type UserService interface {
@@ -243,7 +243,7 @@ func (c *ChatServiceImpl) GetChannelsByUserID(ctx context.Context, userID string
 	for i, channel := range channels {
 		msgs, err := c.msgRepo.GetMessagesByChannelID(ctx, channel.ID, 1, 0)
 		if err != nil {
-			c.logger.Err(err)
+			c.logger.Error().Err(err).Msg(fmt.Sprintf("error getting messages by channel %s", channel.ID))
 			continue
 		}
 		if len(msgs) > 0 {
@@ -255,12 +255,12 @@ func (c *ChatServiceImpl) GetChannelsByUserID(ctx context.Context, userID string
 				Id: userID,
 			})
 			if err != nil {
-				c.logger.Err(err)
+				c.logger.Error().Err(err).Msg(fmt.Sprintf("unable to get user %s", userID))
 				continue
 			}
 			user, err := user_grpc.ConvertProtoToDomain(res.GetUser())
 			if err != nil {
-				c.logger.Err(err)
+				c.logger.Error().Err(err).Msg(fmt.Sprintf("unable to convert to domain user %s", userID))
 				continue
 			}
 			channels[i].Users = append(channels[i].Users, *user)
@@ -304,10 +304,29 @@ loop:
 	return "", custom_errors.ErrMaxRetriesExceeded
 }
 
-func (c *ChatServiceImpl) GetChannelByUserAndPeerIDs(ctx context.Context, userID, peerID string) (*chat_models.Channel, error) {
+func (c *ChatServiceImpl) GetChannelByUserAndPeerIDs(ctx context.Context, userID, peerID string) (*chat_models.Channel, []chat_models.Message, error) {
 	channel, err := c.channelRepo.GetByUserIDs(ctx, []string{userID, peerID})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return &channel, nil
+	for _, userID := range channel.UserIDs {
+		res, err := c.userService.GetUser(ctx, &pb.GetUserRequest{
+			Id: userID,
+		})
+		if err != nil {
+			c.logger.Error().Err(err).Msg(fmt.Sprintf("unable to get user %s", userID))
+			continue
+		}
+		user, err := user_grpc.ConvertProtoToDomain(res.GetUser())
+		if err != nil {
+			c.logger.Error().Err(err).Msg(fmt.Sprintf("unable to convert to domain user %s", userID))
+			continue
+		}
+		channel.Users = append(channel.Users, *user)
+	}
+	msgs, err := c.msgRepo.GetMessagesByChannelID(ctx, channel.ID, 200, 0)
+	if err != nil {
+		return nil, nil, err
+	}
+	return &channel, msgs, nil
 }

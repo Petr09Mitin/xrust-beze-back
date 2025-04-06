@@ -208,7 +208,7 @@ func (ch *Chat) handleGetChannelByUserAndPeerIDs(c *gin.Context) {
 		return
 	}
 
-	channel, err := ch.ChatService.GetChannelByUserAndPeerIDs(c.Request.Context(), userID, peerID)
+	channel, msgs, err := ch.ChatService.GetChannelByUserAndPeerIDs(c.Request.Context(), userID, peerID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "invalid userID or peerID",
@@ -216,6 +216,7 @@ func (ch *Chat) handleGetChannelByUserAndPeerIDs(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"channel": channel,
+		"channel":  channel,
+		"messages": msgs,
 	})
 }
