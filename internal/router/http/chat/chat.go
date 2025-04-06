@@ -19,6 +19,7 @@ import (
 
 const (
 	userIDQueryParam = "user_id"
+	peerIDQueryParam = "peer_id"
 )
 
 type Chat struct {
@@ -55,6 +56,7 @@ func (ch *Chat) InitRouter() {
 	{
 		chatGroup.GET("/ws", ch.HandleWSConn)
 		chatGroup.GET("/:channelID", ch.HandleGetMessagesByChannelID)
+		chatGroup.GET("/channels/by-peer", ch.handleGetChannelByUserAndPeerIDs)
 		chatGroup.GET("/channels", ch.HandleGetChannelsByUserID)
 	}
 }
@@ -68,14 +70,19 @@ func (ch *Chat) InitWS() error {
 	})
 
 	ch.M.HandleMessage(func(s *melody.Session, msg []byte) {
-		err := ch.handleTextMessage(s.Request.Context(), msg)
+		err := ch.handleMessage(s.Request.Context(), msg)
 		if err != nil {
 			data, err := json.Marshal(map[string]string{"error": err.Error()})
 			if err != nil {
-				ch.logger.Err(err)
+				ch.logger.Error().Err(err).Msg("unable to marshal error")
 				return
 			}
-			s.Write(data)
+			err = s.Write(data)
+			if err != nil {
+				ch.logger.Error().Err(err).Msg("unable to write error to response")
+				return
+			}
+			return
 		}
 	})
 
@@ -107,6 +114,7 @@ func (ch *Chat) HandleWSConn(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"err": err.Error(),
 		})
+		return
 	}
 }
 
@@ -115,7 +123,7 @@ func (ch *Chat) handleNewChatJoin(s *melody.Session) {
 	s.Set(UserIDSessionParam, userID)
 }
 
-func (ch *Chat) handleTextMessage(ctx context.Context, msg []byte) error {
+func (ch *Chat) handleMessage(ctx context.Context, msg []byte) error {
 	parsedMsg := chat_models.Message{}
 	err := json.Unmarshal(msg, &parsedMsg)
 	if err != nil {
@@ -175,6 +183,7 @@ func (ch *Chat) HandleGetChannelsByUserID(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "invalid userID",
 		})
+		return
 	}
 	limit, offset := httpparser.GetLimitAndOffset(c)
 	channels, err := ch.ChatService.GetChannelsByUserID(c.Request.Context(), userID, limit, offset)
@@ -182,8 +191,31 @@ func (ch *Chat) HandleGetChannelsByUserID(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"channels": channels,
+	})
+}
+
+func (ch *Chat) handleGetChannelByUserAndPeerIDs(c *gin.Context) {
+	userID := strings.TrimSpace(c.Query(userIDQueryParam))
+	peerID := strings.TrimSpace(c.Query(peerIDQueryParam))
+	if userID == "" || peerID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid userID or peerID",
+		})
+		return
+	}
+
+	channel, err := ch.ChatService.GetChannelByUserAndPeerIDs(c.Request.Context(), userID, peerID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid userID or peerID",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"channel": channel,
 	})
 }

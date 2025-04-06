@@ -22,6 +22,7 @@ type ChatService interface {
 	ProcessStructurizationRequest(ctx context.Context, message chat_models.Message) error
 	GetMessagesByChatID(ctx context.Context, chatID string, limit, offset int64) ([]chat_models.Message, error)
 	GetChannelsByUserID(ctx context.Context, userID string, limit, offset int64) ([]chat_models.Channel, error)
+	GetChannelByUserAndPeerIDs(ctx context.Context, userID, peerID string) (*chat_models.Channel, error)
 }
 
 type UserService interface {
@@ -301,4 +302,12 @@ loop:
 	}
 
 	return "", custom_errors.ErrMaxRetriesExceeded
+}
+
+func (c *ChatServiceImpl) GetChannelByUserAndPeerIDs(ctx context.Context, userID, peerID string) (*chat_models.Channel, error) {
+	channel, err := c.channelRepo.GetByUserIDs(ctx, []string{userID, peerID})
+	if err != nil {
+		return nil, err
+	}
+	return &channel, nil
 }
