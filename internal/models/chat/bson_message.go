@@ -8,7 +8,7 @@ type BSONMessage struct {
 	UserID       string        `bson:"user_id"`
 	PeerID       string        `bson:"peer_id"`
 	Payload      string        `bson:"payload"`
-	Structurized string        `bson:"structurized"`
+	Structurized string        `bson:"structurized,omitempty"`
 	CreatedAt    int64         `bson:"created_at"`
 	UpdatedAt    int64         `bson:"updated_at"`
 }
