@@ -116,21 +116,21 @@ services:
     depends_on:
       - ml_explanator
 
-#  nginx_xb:
-#    image: nginx:1.27.4-perl
-#    container_name: nginx_xb
-#    ports:
-#      - "80:80"
-#      - "443:443"
-#    depends_on:
-#      - chat_service
-#      - ml_explanator
-#      - ml_check
-#      - user_service
-#      - file_service
-#    volumes:
-#      - ./dev/nginx:/etc/nginx
-#      - /etc/letsencrypt:/etc/letsencrypt
+  nginx_xb:
+    image: nginx:1.27.4-perl
+    container_name: nginx_xb
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - chat_service
+      - ml_explanator
+      - ml_check
+      - user_service
+      - file_service
+    volumes:
+      - ./dev/nginx:/etc/nginx
+      - /etc/letsencrypt:/etc/letsencrypt
 
 volumes:
   mongo_data:
