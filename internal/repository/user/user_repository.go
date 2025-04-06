@@ -202,8 +202,9 @@ func (r *userRepository) FindByUsername(ctx context.Context, name string, limit,
 
 	filter := bson.D{
 		{
-			"$text", bson.D{
-				{"$search", name},
+			"username", bson.D{
+				{"$regex", name},
+				{"$options", "i"},
 			},
 		},
 	}
@@ -212,7 +213,6 @@ func (r *userRepository) FindByUsername(ctx context.Context, name string, limit,
 		filter,
 		options.
 			Find().
-			SetSort(bson.D{{"score", bson.D{{"$meta", "textScore"}}}}).
 			SetSkip(offset).
 			SetLimit(limit),
 	)
