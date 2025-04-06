@@ -23,7 +23,7 @@ type UserRepo interface {
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, page, limit int) ([]*user_model.User, error)
 	FindBySkills(ctx context.Context, skillsToLearn []string) ([]*user_model.User, error)
-	FindByUsername(ctx context.Context, name string, limit, offset int64) ([]*user_model.User, error)
+	FindByUsername(ctx context.Context, currUserID, name string, limit, offset int64) ([]*user_model.User, error)
 }
 
 type userRepository struct {
@@ -196,14 +196,21 @@ func (r *userRepository) FindBySkills(ctx context.Context, skillsToLearn []strin
 	return users, nil
 }
 
-func (r *userRepository) FindByUsername(ctx context.Context, name string, limit, offset int64) ([]*user_model.User, error) {
+func (r *userRepository) FindByUsername(ctx context.Context, currUserID, name string, limit, offset int64) ([]*user_model.User, error) {
 	ctx, cancel := context.WithTimeout(ctx, r.timeout)
 	defer cancel()
+	id, err := primitive.ObjectIDFromHex(currUserID)
+	if err != nil {
+		return nil, err
+	}
 
 	filter := bson.D{
+		{"_id", bson.D{
+			{"$ne", id},
+		}},
 		{
 			"username", bson.D{
-				{"$regex", name},
+				{"$regex", "^" + name},
 				{"$options", "i"},
 			},
 		},
@@ -226,7 +233,7 @@ func (r *userRepository) FindByUsername(ctx context.Context, name string, limit,
 		}
 	}()
 
-	var users []*user_model.User
+	users := make([]*user_model.User, 0)
 	if err = cursor.All(ctx, &users); err != nil {
 		return nil, err
 	}

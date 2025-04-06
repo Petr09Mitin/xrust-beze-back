@@ -167,12 +167,13 @@ func (h *UserHandler) FindMatchingUsers(c *gin.Context) {
 
 func (h *UserHandler) FindByUsername(c *gin.Context) {
 	username := strings.TrimSpace(c.Query("username"))
-	if username == "" {
+	userID := strings.TrimSpace(c.Query("user_id"))
+	if username == "" || userID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "username is required"})
 		return
 	}
 	limit, offset := httpparser.GetLimitAndOffset(c)
-	users, err := h.userService.FindUsersByUsername(c.Request.Context(), username, limit, offset)
+	users, err := h.userService.FindUsersByUsername(c.Request.Context(), userID, username, limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
