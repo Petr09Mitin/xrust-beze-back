@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/config"
 	infrakafka "github.com/Petr09Mitin/xrust-beze-back/internal/pkg/kafka"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/logger"
@@ -61,6 +62,10 @@ func main() {
 		return
 	}
 	msgRouter, err := infrakafka.NewBrokerRouter()
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to initialize kafka msg_router")
+		return
+	}
 	msgSub, err := chat.NewMessageSubscriber(msgRouter, kafkaSub, m, log)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to connect to kafka msg_sub")

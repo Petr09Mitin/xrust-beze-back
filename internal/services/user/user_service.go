@@ -2,17 +2,19 @@ package user_service
 
 import (
 	"context"
+	"time"
+
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	filepb "github.com/Petr09Mitin/xrust-beze-back/proto/file"
 	"github.com/rs/zerolog"
-	"time"
 
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
 	user_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/user"
 )
 
 type UserService interface {
-	Create(ctx context.Context, user *user_model.User) error
+	// Create(ctx context.Context, user *user_model.User) error
+	Create(ctx context.Context, user *user_model.User, hashedPassword string) error
 	GetByID(ctx context.Context, id string) (*user_model.User, error)
 	GetByEmail(ctx context.Context, email string) (*user_model.User, error)
 	GetByUsername(ctx context.Context, username string) (*user_model.User, error)
@@ -38,7 +40,8 @@ func NewUserService(userRepo user_repo.UserRepo, fileGRPC filepb.FileServiceClie
 	}
 }
 
-func (s *userService) Create(ctx context.Context, user *user_model.User) error {
+// func (s *userService) Create(ctx context.Context, user *user_model.User) error {
+func (s *userService) Create(ctx context.Context, user *user_model.User, hashedPassword string) error {
 	if err := user.Validate(); err != nil {
 		return err
 	}
@@ -54,14 +57,16 @@ func (s *userService) Create(ctx context.Context, user *user_model.User) error {
 		return custom_errors.ErrUsernameAlreadyExists
 	}
 
-	_, err = s.fileGRPC.MoveTempFileToAvatars(ctx, &filepb.MoveTempFileToAvatarsRequest{
-		Filename: user.Avatar,
-	})
-	if err != nil {
-		return err
+	if user.Avatar != "" {
+		_, err = s.fileGRPC.MoveTempFileToAvatars(ctx, &filepb.MoveTempFileToAvatarsRequest{
+			Filename: user.Avatar,
+		})
+		if err != nil {
+			return err
+		}
 	}
 
-	return s.userRepo.Create(ctx, user)
+	return s.userRepo.Create(ctx, user, hashedPassword)
 }
 
 func (s *userService) GetByID(ctx context.Context, id string) (*user_model.User, error) {

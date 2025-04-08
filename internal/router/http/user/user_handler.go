@@ -2,10 +2,10 @@ package user_http
 
 import (
 	"errors"
-	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	"net/http"
 	"strconv"
 
+	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
 	user_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/user"
 	"github.com/gin-gonic/gin"
@@ -24,7 +24,8 @@ func NewUserHandler(router *gin.Engine, userService user_service.UserService) {
 
 	userGroup := router.Group("/api/v1/users")
 	{
-		userGroup.POST("", handler.Create)
+		userGroup.POST("/create", handler.Create)
+
 		userGroup.GET("/:id", handler.GetByID)
 		userGroup.PUT("/:id", handler.Update)
 		userGroup.DELETE("/:id", handler.Delete)
@@ -33,6 +34,7 @@ func NewUserHandler(router *gin.Engine, userService user_service.UserService) {
 	}
 }
 
+// ручка для тестов, регистрация в сервисе auth
 func (h *UserHandler) Create(c *gin.Context) {
 	ctx := c.Request.Context()
 	var input user_model.User
@@ -41,13 +43,14 @@ func (h *UserHandler) Create(c *gin.Context) {
 		return
 	}
 
-	if err := h.userService.Create(ctx, &input); err != nil {
+	hashedPassword := "dummy"
+	if err := h.userService.Create(ctx, &input, hashedPassword); err != nil {
 		// Проверяем, является ли ошибка ошибкой валидации
 		if _, ok := err.(validator.ValidationErrors); ok {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
 	}
 

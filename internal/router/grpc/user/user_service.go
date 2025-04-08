@@ -3,6 +3,7 @@ package user_grpc
 import (
 	"context"
 	"fmt"
+
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
 	user_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/user"
 	pb "github.com/Petr09Mitin/xrust-beze-back/proto/user"
@@ -60,7 +61,7 @@ func (s *UserService) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 		PreferredFormat: req.PreferredFormat,
 	}
 
-	if err := s.userService.Create(ctx, u); err != nil {
+	if err := s.userService.Create(ctx, u, req.HashedPassword); err != nil {
 		// Проверяем, является ли ошибка ошибкой валидации
 		if _, ok := err.(validator.ValidationErrors); ok {
 			s.logger.Error().Err(err).Msg("validation err")
@@ -76,7 +77,7 @@ func (s *UserService) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 }
 
 // GetUser получает пользователя по ID
-func (s *UserService) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.UserResponse, error) {
+func (s *UserService) GetUser(ctx context.Context, req *pb.GetUserByIDRequest) (*pb.UserResponse, error) {
 	u, err := s.userService.GetByID(ctx, req.Id)
 	if err != nil {
 		s.logger.Error().Err(err).Msg("get user err")

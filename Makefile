@@ -16,12 +16,28 @@ start:
 stop:
 	docker-compose down
 
-proto:
-	protoc --go_out=. --go-grpc_out=. proto/user/user.proto && protoc --go_out=. --go-grpc_out=. proto/file/file.proto
+PROTO_FILES := proto/user/user.proto proto/file/file.proto
+proto: $(PROTO_FILES)
+	protoc --go_out=. --go-grpc_out=. proto/user/user.proto 
+	protoc --go_out=. --go-grpc_out=. proto/file/file.proto
 
 # микросервис user
 build-user:
 	docker build -t xrust_beze_user:latest -f cmd/user/Dockerfile .
 
-start-user-only: build-user
+build-file:
+	docker build -t xrust_beze_file:latest -f cmd/file/Dockerfile .
+
+start-user-only: build-user build-file
 	docker-compose up -d mongo_db user_service
+
+start-all-user-only:
+	docker build -t xrust_beze_user:latest -f cmd/user/Dockerfile . \
+	&& docker build -t xrust_beze_file:latest -f cmd/file/Dockerfile . \
+	&& docker-compose up
+
+build-auth:
+	docker build -t xrust_beze_auth:latest -f cmd/auth/Dockerfile .
+
+start-auth-only: build-auth
+	docker-compose up -d redis_xb auth_service

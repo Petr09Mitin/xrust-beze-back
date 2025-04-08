@@ -1,0 +1,20 @@
+http:
+  port: 8080
+
+redis:
+  host: redis_xb
+  port: 6379
+  password: ""  # если нет
+  db: 0
+
+cookie:
+  name: skill_sharing_token
+  domain: skill-sharing.ru
+  max_age: 86400
+  secure: true
+  http_only: true
+
+services:
+  user_service:
+    host: user_service
+    port: 50051

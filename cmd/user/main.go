@@ -4,17 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/config"
-	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/logger"
-	"github.com/Petr09Mitin/xrust-beze-back/internal/router/middleware"
-	"github.com/rs/zerolog"
-	"google.golang.org/grpc/credentials/insecure"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/config"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/logger"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/router/middleware"
+	"github.com/rs/zerolog"
+	"google.golang.org/grpc/credentials/insecure"
 
 	user_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/user"
 	grpc_handler "github.com/Petr09Mitin/xrust-beze-back/internal/router/grpc/user"
@@ -82,7 +83,7 @@ func main() {
 			Handler: router,
 		}
 
-		log.Printf("HTTP server starting on port %s...", httpPort)
+		log.Printf("HTTP server starting on port %d...", httpPort)
 		// if err := router.Run(":" + httpPort); err != nil && err != httpparser.ErrServerClosed {
 		// 	errChan <- fmt.Errorf("failed to run HTTP server: %v", err)
 		// }
@@ -95,7 +96,7 @@ func main() {
 	go func() {
 		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
 		if err != nil {
-			errChan <- fmt.Errorf("failed to listen on port %s: %v", grpcPort, err)
+			errChan <- fmt.Errorf("failed to listen on port %d: %v", grpcPort, err)
 			return
 		}
 
@@ -103,7 +104,7 @@ func main() {
 		userGrpcService := grpc_handler.NewUserService(userService, log)
 		pb.RegisterUserServiceServer(grpcServer, userGrpcService)
 
-		log.Printf("gRPC server starting on port %s...", grpcPort)
+		log.Printf("gRPC server starting on port %d...", grpcPort)
 		if err := grpcServer.Serve(lis); err != nil {
 			errChan <- fmt.Errorf("failed to serve gRPC: %v", err)
 		}
@@ -134,7 +135,7 @@ func initMongo(log zerolog.Logger, cfg *config.Mongo) (*mongo.Database, error) {
 	log.Println("Connecting to MongoDB...")
 
 	uri := fmt.Sprintf(
-		"mongodb://%s:%s@%s:%d",
+		"mongodb://%s:%s@%s:%d/?authSource=admin",
 		cfg.Username,
 		cfg.Password,
 		cfg.Host,
@@ -144,6 +145,8 @@ func initMongo(log zerolog.Logger, cfg *config.Mongo) (*mongo.Database, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+
+	log.Printf("Connecting to MongoDB with URI: %s", uri)
 
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {

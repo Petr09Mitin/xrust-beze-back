@@ -3,9 +3,10 @@ package user_repo
 import (
 	"context"
 	"errors"
+	"time"
+
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	"github.com/rs/zerolog"
-	"time"
 
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
 	"go.mongodb.org/mongo-driver/bson"
@@ -15,7 +16,8 @@ import (
 )
 
 type UserRepo interface {
-	Create(ctx context.Context, user *user_model.User) error
+	// Create(ctx context.Context, user *user_model.User) error
+	Create(ctx context.Context, user *user_model.User, hashedPassword string) error
 	GetByID(ctx context.Context, id string) (*user_model.User, error)
 	GetByEmail(ctx context.Context, email string) (*user_model.User, error)
 	GetByUsername(ctx context.Context, username string) (*user_model.User, error)
@@ -39,7 +41,8 @@ func NewUserRepository(db *mongo.Database, timeout time.Duration, logger zerolog
 	}
 }
 
-func (r *userRepository) Create(ctx context.Context, user *user_model.User) error {
+// func (r *userRepository) Create(ctx context.Context, user *user_model.User) error {
+func (r *userRepository) Create(ctx context.Context, user *user_model.User, hashedPassword string) error {
 	ctx, cancel := context.WithTimeout(ctx, r.timeout)
 	defer cancel()
 
@@ -47,7 +50,27 @@ func (r *userRepository) Create(ctx context.Context, user *user_model.User) erro
 	user.UpdatedAt = time.Now()
 	user.LastActiveAt = time.Now()
 
-	result, err := r.collection.InsertOne(ctx, user)
+	// result, err := r.collection.InsertOne(ctx, user)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// user.ID = result.InsertedID.(primitive.ObjectID)
+	// return nil
+	data, err := bson.Marshal(user)
+	if err != nil {
+		return err
+	}
+
+	var doc bson.M
+	if err := bson.Unmarshal(data, &doc); err != nil {
+		return err
+	}
+
+	// Добавляем хэш пароля вручную
+	doc["password_hash"] = hashedPassword
+
+	result, err := r.collection.InsertOne(ctx, doc)
 	if err != nil {
 		return err
 	}

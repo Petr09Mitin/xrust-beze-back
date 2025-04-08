@@ -8,7 +8,8 @@ import "google/protobuf/timestamp.proto";
 
 service UserService {
   rpc CreateUser(CreateUserRequest) returns (UserResponse);
-  rpc GetUser(GetUserRequest) returns (UserResponse);
+  rpc GetUserByID(GetUserByIDRequest) returns (UserResponse);
+  rpc GetUserByEmailToLogin(GetUserByEmailRequest) returns (UserToLoginResponse);
   rpc UpdateUser(UpdateUserRequest) returns (UserResponse);
   rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
   rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
@@ -35,18 +36,29 @@ message User {
   string preferred_format = 11;
 }
 
+message UserToLogin {
+  string id = 1;
+  string email = 2;
+  string password = 3;
+}
+
 message CreateUserRequest {
   string username = 1;
   string email = 2;
-  repeated Skill skills_to_learn = 3;
-  repeated Skill skills_to_share = 4;
-  string bio = 5;
-  string avatar_url = 6;
-  string preferred_format = 7;
+  string hashed_password = 3;
+  repeated Skill skills_to_learn = 4;
+  repeated Skill skills_to_share = 5;
+  string bio = 6;
+  string avatar_url = 7;
+  string preferred_format = 8;
 }
 
-message GetUserRequest {
+message GetUserByIDRequest {
   string id = 1;
+}
+
+message GetUserByEmailRequest {
+  string email = 1;
 }
 
 message UpdateUserRequest {
@@ -70,6 +82,10 @@ message DeleteUserResponse {
 
 message UserResponse {
   User user = 1;
+}
+
+message UserToLoginResponse {
+  UserToLogin UserToLogin = 1;
 }
 
 message ListUsersRequest {

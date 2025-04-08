@@ -3,6 +3,8 @@ package chat_service
 import (
 	"context"
 	"errors"
+	"time"
+
 	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	channelrepo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/channel"
@@ -11,7 +13,6 @@ import (
 	pb "github.com/Petr09Mitin/xrust-beze-back/proto/user"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
-	"time"
 )
 
 type ChatService interface {
@@ -21,7 +22,7 @@ type ChatService interface {
 }
 
 type UserService interface {
-	GetUser(ctx context.Context, in *pb.GetUserRequest, opts ...grpc.CallOption) (*pb.UserResponse, error)
+	GetUserByID(ctx context.Context, in *pb.GetUserByIDRequest, opts ...grpc.CallOption) (*pb.UserResponse, error)
 }
 
 type ChatServiceImpl struct {
@@ -205,7 +206,7 @@ func (c *ChatServiceImpl) GetChannelsByUserID(ctx context.Context, userID string
 		}
 
 		for _, userID := range channel.UserIDs {
-			res, err := c.userService.GetUser(ctx, &pb.GetUserRequest{
+			res, err := c.userService.GetUserByID(ctx, &pb.GetUserByIDRequest{
 				Id: userID,
 			})
 			if err != nil {

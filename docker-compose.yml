@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   zookeeper_xb:
     container_name: zookeeper_xb
@@ -31,8 +33,11 @@ services:
       - "27025:27017"
     container_name: mongo_db
     restart: always
-    env_file:
-      - ./.env
+    # env_file:
+    #   - ./.env
+    # environment:
+    #   MONGO_INITDB_ROOT_USERNAME: admin
+    #   MONGO_INITDB_ROOT_PASSWORD: admin
     volumes:
       - ./dev/mongo:/scripts
       - mongo_data:/data/db
@@ -84,8 +89,8 @@ services:
   user_service:
     image: xrust_beze_user:latest
     container_name: user_service
-    env_file:
-      - ./user_service.env
+    # env_file:
+    #   - ./user_service.env
     ports:
       - "8083:8080"  # HTTP порт (изменен, чтобы не конфликтовать с другими сервисами)
       - "50051:50051"  # gRPC порт
@@ -132,7 +137,29 @@ services:
       - ./dev/nginx:/etc/nginx
       - /etc/letsencrypt:/etc/letsencrypt
 
+  auth_service:
+    image: xrust_beze_auth:latest  # предположим, что билдится как и другие сервисы
+    container_name: auth_service
+    ports:
+      - "8082:8080"  # или любой другой, чтобы не конфликтовать
+    volumes:
+      - .:/app
+    restart: always
+    depends_on:
+      - redis_xb
+      - user_service
+
+  redis_xb:
+    image: redis:alpine
+    container_name: redis_xb
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
 volumes:
   mongo_data:
   kafka_data:
   minio_data:
+  redis_data:
