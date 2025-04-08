@@ -18,6 +18,9 @@ if st.button("Check"):
                 if response.status_code == 200:
                     st.success("Расширенный ответ:")
                     st.write(response.json().get("is_profanity", "Нет данных"))
+                    st.write(response.json().get("swearing_list"))
+                    st.dataframe(response.json().get("result"))
+                    st.markdown("### Как выглядит json:")
                     st.write(response.json())
                 else:
                     st.error(f"Ошибка: {response.status_code} - {response.json().get('detail')}")
