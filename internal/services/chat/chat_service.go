@@ -108,6 +108,8 @@ func (c *ChatServiceImpl) ProcessStructurizationRequest(ctx context.Context, mes
 	if err != nil {
 		return err
 	}
+	newMsg.Type = chat_models.UpdateMessageType
+	newMsg.Event = chat_models.StructurizationEvent
 
 	err = c.msgRepo.PublishMessage(ctx, newMsg)
 	if err != nil {
