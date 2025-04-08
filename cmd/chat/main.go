@@ -57,6 +57,7 @@ func main() {
 	structurizationRepo := structurization_repo.NewStructurizationRepository(cfg.Services.StructurizationService, log)
 	chatService := chat_service.NewChatService(msgRepo, chanRepo, structurizationRepo, userGRPCClient, log, cfg)
 	m := melody.New()
+	m.Config.MaxMessageSize = 1 << 20
 	kafkaSub, err := infrakafka.NewKafkaSubscriber(cfg.Kafka)
 	if err != nil {
 		log.Err(err).Msg("failed to connect to kafka sub")
