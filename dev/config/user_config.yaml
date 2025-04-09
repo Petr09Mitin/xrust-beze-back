@@ -15,3 +15,6 @@ services:
   file_service:
     host: file_service
     port: 50051
+  auth_service:
+    host: auth_service
+    port: 50051

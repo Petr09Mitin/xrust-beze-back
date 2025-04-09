@@ -19,6 +19,7 @@ type Cookie struct {
 
 type Auth struct {
 	HTTP     *HTTP     `mapstructure:"http"`
+	GRPC     *GRPC     `mapstructure:"grpc"`
 	Redis    *Redis    `mapstructure:"redis"`
 	Cookie   *Cookie   `mapstructure:"cookie"`
 	Services *Services `mapstructure:"services"`

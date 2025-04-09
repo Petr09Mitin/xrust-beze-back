@@ -16,10 +16,11 @@ start:
 stop:
 	docker-compose down
 
-PROTO_FILES := proto/user/user.proto proto/file/file.proto
+PROTO_FILES := proto/user/user.proto proto/file/file.proto proto/auth/auth.proto
 proto: $(PROTO_FILES)
-	protoc --go_out=. --go-grpc_out=. proto/user/user.proto 
+	protoc --go_out=. --go-grpc_out=. proto/user/user.proto
 	protoc --go_out=. --go-grpc_out=. proto/file/file.proto
+	protoc --go_out=. --go-grpc_out=. proto/auth/auth.proto
 
 # микросервис user
 build-user:

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
+	authpb "github.com/Petr09Mitin/xrust-beze-back/proto/auth"
 	filepb "github.com/Petr09Mitin/xrust-beze-back/proto/file"
 	"github.com/rs/zerolog"
 
@@ -30,14 +31,16 @@ type UserService interface {
 type userService struct {
 	userRepo user_repo.UserRepo
 	fileGRPC filepb.FileServiceClient
+	authGRPC authpb.AuthServiceClient
 	timeout  time.Duration
 	logger   zerolog.Logger
 }
 
-func NewUserService(userRepo user_repo.UserRepo, fileGRPC filepb.FileServiceClient, timeout time.Duration, logger zerolog.Logger) UserService {
+func NewUserService(userRepo user_repo.UserRepo, fileGRPC filepb.FileServiceClient, authGRPC authpb.AuthServiceClient, timeout time.Duration, logger zerolog.Logger) UserService {
 	return &userService{
 		userRepo: userRepo,
 		fileGRPC: fileGRPC,
+		authGRPC: authGRPC,
 		timeout:  timeout,
 		logger:   logger,
 	}

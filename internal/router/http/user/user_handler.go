@@ -5,9 +5,11 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/Petr09Mitin/xrust-beze-back/internal/middleware"
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
 	user_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/user"
+	authpb "github.com/Petr09Mitin/xrust-beze-back/proto/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -17,7 +19,7 @@ type UserHandler struct {
 	userService user_service.UserService
 }
 
-func NewUserHandler(router *gin.Engine, userService user_service.UserService) {
+func NewUserHandler(router *gin.Engine, userService user_service.UserService, authClient authpb.AuthServiceClient) {
 	handler := &UserHandler{
 		userService: userService,
 	}
@@ -25,12 +27,16 @@ func NewUserHandler(router *gin.Engine, userService user_service.UserService) {
 	userGroup := router.Group("/api/v1/users")
 	{
 		userGroup.POST("/create", handler.Create)
-
 		userGroup.GET("/:id", handler.GetByID)
-		userGroup.PUT("/:id", handler.Update)
-		userGroup.DELETE("/:id", handler.Delete)
 		userGroup.GET("", handler.List)
 		userGroup.GET("/match/:id", handler.FindMatchingUsers)
+	}
+
+	secure := router.Group("/api/v1/users")
+	secure.Use(middleware.AuthMiddleware(authClient))
+	{
+		secure.PUT("/:id", handler.Update)
+		secure.DELETE("/:id", handler.Delete)
 	}
 }
 
@@ -71,15 +77,32 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 }
 
 func (h *UserHandler) Update(c *gin.Context) {
-
-	// добавить в слой services проверку user id
-
 	ctx := c.Request.Context()
-	id := c.Param("id")
-	objectID, err := primitive.ObjectIDFromHex(id)
+
+	// userIDCtx, exists := c.Get("user_id")
+	// if !exists {
+	// 	c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+	// 	// в общем случае такие не должны допускаться сюда мидлварой
+	// 	return
+	// }
+	// userIDStr, ok := userIDCtx.(string)
+	// if !ok {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user_id format"})
+	// 	return
+	// }
+	// paramID := c.Param("id")
+	// if userIDStr != paramID {
+	// 	c.JSON(http.StatusForbidden, gin.H{"error": "cannot update another user's data"})
+	// 	return
+	// }
+	// userObjectID, err := primitive.ObjectIDFromHex(userIDStr)
+	// if err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+	// 	return
+	// }
+	userObjectID, err := extractAndValidateUserID(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
-		return
+		return // JSON-ответ уже установлен в функции
 	}
 
 	var input user_model.User
@@ -87,8 +110,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	input.ID = objectID
+	input.ID = userObjectID
 
 	if err := h.userService.Update(ctx, &input); err != nil {
 		if errors.Is(err, custom_errors.ErrNotFound) {
@@ -108,13 +130,15 @@ func (h *UserHandler) Update(c *gin.Context) {
 }
 
 func (h *UserHandler) Delete(c *gin.Context) {
-
-	// добавить в слой services проверку user id
-
 	ctx := c.Request.Context()
-	id := c.Param("id")
 
-	err := h.userService.Delete(ctx, id)
+	_, err := extractAndValidateUserID(c)
+	if err != nil {
+		return // JSON-ответ уже установлен в функции
+	}
+
+	id := c.Param("id")
+	err = h.userService.Delete(ctx, id)
 	if errors.Is(err, custom_errors.ErrNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -163,4 +187,33 @@ func (h *UserHandler) FindMatchingUsers(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, users)
+}
+
+// ExtractAndValidateUserID извлекает user_id из контекста и проверяет соответствие параметру запроса
+func extractAndValidateUserID(c *gin.Context) (primitive.ObjectID, error) {
+	userIDCtx, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return primitive.NilObjectID, custom_errors.ErrMissingUserID
+	}
+
+	userIDStr, ok := userIDCtx.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user_id format"})
+		return primitive.NilObjectID, custom_errors.ErrInvalidUserIDType
+	}
+
+	paramID := c.Param("id")
+	if userIDStr != paramID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "cannot update another user's data"})
+		return primitive.NilObjectID, custom_errors.ErrUserIDMismatch
+	}
+
+	userObjectID, err := primitive.ObjectIDFromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		return primitive.NilObjectID, custom_errors.ErrInvalidUserID
+	}
+
+	return userObjectID, nil
 }

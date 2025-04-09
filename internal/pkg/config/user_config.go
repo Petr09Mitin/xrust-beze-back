@@ -4,6 +4,7 @@ import "github.com/spf13/viper"
 
 type UserServiceServices struct {
 	File *GRPCService `mapstructure:"file_service"`
+	Auth *GRPCService `mapstructure:"auth_service"`
 }
 
 type User struct {

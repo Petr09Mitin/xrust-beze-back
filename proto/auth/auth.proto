@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package = "proto/auth";
+
+service AuthService {
+  rpc ValidateSession(SessionRequest) returns (SessionResponse);
+}
+
+message SessionRequest {
+  string session_id = 1;
+}
+
+message SessionResponse {
+  string user_id = 1;
+  bool valid = 2;
+}

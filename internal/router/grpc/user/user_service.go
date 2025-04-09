@@ -106,6 +106,17 @@ func (s *UserService) GetUserByEmailToLogin(ctx context.Context, req *pb.GetUser
 
 // UpdateUser обновляет пользователя
 func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UserResponse, error) {
+	// Получаем ID авторизованного пользователя из контекста
+	// authUserID, ok := ctx.Value("user_id").(string)
+	// if !ok {
+	// 	return nil, status.Errorf(codes.Internal, "user_id not found in context")
+	// }
+
+	// // Проверяем, что пользователь пытается изменить свои данные
+	// if authUserID != req.Id {
+	// 	return nil, status.Errorf(codes.PermissionDenied, "can only update own profile")
+	// }
+
 	objectID, err := primitive.ObjectIDFromHex(req.Id)
 	if err != nil {
 		s.logger.Error().Err(err).Msg("invalid ID format")
@@ -159,8 +170,18 @@ func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 
 // DeleteUser удаляет пользователя
 func (s *UserService) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
+	// Получаем ID авторизованного пользователя из контекста
+	// authUserID, ok := ctx.Value("user_id").(string)
+	// if !ok {
+	// 	return nil, status.Errorf(codes.Internal, "user_id not found in context")
+	// }
+
+	// // Проверяем, что пользователь пытается удалить свой аккаунт
+	// if authUserID != req.Id {
+	// 	return nil, status.Errorf(codes.PermissionDenied, "can only delete own account")
+	// }
+
 	if err := s.userService.Delete(ctx, req.Id); err != nil {
-		s.logger.Error().Err(err).Msg("delete user err")
 		return nil, status.Errorf(codes.Internal, "failed to delete user: %v", err)
 	}
 

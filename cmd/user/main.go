@@ -21,6 +21,7 @@ import (
 	grpc_handler "github.com/Petr09Mitin/xrust-beze-back/internal/router/grpc/user"
 	http_handler "github.com/Petr09Mitin/xrust-beze-back/internal/router/http/user"
 	user_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/user"
+	authpb "github.com/Petr09Mitin/xrust-beze-back/proto/auth"
 	filepb "github.com/Petr09Mitin/xrust-beze-back/proto/file"
 	pb "github.com/Petr09Mitin/xrust-beze-back/proto/user"
 	"github.com/gin-gonic/gin"
@@ -60,8 +61,21 @@ func main() {
 		return
 	}
 	fileGRPCClient := filepb.NewFileServiceClient(fileGRPCConn)
+	defer fileGRPCConn.Close()
+
+	authGRPCConn, err := grpc.NewClient(
+		fmt.Sprintf("%s:%d", cfg.Services.Auth.Host, cfg.Services.Auth.Port),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to connect to auth_service")
+		return
+	}
+	authClient := authpb.NewAuthServiceClient(authGRPCConn)
+	defer authGRPCConn.Close()
+
 	userRepo := user_repo.NewUserRepository(db, 10*time.Second, log)
-	userService := user_service.NewUserService(userRepo, fileGRPCClient, 10*time.Second, log)
+	userService := user_service.NewUserService(userRepo, fileGRPCClient, authClient, 10*time.Second, log)
 
 	skillRepo := user_repo.NewSkillRepository(db, 10*time.Second, log)
 	skillService := user_service.NewSkillService(skillRepo, 10*time.Second, log)
@@ -75,18 +89,13 @@ func main() {
 	go func() {
 		router := gin.Default()
 		router.Use(middleware.CORSMiddleware())
-		http_handler.NewUserHandler(router, userService)
+		http_handler.NewUserHandler(router, userService, authClient)
 		http_handler.NewSkillHandler(router, skillService)
-
 		httpServer = &http.Server{
 			Addr:    fmt.Sprintf(":%d", httpPort),
 			Handler: router,
 		}
-
 		log.Printf("HTTP server starting on port %d...", httpPort)
-		// if err := router.Run(":" + httpPort); err != nil && err != httpparser.ErrServerClosed {
-		// 	errChan <- fmt.Errorf("failed to run HTTP server: %v", err)
-		// }
 		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errChan <- fmt.Errorf("failed to run HTTP server: %v", err)
 		}

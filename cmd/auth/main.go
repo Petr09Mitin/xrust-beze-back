@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -11,14 +12,18 @@ import (
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/config"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/logger"
 	session_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/auth"
+	grpc_handler "github.com/Petr09Mitin/xrust-beze-back/internal/router/grpc/auth"
 	auth_http "github.com/Petr09Mitin/xrust-beze-back/internal/router/http/auth"
 	auth_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/auth"
+	authpb "github.com/Petr09Mitin/xrust-beze-back/proto/auth"
 	userpb "github.com/Petr09Mitin/xrust-beze-back/proto/user"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
+
+var grpcServer *grpc.Server
 
 func main() {
 	log := logger.NewLogger()
@@ -29,33 +34,13 @@ func main() {
 		log.Fatal().Err(err).Msg("Failed to load auth config")
 	}
 
-	// Подключение к user service через gRPC
-	// userConn, err := grpc.Dial(
-	// 	"user_service:50051",
-	// 	grpc.WithTransportCredentials(insecure.NewCredentials()),
-	// )
-	// if err != nil {
-	// 	log.Fatal().Err(err).Msg("Failed to connect to user service")
-	// }
-	// defer userConn.Close()
-
-	// userGRPCConn, err := grpc.NewClient(
-	// 	fmt.Sprintf("%s:%d", cfg.Services.UserService.Host, cfg.Services.UserService.Port),
-	// 	grpc.WithTransportCredentials(insecure.NewCredentials()),
-	// )
-	// if err != nil {
-	// 	log.Fatal().Err(err).Msg("failed to connect to user_service")
-	// 	return
-	// }
-
 	userGRPCConn, err := dialWithRetry(fmt.Sprintf("%s:%d", cfg.Services.UserService.Host, cfg.Services.UserService.Port), 5, 2*time.Second)
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to connect to user_service after retries")
+		log.Fatal().Err(err).Msg("Failed to connect to user_service after retries")
 		return
 	}
-
-	defer userGRPCConn.Close()
 	userGRPCClient := userpb.NewUserServiceClient(userGRPCConn)
+	defer userGRPCConn.Close()
 
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port),
@@ -66,7 +51,6 @@ func main() {
 	sessionRepo := session_repo.NewSessionRepository(redisClient, 10*time.Second)
 	authService := auth_service.NewAuthService(sessionRepo, userGRPCClient, log, 24*time.Hour)
 
-	// Создание каналов для сигналов завершения
 	errChan := make(chan error)
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
@@ -80,9 +64,28 @@ func main() {
 		Handler: router,
 	}
 
+	// Запуск http
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			errChan <- fmt.Errorf("failed to run HTTP server: %v", err)
+		}
+	}()
+
+	// Запуск пкзс
+	go func() {
+		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.GRPC.Port))
+		if err != nil {
+			errChan <- fmt.Errorf("failed to listen on port %d: %v", cfg.GRPC.Port, err)
+			return
+		}
+
+		grpcServer = grpc.NewServer()
+		authGrpcService := grpc_handler.NewAuthService(authService, log)
+		authpb.RegisterAuthServiceServer(grpcServer, authGrpcService)
+
+		log.Printf("gRPC server starting on port %d...", cfg.GRPC.Port)
+		if err := grpcServer.Serve(lis); err != nil {
+			errChan <- fmt.Errorf("failed to serve gRPC: %v", err)
 		}
 	}()
 
@@ -114,3 +117,22 @@ func dialWithRetry(address string, maxAttempts int, delay time.Duration) (*grpc.
 	}
 	return nil, err
 }
+
+// Подключение к user service через gRPC
+// userConn, err := grpc.Dial(
+// 	"user_service:50051",
+// 	grpc.WithTransportCredentials(insecure.NewCredentials()),
+// )
+// if err != nil {
+// 	log.Fatal().Err(err).Msg("Failed to connect to user service")
+// }
+// defer userConn.Close()
+
+// userGRPCConn, err := grpc.NewClient(
+// 	fmt.Sprintf("%s:%d", cfg.Services.UserService.Host, cfg.Services.UserService.Port),
+// 	grpc.WithTransportCredentials(insecure.NewCredentials()),
+// )
+// if err != nil {
+// 	log.Fatal().Err(err).Msg("failed to connect to user_service")
+// 	return
+// }

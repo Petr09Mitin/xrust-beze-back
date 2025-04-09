@@ -1,6 +1,9 @@
 http:
   port: 8080
 
+grpc:
+  port: 50051
+
 redis:
   host: redis_xb
   port: 6379
