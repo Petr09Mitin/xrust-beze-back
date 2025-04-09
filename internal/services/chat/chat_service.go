@@ -92,7 +92,7 @@ func (c *ChatServiceImpl) ProcessStructurizationRequest(ctx context.Context, mes
 	}
 	oldMessage.SetReceiverIDs(channel.UserIDs)
 
-	prevMessages, err := c.msgRepo.GetPreviousMessagesByMessageCreatedAt(ctx, channel.ID, oldMessage.CreatedAt, 10)
+	prevMessages, err := c.msgRepo.GetPreviousMessagesByMessageCreatedAt(ctx, channel.ID, oldMessage.CreatedAt, 1)
 	if err != nil {
 		return err
 	}
