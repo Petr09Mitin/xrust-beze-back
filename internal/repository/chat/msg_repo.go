@@ -157,7 +157,7 @@ func (m *MessageRepoImpl) GetPreviousMessagesByMessageCreatedAt(ctx context.Cont
 		ctx,
 		bson.M{
 			"channel_id": channelID,
-			"created": bson.M{
+			"created_at": bson.M{
 				"$lt": createdAt,
 			},
 		},
