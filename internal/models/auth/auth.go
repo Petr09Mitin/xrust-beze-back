@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"log"
 	"strings"
 	"time"
 
@@ -12,7 +13,12 @@ var validate *validator.Validate
 
 func init() {
 	validate = validator.New()
-	_ = validate.RegisterValidation("validate-password", validatePassword)
+	err := validate.RegisterValidation("validate-password", validatePassword)
+	if err != nil {
+		log.Printf("Failed to register password validation: %v", err)
+	} else {
+		log.Println("Successfully registered password validation")
+	}
 }
 
 type RegisterRequest struct {
@@ -32,18 +38,34 @@ type Session struct {
 	ExpiresAt time.Time `json:"expires_at" bson:"expires_at"`
 }
 
+func (a *LoginRequest) Validate() error {
+	if err := validate.Struct(a); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *RegisterRequest) Validate() error {
+	// Валидируем встроенную структуру User
+	if err := r.User.Validate(); err != nil {
+		return err
+	}
+	// Валидируем пароль
+	if err := validate.Struct(r); err != nil {
+		return err
+	}
+	return nil
+}
+
 func validatePassword(fl validator.FieldLevel) bool {
 	password := fl.Field().String()
-
 	if len(password) < 8 || len(password) > 64 {
 		return false
 	}
-
 	hasUpper := false
 	hasLower := false
 	hasNumber := false
 	hasSpecial := false
-
 	for _, c := range password {
 		switch {
 		case 'A' <= c && c <= 'Z':
@@ -55,30 +77,9 @@ func validatePassword(fl validator.FieldLevel) bool {
 		case strings.ContainsRune("!@#$%^&*", c):
 			hasSpecial = true
 		default:
+			log.Println("hereeee yes")
 			return false // Недопустимый символ
 		}
 	}
-
 	return hasUpper && hasLower && hasNumber && hasSpecial
-}
-
-func (a *LoginRequest) Validate() error {
-	if err := validate.Struct(a); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Проверяет валидность запроса регистрации
-func (r *RegisterRequest) Validate() error {
-	if err := validate.Struct(r); err != nil {
-		return err
-	}
-
-	// Дополнительная валидация пользователя
-	if err := r.User.Validate(); err != nil {
-		return err
-	}
-
-	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
 	user_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/user"
 	pb "github.com/Petr09Mitin/xrust-beze-back/proto/user"
@@ -61,13 +62,11 @@ func (s *UserService) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 		PreferredFormat: req.PreferredFormat,
 	}
 
-	if err := s.userService.Create(ctx, u, req.HashedPassword); err != nil {
+	if err := s.userService.Create(ctx, u, req.Password); err != nil {
 		// Проверяем, является ли ошибка ошибкой валидации
 		if _, ok := err.(validator.ValidationErrors); ok {
-			s.logger.Error().Err(err).Msg("validation err")
 			return nil, status.Errorf(codes.InvalidArgument, "validation error: %v", err)
 		}
-		s.logger.Error().Err(err).Msg("create user err")
 		return nil, status.Errorf(codes.Internal, "failed to create user: %v", err)
 	}
 
@@ -80,12 +79,28 @@ func (s *UserService) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 func (s *UserService) GetUser(ctx context.Context, req *pb.GetUserByIDRequest) (*pb.UserResponse, error) {
 	u, err := s.userService.GetByID(ctx, req.Id)
 	if err != nil {
-		s.logger.Error().Err(err).Msg("get user err")
 		return nil, status.Errorf(codes.NotFound, "user not found: %v", err)
 	}
 
 	return &pb.UserResponse{
 		User: convertDomainToProto(u),
+	}, nil
+}
+
+func (s *UserService) GetUserByEmailToLogin(ctx context.Context, req *pb.GetUserByEmailRequest) (*pb.UserToLoginResponse, error) {
+	user, err := s.userService.GetByEmailWithPassword(ctx, req.Email)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil || user.User.ID.IsZero() {
+		return nil, custom_errors.ErrUserNotExists
+	}
+	return &pb.UserToLoginResponse{
+		UserToLogin: &pb.UserToLogin{
+			Id:       user.User.ID.Hex(),
+			Email:    user.User.Email,
+			Password: user.Password,
+		},
 	}, nil
 }
 

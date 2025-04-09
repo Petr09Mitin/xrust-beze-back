@@ -45,7 +45,7 @@ message UserToLogin {
 message CreateUserRequest {
   string username = 1;
   string email = 2;
-  string hashed_password = 3;
+  string password = 3;
   repeated Skill skills_to_learn = 4;
   repeated Skill skills_to_share = 5;
   string bio = 6;

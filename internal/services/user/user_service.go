@@ -8,6 +8,7 @@ import (
 	filepb "github.com/Petr09Mitin/xrust-beze-back/proto/file"
 	"github.com/rs/zerolog"
 
+	auth_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/auth"
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
 	user_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/user"
 )
@@ -17,6 +18,8 @@ type UserService interface {
 	Create(ctx context.Context, user *user_model.User, hashedPassword string) error
 	GetByID(ctx context.Context, id string) (*user_model.User, error)
 	GetByEmail(ctx context.Context, email string) (*user_model.User, error)
+	// GetByEmailWithPassword(ctx context.Context, email string) (*user_model.UserWithPassword, error)
+	GetByEmailWithPassword(ctx context.Context, email string) (*auth_model.RegisterRequest, error)
 	GetByUsername(ctx context.Context, username string) (*user_model.User, error)
 	Update(ctx context.Context, user *user_model.User) error
 	Delete(ctx context.Context, id string) error
@@ -42,16 +45,15 @@ func NewUserService(userRepo user_repo.UserRepo, fileGRPC filepb.FileServiceClie
 
 // func (s *userService) Create(ctx context.Context, user *user_model.User) error {
 func (s *userService) Create(ctx context.Context, user *user_model.User, hashedPassword string) error {
-	if err := user.Validate(); err != nil {
-		return err
-	}
+	// if err := user.Validate(); err != nil {
+	// 	s.logger.Error().Err(err).Msg("Validation failed for new user")
+	// 	return err
+	// }
 
-	// Проверка на уникальность email и username
 	existingUser, err := s.userRepo.GetByEmail(ctx, user.Email)
 	if err == nil && existingUser != nil {
 		return custom_errors.ErrEmailAlreadyExists
 	}
-
 	existingUser, err = s.userRepo.GetByUsername(ctx, user.Username)
 	if err == nil && existingUser != nil {
 		return custom_errors.ErrUsernameAlreadyExists
@@ -66,7 +68,11 @@ func (s *userService) Create(ctx context.Context, user *user_model.User, hashedP
 		}
 	}
 
-	return s.userRepo.Create(ctx, user, hashedPassword)
+	err = s.userRepo.Create(ctx, user, hashedPassword)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *userService) GetByID(ctx context.Context, id string) (*user_model.User, error) {
@@ -75,6 +81,10 @@ func (s *userService) GetByID(ctx context.Context, id string) (*user_model.User,
 
 func (s *userService) GetByEmail(ctx context.Context, email string) (*user_model.User, error) {
 	return s.userRepo.GetByEmail(ctx, email)
+}
+
+func (s *userService) GetByEmailWithPassword(ctx context.Context, email string) (*auth_model.RegisterRequest, error) {
+	return s.userRepo.GetByEmailWithPassword(ctx, email)
 }
 
 func (s *userService) GetByUsername(ctx context.Context, username string) (*user_model.User, error) {

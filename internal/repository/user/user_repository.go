@@ -8,6 +8,7 @@ import (
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	"github.com/rs/zerolog"
 
+	auth_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/auth"
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -20,6 +21,8 @@ type UserRepo interface {
 	Create(ctx context.Context, user *user_model.User, hashedPassword string) error
 	GetByID(ctx context.Context, id string) (*user_model.User, error)
 	GetByEmail(ctx context.Context, email string) (*user_model.User, error)
+	// GetByEmailWithPassword(ctx context.Context, email string) (*user_model.UserWithPassword, error)
+	GetByEmailWithPassword(ctx context.Context, email string) (*auth_model.RegisterRequest, error)
 	GetByUsername(ctx context.Context, username string) (*user_model.User, error)
 	Update(ctx context.Context, user *user_model.User) error
 	Delete(ctx context.Context, id string) error
@@ -50,28 +53,24 @@ func (r *userRepository) Create(ctx context.Context, user *user_model.User, hash
 	user.UpdatedAt = time.Now()
 	user.LastActiveAt = time.Now()
 
-	// result, err := r.collection.InsertOne(ctx, user)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// user.ID = result.InsertedID.(primitive.ObjectID)
-	// return nil
-	data, err := bson.Marshal(user)
-	if err != nil {
-		return err
+	// Создаем документ для MongoDB
+	doc := bson.M{
+		"username":         user.Username,
+		"email":            user.Email,
+		"password":         hashedPassword,
+		"skills_to_learn":  user.SkillsToLearn,
+		"skills_to_share":  user.SkillsToShare,
+		"bio":              user.Bio,
+		"avatar":           user.Avatar,
+		"preferred_format": user.PreferredFormat,
+		"created_at":       user.CreatedAt,
+		"updated_at":       user.UpdatedAt,
+		"last_active_at":   user.LastActiveAt,
 	}
-
-	var doc bson.M
-	if err := bson.Unmarshal(data, &doc); err != nil {
-		return err
-	}
-
-	// Добавляем хэш пароля вручную
-	doc["password_hash"] = hashedPassword
 
 	result, err := r.collection.InsertOne(ctx, doc)
 	if err != nil {
+		r.logger.Error().Err(err).Msg("Failed to create user in MongoDB")
 		return err
 	}
 
@@ -114,6 +113,29 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*user_mo
 	}
 
 	return &u, nil
+}
+
+func (r *userRepository) GetByEmailWithPassword(ctx context.Context, email string) (*auth_model.RegisterRequest, error) {
+	ctx, cancel := context.WithTimeout(ctx, r.timeout)
+	defer cancel()
+	user, err := r.GetByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+	// Получаем только пароль
+	var doc bson.M
+	err = r.collection.FindOne(ctx, bson.M{"_id": user.ID}).Decode(&doc)
+	if err != nil {
+		return nil, err
+	}
+	password, ok := doc["password"].(string)
+	if !ok {
+		return nil, custom_errors.ErrMissingPassword
+	}
+	return &auth_model.RegisterRequest{
+		User:     *user,
+		Password: password,
+	}, nil
 }
 
 func (r *userRepository) GetByUsername(ctx context.Context, username string) (*user_model.User, error) {

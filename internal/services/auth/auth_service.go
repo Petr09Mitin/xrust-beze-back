@@ -16,13 +16,11 @@ import (
 )
 
 type AuthService interface {
+	Register(ctx context.Context, req *auth_model.RegisterRequest) (*user_model.User, error)
+	Login(ctx context.Context, req *auth_model.LoginRequest) (*auth_model.Session, error)
 	CreateSession(ctx context.Context, userID string) (*auth_model.Session, error)
 	ValidateSession(ctx context.Context, sessionID string) (*auth_model.Session, error)
 	DeleteSession(ctx context.Context, sessionID string) error
-	// Register(ctx context.Context, req *auth_model.RegisterRequest) error
-	Register(ctx context.Context, req *auth_model.RegisterRequest) (*user_model.User, error)
-	Login(ctx context.Context, req *auth_model.LoginRequest) (*auth_model.Session, error)
-
 	TestUserConnection(ctx context.Context) ([]*user_model.User, error)
 }
 
@@ -43,76 +41,20 @@ func NewAuthService(sessionRepo session_repo.SessionRepository, userClient user_
 	}
 }
 
-func hashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	return string(bytes), err
-}
-
-func isPasswordCorrect(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
-}
-
-func (s *authService) CreateSession(ctx context.Context, userID string) (*auth_model.Session, error) {
-	now := time.Now()
-	sess := &auth_model.Session{
-		ID:        uuid.New().String(),
-		UserID:    userID,
-		CreatedAt: now,
-		ExpiresAt: now.Add(s.sessionTTL),
-	}
-
-	if err := s.sessionRepo.Create(ctx, sess); err != nil {
-		return nil, err
-	}
-
-	return sess, nil
-}
-
-func (s *authService) ValidateSession(ctx context.Context, sessionID string) (*auth_model.Session, error) {
-	sess, err := s.sessionRepo.Get(ctx, sessionID)
-	if err != nil {
-		return nil, err
-	}
-
-	if sess == nil || time.Now().After(sess.ExpiresAt) {
-		return nil, nil
-	}
-
-	return sess, nil
-}
-
-func (s *authService) DeleteSession(ctx context.Context, sessionID string) error {
-	return s.sessionRepo.Delete(ctx, sessionID)
-}
-
-// func (s *authService) Register(ctx context.Context, req *auth.RegisterRequest) error {
-// 	hashedPassword, err := hashPassword(req.Password)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	return s.userGRPC.CreateUser(ctx, req.Username, req.Email, hashedPassword)
-// }
-
 func (s *authService) Register(ctx context.Context, req *auth_model.RegisterRequest) (*user_model.User, error) {
 	hashedPassword, err := hashPassword(req.Password)
 	if err != nil {
 		return nil, err
 	}
-
 	createReq := convertUserToCreateUserRequest(req.User, hashedPassword)
-
 	resp, err := s.userGRPC.CreateUser(ctx, createReq)
 	if err != nil {
 		return nil, err
 	}
-
 	user, err := user_grpc.ConvertProtoToDomain(resp.User)
 	if err != nil {
 		return nil, err
 	}
-
 	return user, nil
 }
 
@@ -130,6 +72,35 @@ func (s *authService) Login(ctx context.Context, req *auth_model.LoginRequest) (
 		return nil, custom_errors.ErrWrongPassword
 	}
 	return s.CreateSession(ctx, user.UserToLogin.Id)
+}
+
+func (s *authService) CreateSession(ctx context.Context, userID string) (*auth_model.Session, error) {
+	now := time.Now()
+	sess := &auth_model.Session{
+		ID:        uuid.New().String(),
+		UserID:    userID,
+		CreatedAt: now,
+		ExpiresAt: now.Add(s.sessionTTL),
+	}
+	if err := s.sessionRepo.Create(ctx, sess); err != nil {
+		return nil, err
+	}
+	return sess, nil
+}
+
+func (s *authService) ValidateSession(ctx context.Context, sessionID string) (*auth_model.Session, error) {
+	sess, err := s.sessionRepo.Get(ctx, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	if sess == nil || time.Now().After(sess.ExpiresAt) {
+		return nil, nil
+	}
+	return sess, nil
+}
+
+func (s *authService) DeleteSession(ctx context.Context, sessionID string) error {
+	return s.sessionRepo.Delete(ctx, sessionID)
 }
 
 func (s *authService) TestUserConnection(ctx context.Context) ([]*user_model.User, error) {
@@ -155,6 +126,16 @@ func (s *authService) TestUserConnection(ctx context.Context) ([]*user_model.Use
 	return users, nil
 }
 
+func hashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(bytes), err
+}
+
+func isPasswordCorrect(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+
 func convertUserToCreateUserRequest(user user_model.User, hashedPassword string) *user_pb.CreateUserRequest {
 	convertSkills := func(skills []user_model.Skill) []*user_pb.Skill {
 		protoSkills := make([]*user_pb.Skill, 0, len(skills))
@@ -171,7 +152,7 @@ func convertUserToCreateUserRequest(user user_model.User, hashedPassword string)
 	return &user_pb.CreateUserRequest{
 		Username:        user.Username,
 		Email:           user.Email,
-		HashedPassword:  hashedPassword,
+		Password:        hashedPassword,
 		Bio:             user.Bio,
 		AvatarUrl:       user.Avatar,
 		PreferredFormat: user.PreferredFormat,

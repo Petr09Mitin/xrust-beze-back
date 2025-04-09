@@ -39,5 +39,5 @@ start-all-user-only:
 build-auth:
 	docker build -t xrust_beze_auth:latest -f cmd/auth/Dockerfile .
 
-start-auth-only: build-auth
+start-auth-only: build-user build-auth
 	docker-compose up -d redis_xb auth_service

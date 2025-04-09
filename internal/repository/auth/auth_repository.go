@@ -1,4 +1,4 @@
-package session
+package auth
 
 import (
 	"context"
@@ -32,7 +32,6 @@ func (r *redisRepository) Create(ctx context.Context, session *auth_model.Sessio
 	if err != nil {
 		return err
 	}
-
 	expiration := time.Until(session.ExpiresAt)
 	return r.client.Set(ctx, session.ID, data, expiration).Err()
 }
@@ -45,12 +44,10 @@ func (r *redisRepository) Get(ctx context.Context, sessionID string) (*auth_mode
 		}
 		return nil, err
 	}
-
 	var session auth_model.Session
 	if err := json.Unmarshal(data, &session); err != nil {
 		return nil, err
 	}
-
 	return &session, nil
 }
 

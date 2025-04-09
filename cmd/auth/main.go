@@ -101,7 +101,12 @@ func dialWithRetry(address string, maxAttempts int, delay time.Duration) (*grpc.
 	var conn *grpc.ClientConn
 	var err error
 	for i := 0; i < maxAttempts; i++ {
-		conn, err = grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		// conn, err = grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err = grpc.Dial(
+			address,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithTimeout(5*time.Second),
+		)
 		if err == nil {
 			return conn, nil
 		}

@@ -32,6 +32,11 @@ type User struct {
 	PreferredFormat string             `json:"preferred_format" bson:"preferred_format" validate:"omitempty,oneof=text voice video"`
 }
 
+// type UserWithPassword struct {
+// 	User
+// 	Password string `json:"password" bson:"password" validate:"required,validate-password"`
+// }
+
 // Навык
 type Skill struct {
 	Name        string `json:"name" bson:"name" validate:"required"`
@@ -50,28 +55,34 @@ func (u *User) Validate() error {
 	if err := validate.Struct(u); err != nil {
 		return err
 	}
-
 	// if !emailRegex.MatchString(u.Email) {
 	// 	return errors.New("invalid email format")
 	// }
-
 	// Проверка навыков (есть хотя бы один)
 	if len(u.SkillsToLearn) == 0 && len(u.SkillsToShare) == 0 {
 		return errors.New("at least one skill to learn or share is required")
 	}
 
-	// Валидация каждого навыка
 	for _, skill := range u.SkillsToLearn {
 		if err := validate.Struct(skill); err != nil {
 			return errors.New("invalid skill to learn: " + err.Error())
 		}
 	}
-
 	for _, skill := range u.SkillsToShare {
 		if err := validate.Struct(skill); err != nil {
 			return errors.New("invalid skill to share: " + err.Error())
 		}
 	}
-
 	return nil
 }
+
+// func (u *UserWithPassword) Validate() error {
+// 	if err := u.User.Validate(); err != nil {
+// 		return err
+// 	}
+// 	// Password провалидируется здесь
+// 	if err := validate.Struct(u); err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
