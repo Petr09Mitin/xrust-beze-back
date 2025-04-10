@@ -191,5 +191,6 @@ func convertUserToCreateUserRequest(user user_model.User, hashedPassword string)
 		PreferredFormat: user.PreferredFormat,
 		SkillsToLearn:   convertSkills(user.SkillsToLearn),
 		SkillsToShare:   convertSkills(user.SkillsToShare),
+		Hrefs:           user.Hrefs,
 	}
 }

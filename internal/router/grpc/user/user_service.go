@@ -35,6 +35,7 @@ func NewUserService(userService user_service.UserService, logger zerolog.Logger)
 func (s *UserService) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.UserResponse, error) {
 	var skillsToLearn []user_model.Skill
 	var skillsToShare []user_model.Skill
+	var hrefs []string
 
 	for _, skill := range req.SkillsToLearn {
 		skillsToLearn = append(skillsToLearn, user_model.Skill{
@@ -52,6 +53,8 @@ func (s *UserService) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 		})
 	}
 
+	hrefs = append(hrefs, req.Hrefs...)
+
 	u := &user_model.User{
 		Username:        req.Username,
 		Email:           req.Email,
@@ -60,6 +63,7 @@ func (s *UserService) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 		Bio:             req.Bio,
 		Avatar:          req.AvatarUrl,
 		PreferredFormat: req.PreferredFormat,
+		Hrefs:           hrefs,
 	}
 
 	if err := s.userService.Create(ctx, u, req.Password); err != nil {
@@ -142,6 +146,7 @@ func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 
 	var skillsToLearn []user_model.Skill
 	var skillsToShare []user_model.Skill
+	var hrefs []string
 
 	for _, skill := range req.SkillsToLearn {
 		skillsToLearn = append(skillsToLearn, user_model.Skill{
@@ -159,6 +164,8 @@ func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 		})
 	}
 
+	hrefs = append(hrefs, req.Hrefs...)
+
 	u := &user_model.User{
 		ID:              objectID,
 		Username:        req.Username,
@@ -168,6 +175,7 @@ func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 		Bio:             req.Bio,
 		Avatar:          req.AvatarUrl,
 		PreferredFormat: req.PreferredFormat,
+		Hrefs:           hrefs,
 	}
 
 	if err := s.userService.Update(ctx, u); err != nil {
@@ -246,6 +254,7 @@ func (s *UserService) FindMatchingUsers(ctx context.Context, req *pb.FindMatchin
 func convertDomainToProto(u *user_model.User) *pb.User {
 	var skillsToLearn []*pb.Skill
 	var skillsToShare []*pb.Skill
+	var hrefs []string
 
 	for _, skill := range u.SkillsToLearn {
 		skillsToLearn = append(skillsToLearn, &pb.Skill{
@@ -263,6 +272,8 @@ func convertDomainToProto(u *user_model.User) *pb.User {
 		})
 	}
 
+	hrefs = append(hrefs, u.Hrefs...)
+
 	return &pb.User{
 		Id:              u.ID.Hex(),
 		Username:        u.Username,
@@ -275,12 +286,14 @@ func convertDomainToProto(u *user_model.User) *pb.User {
 		UpdatedAt:       timestamppb.New(u.UpdatedAt),
 		LastActiveAt:    timestamppb.New(u.LastActiveAt),
 		PreferredFormat: u.PreferredFormat,
+		Hrefs:           hrefs,
 	}
 }
 
 func ConvertProtoToDomain(u *pb.User) (*user_model.User, error) {
 	skillsToLearn := make([]user_model.Skill, 0)
 	skillsToShare := make([]user_model.Skill, 0)
+	hrefs := make([]string, 0)
 
 	for _, skill := range u.GetSkillsToLearn() {
 		skillsToLearn = append(skillsToLearn, user_model.Skill{
@@ -297,6 +310,8 @@ func ConvertProtoToDomain(u *pb.User) (*user_model.User, error) {
 			Description: skill.Description,
 		})
 	}
+
+	hrefs = append(hrefs, u.GetHrefs()...)
 
 	id, err := primitive.ObjectIDFromHex(u.Id)
 	if err != nil {
@@ -316,5 +331,6 @@ func ConvertProtoToDomain(u *pb.User) (*user_model.User, error) {
 		UpdatedAt:       u.GetUpdatedAt().AsTime(),
 		LastActiveAt:    u.GetLastActiveAt().AsTime(),
 		PreferredFormat: u.GetPreferredFormat(),
+		Hrefs:           hrefs,
 	}, nil
 }

@@ -15,11 +15,9 @@ import (
 )
 
 type UserService interface {
-	// Create(ctx context.Context, user *user_model.User) error
 	Create(ctx context.Context, user *user_model.User, hashedPassword string) error
 	GetByID(ctx context.Context, id string) (*user_model.User, error)
 	GetByEmail(ctx context.Context, email string) (*user_model.User, error)
-	// GetByEmailWithPassword(ctx context.Context, email string) (*user_model.UserWithPassword, error)
 	GetByEmailWithPassword(ctx context.Context, email string) (*auth_model.RegisterRequest, error)
 	GetByUsername(ctx context.Context, username string) (*user_model.User, error)
 	GetByUsernameWithPassword(ctx context.Context, username string) (*auth_model.RegisterRequest, error)
@@ -47,12 +45,7 @@ func NewUserService(userRepo user_repo.UserRepo, fileGRPC filepb.FileServiceClie
 	}
 }
 
-// func (s *userService) Create(ctx context.Context, user *user_model.User) error {
 func (s *userService) Create(ctx context.Context, user *user_model.User, hashedPassword string) error {
-	// if err := user.Validate(); err != nil {
-	// 	s.logger.Error().Err(err).Msg("Validation failed for new user")
-	// 	return err
-	// }
 
 	existingUser, err := s.userRepo.GetByEmail(ctx, user.Email)
 	if err == nil && existingUser != nil {
@@ -62,7 +55,6 @@ func (s *userService) Create(ctx context.Context, user *user_model.User, hashedP
 	if err == nil && existingUser != nil {
 		return custom_errors.ErrUsernameAlreadyExists
 	}
-
 	if user.Avatar != "" {
 		_, err = s.fileGRPC.MoveTempFileToAvatars(ctx, &filepb.MoveTempFileToAvatarsRequest{
 			Filename: user.Avatar,
@@ -71,7 +63,6 @@ func (s *userService) Create(ctx context.Context, user *user_model.User, hashedP
 			return err
 		}
 	}
-
 	err = s.userRepo.Create(ctx, user, hashedPassword)
 	if err != nil {
 		return err
@@ -103,17 +94,14 @@ func (s *userService) Update(ctx context.Context, user *user_model.User) error {
 	if err := user.Validate(); err != nil {
 		return err
 	}
-
 	// Проверяем существование пользователя
 	existingUser, err := s.userRepo.GetByID(ctx, user.ID.Hex())
 	if err != nil {
 		return err
 	}
-
 	// Чтобы эти поля не обновлялись
 	user.CreatedAt = existingUser.CreatedAt
 	user.LastActiveAt = existingUser.LastActiveAt
-
 	// Проверка на уникальность email и username, если они изменились
 	if existingUser.Email != user.Email {
 		userWithEmail, err := s.userRepo.GetByEmail(ctx, user.Email)
@@ -121,7 +109,6 @@ func (s *userService) Update(ctx context.Context, user *user_model.User) error {
 			return custom_errors.ErrEmailAlreadyExists
 		}
 	}
-
 	if existingUser.Username != user.Username {
 		userWithUsername, err := s.userRepo.GetByUsername(ctx, user.Username)
 		if err == nil && userWithUsername != nil && userWithUsername.ID != user.ID {
@@ -144,8 +131,6 @@ func (s *userService) Update(ctx context.Context, user *user_model.User) error {
 			s.logger.Error().Err(err).Msg("failed to delete avatar") // not crit, still can return 200
 		}
 	}
-
-	user.UpdatedAt = time.Now()
 
 	return s.userRepo.Update(ctx, user)
 }

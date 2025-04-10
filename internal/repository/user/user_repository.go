@@ -65,6 +65,7 @@ func (r *userRepository) Create(ctx context.Context, user *user_model.User, hash
 		CreatedAt:       user.CreatedAt,
 		UpdatedAt:       user.UpdatedAt,
 		LastActiveAt:    user.LastActiveAt,
+		Hrefs:           user.Hrefs,
 	}
 
 	result, err := r.collection.InsertOne(ctx, doc)
@@ -155,6 +156,7 @@ func (r *userRepository) Update(ctx context.Context, user *user_model.User) erro
 			PreferredFormat: user.PreferredFormat,
 			UpdatedAt:       user.UpdatedAt,
 			LastActiveAt:    user.LastActiveAt,
+			Hrefs:           user.Hrefs,
 		},
 	}
 

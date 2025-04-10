@@ -20,6 +20,7 @@ type User struct {
 	UpdatedAt       time.Time          `json:"updated_at" bson:"updated_at"`
 	LastActiveAt    time.Time          `json:"last_active_at" bson:"last_active_at"`
 	PreferredFormat string             `json:"preferred_format" bson:"preferred_format" validate:"omitempty,oneof=text voice video"`
+	Hrefs           []string           `json:"hrefs" bson:"hrefs"`
 }
 
 type UserToCreate struct {
@@ -34,6 +35,7 @@ type UserToCreate struct {
 	CreatedAt       time.Time `bson:"created_at"`
 	UpdatedAt       time.Time `bson:"updated_at"`
 	LastActiveAt    time.Time `bson:"last_active_at"`
+	Hrefs           []string  `bson:"hrefs"`
 }
 
 type UserToUpdate struct {
@@ -46,6 +48,7 @@ type UserToUpdate struct {
 	UpdatedAt       time.Time `bson:"updated_at"`
 	LastActiveAt    time.Time `bson:"last_active_at"`
 	PreferredFormat string    `bson:"preferred_format"`
+	Hrefs           []string  `bson:"hrefs"`
 }
 
 // Навык
