@@ -17,7 +17,7 @@ import (
 
 type AuthService interface {
 	Register(ctx context.Context, req *auth_model.RegisterRequest) (*user_model.User, error)
-	Login(ctx context.Context, req *auth_model.LoginRequest) (*auth_model.Session, error)
+	Login(ctx context.Context, req *auth_model.LoginRequest) (*auth_model.Session, *user_model.User, error)
 	CreateSession(ctx context.Context, userID string) (*auth_model.Session, error)
 	ValidateSession(ctx context.Context, sessionID string) (*auth_model.Session, error)
 	DeleteSession(ctx context.Context, sessionID string) error
@@ -58,20 +58,53 @@ func (s *authService) Register(ctx context.Context, req *auth_model.RegisterRequ
 	return user, nil
 }
 
-func (s *authService) Login(ctx context.Context, req *auth_model.LoginRequest) (*auth_model.Session, error) {
-	user, err := s.userGRPC.GetUserByEmailToLogin(ctx, &user_pb.GetUserByEmailRequest{
-		Email: req.Email,
+func (s *authService) Login(ctx context.Context, req *auth_model.LoginRequest) (*auth_model.Session, *user_model.User, error) {
+	var userWithPassword *user_pb.UserToLoginResponse
+	// var err error
+
+	err := req.Validate()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if req.Email != "" {
+		userWithPassword, err = s.userGRPC.GetUserByEmailToLogin(ctx, &user_pb.GetUserByEmailRequest{
+			Email: req.Email,
+		})
+	} else {
+		userWithPassword, err = s.userGRPC.GetUserByUsernameToLogin(ctx, &user_pb.GetUserByUsernameRequest{
+			Username: req.Username,
+		})
+	}
+
+	if err != nil {
+		return nil, nil, err
+	}
+	if userWithPassword == nil {
+		return nil, nil, custom_errors.ErrUserNotExists
+	}
+	if !isPasswordCorrect(req.Password, userWithPassword.UserToLogin.Password) {
+		return nil, nil, custom_errors.ErrWrongPassword
+	}
+
+	user, err := s.userGRPC.GetUserByID(ctx, &user_pb.GetUserByIDRequest{
+		Id: userWithPassword.UserToLogin.Id,
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	if user == nil {
-		return nil, custom_errors.ErrUserNotExists
+
+	convertedUser, err := user_grpc.ConvertProtoToDomain(user.User)
+	if err != nil {
+		return nil, nil, err
 	}
-	if !isPasswordCorrect(req.Password, user.UserToLogin.Password) {
-		return nil, custom_errors.ErrWrongPassword
+
+	session, err := s.CreateSession(ctx, userWithPassword.UserToLogin.Id)
+	if err != nil {
+		return nil, nil, err
 	}
-	return s.CreateSession(ctx, user.UserToLogin.Id)
+
+	return session, convertedUser, nil
 }
 
 func (s *authService) CreateSession(ctx context.Context, userID string) (*auth_model.Session, error) {

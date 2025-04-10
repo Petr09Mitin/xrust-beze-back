@@ -76,7 +76,7 @@ func (s *UserService) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 }
 
 // GetUser получает пользователя по ID
-func (s *UserService) GetUser(ctx context.Context, req *pb.GetUserByIDRequest) (*pb.UserResponse, error) {
+func (s *UserService) GetUserByID(ctx context.Context, req *pb.GetUserByIDRequest) (*pb.UserResponse, error) {
 	u, err := s.userService.GetByID(ctx, req.Id)
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "user not found: %v", err)
@@ -89,6 +89,23 @@ func (s *UserService) GetUser(ctx context.Context, req *pb.GetUserByIDRequest) (
 
 func (s *UserService) GetUserByEmailToLogin(ctx context.Context, req *pb.GetUserByEmailRequest) (*pb.UserToLoginResponse, error) {
 	user, err := s.userService.GetByEmailWithPassword(ctx, req.Email)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil || user.User.ID.IsZero() {
+		return nil, custom_errors.ErrUserNotExists
+	}
+	return &pb.UserToLoginResponse{
+		UserToLogin: &pb.UserToLogin{
+			Id:       user.User.ID.Hex(),
+			Email:    user.User.Email,
+			Password: user.Password,
+		},
+	}, nil
+}
+
+func (s *UserService) GetUserByUsernameToLogin(ctx context.Context, req *pb.GetUserByUsernameRequest) (*pb.UserToLoginResponse, error) {
+	user, err := s.userService.GetByUsernameWithPassword(ctx, req.Username)
 	if err != nil {
 		return nil, err
 	}
@@ -171,23 +188,22 @@ func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 // DeleteUser удаляет пользователя
 func (s *UserService) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
 	// Получаем ID авторизованного пользователя из контекста
-	// authUserID, ok := ctx.Value("user_id").(string)
-	// if !ok {
-	// 	return nil, status.Errorf(codes.Internal, "user_id not found in context")
-	// }
+	authUserID, ok := ctx.Value("userID").(string)
+	if !ok {
+		return nil, status.Errorf(codes.Unauthenticated, "user not authenticated")
+	}
 
-	// // Проверяем, что пользователь пытается удалить свой аккаунт
-	// if authUserID != req.Id {
-	// 	return nil, status.Errorf(codes.PermissionDenied, "can only delete own account")
-	// }
+	// Проверяем, что пользователь удаляет свой собственный аккаунт
+	if authUserID != req.Id {
+		return nil, status.Errorf(codes.PermissionDenied, "can only delete your own account")
+	}
 
-	if err := s.userService.Delete(ctx, req.Id); err != nil {
+	err := s.userService.Delete(ctx, req.Id)
+	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to delete user: %v", err)
 	}
 
-	return &pb.DeleteUserResponse{
-		Success: true,
-	}, nil
+	return &pb.DeleteUserResponse{}, nil
 }
 
 // ListUsers возвращает список пользователей

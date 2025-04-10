@@ -73,7 +73,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	session, err := h.authService.Login(c.Request.Context(), &req)
+	session, user, err := h.authService.Login(c.Request.Context(), &req)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -90,7 +90,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		h.config.Cookie.HttpOnly,
 	)
 
-	c.JSON(http.StatusOK, gin.H{"user_id": session.UserID})
+	c.JSON(http.StatusOK, user)
 }
 
 func (h *AuthHandler) Logout(c *gin.Context) {

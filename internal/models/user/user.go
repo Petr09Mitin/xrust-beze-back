@@ -4,23 +4,13 @@ import (
 	"errors"
 	"time"
 
-	"github.com/go-playground/validator/v10"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/validation"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-var (
-	validate *validator.Validate
-	// emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
-)
-
-func init() {
-	validate = validator.New()
-}
-
-// Модель пользователя
 type User struct {
 	ID              primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	Username        string             `json:"username" bson:"username" validate:"required,min=3,max=50"`
+	Username        string             `json:"username" bson:"username" validate:"required,validate-username"`
 	Email           string             `json:"email" bson:"email" validate:"required,email"`
 	SkillsToLearn   []Skill            `json:"skills_to_learn" bson:"skills_to_learn"`
 	SkillsToShare   []Skill            `json:"skills_to_share" bson:"skills_to_share"`
@@ -32,10 +22,31 @@ type User struct {
 	PreferredFormat string             `json:"preferred_format" bson:"preferred_format" validate:"omitempty,oneof=text voice video"`
 }
 
-// type UserWithPassword struct {
-// 	User
-// 	Password string `json:"password" bson:"password" validate:"required,validate-password"`
-// }
+type UserToCreate struct {
+	Username        string    `bson:"username"`
+	Email           string    `bson:"email"`
+	Password        string    `bson:"password"`
+	SkillsToLearn   []Skill   `bson:"skills_to_learn"`
+	SkillsToShare   []Skill   `bson:"skills_to_share"`
+	Bio             string    `bson:"bio"`
+	Avatar          string    `bson:"avatar"`
+	PreferredFormat string    `bson:"preferred_format"`
+	CreatedAt       time.Time `bson:"created_at"`
+	UpdatedAt       time.Time `bson:"updated_at"`
+	LastActiveAt    time.Time `bson:"last_active_at"`
+}
+
+type UserToUpdate struct {
+	Username        string    `bson:"username"`
+	Email           string    `bson:"email"`
+	SkillsToLearn   []Skill   `bson:"skills_to_learn"`
+	SkillsToShare   []Skill   `bson:"skills_to_share"`
+	Bio             string    `bson:"bio"`
+	Avatar          string    `bson:"avatar"`
+	UpdatedAt       time.Time `bson:"updated_at"`
+	LastActiveAt    time.Time `bson:"last_active_at"`
+	PreferredFormat string    `bson:"preferred_format"`
+}
 
 // Навык
 type Skill struct {
@@ -50,39 +61,23 @@ type SkillsByCategory struct {
 	Skills   []string `json:"skills" bson:"skills"`
 }
 
-// Проверяет валидность модели пользователя
 func (u *User) Validate() error {
-	if err := validate.Struct(u); err != nil {
+	if err := validation.Validate.Struct(u); err != nil {
 		return err
 	}
-	// if !emailRegex.MatchString(u.Email) {
-	// 	return errors.New("invalid email format")
-	// }
 	// Проверка навыков (есть хотя бы один)
 	if len(u.SkillsToLearn) == 0 && len(u.SkillsToShare) == 0 {
 		return errors.New("at least one skill to learn or share is required")
 	}
-
 	for _, skill := range u.SkillsToLearn {
-		if err := validate.Struct(skill); err != nil {
+		if err := validation.Validate.Struct(skill); err != nil {
 			return errors.New("invalid skill to learn: " + err.Error())
 		}
 	}
 	for _, skill := range u.SkillsToShare {
-		if err := validate.Struct(skill); err != nil {
+		if err := validation.Validate.Struct(skill); err != nil {
 			return errors.New("invalid skill to share: " + err.Error())
 		}
 	}
 	return nil
 }
-
-// func (u *UserWithPassword) Validate() error {
-// 	if err := u.User.Validate(); err != nil {
-// 		return err
-// 	}
-// 	// Password провалидируется здесь
-// 	if err := validate.Struct(u); err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }

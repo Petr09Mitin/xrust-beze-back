@@ -19,13 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	UserService_CreateUser_FullMethodName            = "/user.UserService/CreateUser"
-	UserService_GetUserByID_FullMethodName           = "/user.UserService/GetUserByID"
-	UserService_GetUserByEmailToLogin_FullMethodName = "/user.UserService/GetUserByEmailToLogin"
-	UserService_UpdateUser_FullMethodName            = "/user.UserService/UpdateUser"
-	UserService_DeleteUser_FullMethodName            = "/user.UserService/DeleteUser"
-	UserService_ListUsers_FullMethodName             = "/user.UserService/ListUsers"
-	UserService_FindMatchingUsers_FullMethodName     = "/user.UserService/FindMatchingUsers"
+	UserService_CreateUser_FullMethodName               = "/user.UserService/CreateUser"
+	UserService_GetUserByID_FullMethodName              = "/user.UserService/GetUserByID"
+	UserService_GetUserByEmailToLogin_FullMethodName    = "/user.UserService/GetUserByEmailToLogin"
+	UserService_GetUserByUsernameToLogin_FullMethodName = "/user.UserService/GetUserByUsernameToLogin"
+	UserService_UpdateUser_FullMethodName               = "/user.UserService/UpdateUser"
+	UserService_DeleteUser_FullMethodName               = "/user.UserService/DeleteUser"
+	UserService_ListUsers_FullMethodName                = "/user.UserService/ListUsers"
+	UserService_FindMatchingUsers_FullMethodName        = "/user.UserService/FindMatchingUsers"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -35,6 +36,7 @@ type UserServiceClient interface {
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*UserResponse, error)
 	GetUserByID(ctx context.Context, in *GetUserByIDRequest, opts ...grpc.CallOption) (*UserResponse, error)
 	GetUserByEmailToLogin(ctx context.Context, in *GetUserByEmailRequest, opts ...grpc.CallOption) (*UserToLoginResponse, error)
+	GetUserByUsernameToLogin(ctx context.Context, in *GetUserByUsernameRequest, opts ...grpc.CallOption) (*UserToLoginResponse, error)
 	UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*UserResponse, error)
 	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*DeleteUserResponse, error)
 	ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (*ListUsersResponse, error)
@@ -73,6 +75,16 @@ func (c *userServiceClient) GetUserByEmailToLogin(ctx context.Context, in *GetUs
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UserToLoginResponse)
 	err := c.cc.Invoke(ctx, UserService_GetUserByEmailToLogin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetUserByUsernameToLogin(ctx context.Context, in *GetUserByUsernameRequest, opts ...grpc.CallOption) (*UserToLoginResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserToLoginResponse)
+	err := c.cc.Invoke(ctx, UserService_GetUserByUsernameToLogin_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -126,6 +138,7 @@ type UserServiceServer interface {
 	CreateUser(context.Context, *CreateUserRequest) (*UserResponse, error)
 	GetUserByID(context.Context, *GetUserByIDRequest) (*UserResponse, error)
 	GetUserByEmailToLogin(context.Context, *GetUserByEmailRequest) (*UserToLoginResponse, error)
+	GetUserByUsernameToLogin(context.Context, *GetUserByUsernameRequest) (*UserToLoginResponse, error)
 	UpdateUser(context.Context, *UpdateUserRequest) (*UserResponse, error)
 	DeleteUser(context.Context, *DeleteUserRequest) (*DeleteUserResponse, error)
 	ListUsers(context.Context, *ListUsersRequest) (*ListUsersResponse, error)
@@ -148,6 +161,9 @@ func (UnimplementedUserServiceServer) GetUserByID(context.Context, *GetUserByIDR
 }
 func (UnimplementedUserServiceServer) GetUserByEmailToLogin(context.Context, *GetUserByEmailRequest) (*UserToLoginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserByEmailToLogin not implemented")
+}
+func (UnimplementedUserServiceServer) GetUserByUsernameToLogin(context.Context, *GetUserByUsernameRequest) (*UserToLoginResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserByUsernameToLogin not implemented")
 }
 func (UnimplementedUserServiceServer) UpdateUser(context.Context, *UpdateUserRequest) (*UserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateUser not implemented")
@@ -232,6 +248,24 @@ func _UserService_GetUserByEmailToLogin_Handler(srv interface{}, ctx context.Con
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServiceServer).GetUserByEmailToLogin(ctx, req.(*GetUserByEmailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetUserByUsernameToLogin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserByUsernameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetUserByUsernameToLogin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetUserByUsernameToLogin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetUserByUsernameToLogin(ctx, req.(*GetUserByUsernameRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -326,6 +360,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserByEmailToLogin",
 			Handler:    _UserService_GetUserByEmailToLogin_Handler,
+		},
+		{
+			MethodName: "GetUserByUsernameToLogin",
+			Handler:    _UserService_GetUserByUsernameToLogin_Handler,
 		},
 		{
 			MethodName: "UpdateUser",

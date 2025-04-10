@@ -10,6 +10,7 @@ service UserService {
   rpc CreateUser(CreateUserRequest) returns (UserResponse);
   rpc GetUserByID(GetUserByIDRequest) returns (UserResponse);
   rpc GetUserByEmailToLogin(GetUserByEmailRequest) returns (UserToLoginResponse);
+  rpc GetUserByUsernameToLogin(GetUserByUsernameRequest) returns (UserToLoginResponse);
   rpc UpdateUser(UpdateUserRequest) returns (UserResponse);
   rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
   rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
@@ -59,6 +60,10 @@ message GetUserByIDRequest {
 
 message GetUserByEmailRequest {
   string email = 1;
+}
+
+message GetUserByUsernameRequest {
+  string username = 1;
 }
 
 message UpdateUserRequest {

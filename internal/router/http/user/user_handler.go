@@ -26,7 +26,6 @@ func NewUserHandler(router *gin.Engine, userService user_service.UserService, au
 
 	userGroup := router.Group("/api/v1/users")
 	{
-		userGroup.POST("/create", handler.Create)
 		userGroup.GET("/:id", handler.GetByID)
 		userGroup.GET("", handler.List)
 		userGroup.GET("/match/:id", handler.FindMatchingUsers)
@@ -38,29 +37,6 @@ func NewUserHandler(router *gin.Engine, userService user_service.UserService, au
 		secure.PUT("/:id", handler.Update)
 		secure.DELETE("/:id", handler.Delete)
 	}
-}
-
-// ручка для тестов, регистрация в сервисе auth
-func (h *UserHandler) Create(c *gin.Context) {
-	ctx := c.Request.Context()
-	var input user_model.User
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	hashedPassword := "dummy"
-	if err := h.userService.Create(ctx, &input, hashedPassword); err != nil {
-		// Проверяем, является ли ошибка ошибкой валидации
-		if _, ok := err.(validator.ValidationErrors); ok {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-		return
-	}
-
-	c.JSON(http.StatusCreated, input)
 }
 
 func (h *UserHandler) GetByID(c *gin.Context) {
@@ -79,27 +55,6 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 func (h *UserHandler) Update(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	// userIDCtx, exists := c.Get("user_id")
-	// if !exists {
-	// 	c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-	// 	// в общем случае такие не должны допускаться сюда мидлварой
-	// 	return
-	// }
-	// userIDStr, ok := userIDCtx.(string)
-	// if !ok {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user_id format"})
-	// 	return
-	// }
-	// paramID := c.Param("id")
-	// if userIDStr != paramID {
-	// 	c.JSON(http.StatusForbidden, gin.H{"error": "cannot update another user's data"})
-	// 	return
-	// }
-	// userObjectID, err := primitive.ObjectIDFromHex(userIDStr)
-	// if err != nil {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
-	// 	return
-	// }
 	userObjectID, err := extractAndValidateUserID(c)
 	if err != nil {
 		return // JSON-ответ уже установлен в функции
@@ -217,3 +172,26 @@ func extractAndValidateUserID(c *gin.Context) (primitive.ObjectID, error) {
 
 	return userObjectID, nil
 }
+
+// ручка для тестов, регистрация в сервисе auth
+// func (h *UserHandler) Create(c *gin.Context) {
+// 	ctx := c.Request.Context()
+// 	var input user_model.User
+// 	if err := c.ShouldBindJSON(&input); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	hashedPassword := "dummy"
+// if err := h.userService.Create(ctx, &input, hashedPassword); err != nil {
+// 		// Проверяем, является ли ошибка ошибкой валидации
+// 		if _, ok := err.(validator.ValidationErrors); ok {
+// 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 			return
+// 		}
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusCreated, input)
+// }

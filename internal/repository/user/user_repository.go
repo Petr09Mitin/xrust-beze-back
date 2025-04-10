@@ -24,6 +24,7 @@ type UserRepo interface {
 	// GetByEmailWithPassword(ctx context.Context, email string) (*user_model.UserWithPassword, error)
 	GetByEmailWithPassword(ctx context.Context, email string) (*auth_model.RegisterRequest, error)
 	GetByUsername(ctx context.Context, username string) (*user_model.User, error)
+	GetByUsernameWithPassword(ctx context.Context, username string) (*auth_model.RegisterRequest, error)
 	Update(ctx context.Context, user *user_model.User) error
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, page, limit int) ([]*user_model.User, error)
@@ -44,7 +45,6 @@ func NewUserRepository(db *mongo.Database, timeout time.Duration, logger zerolog
 	}
 }
 
-// func (r *userRepository) Create(ctx context.Context, user *user_model.User) error {
 func (r *userRepository) Create(ctx context.Context, user *user_model.User, hashedPassword string) error {
 	ctx, cancel := context.WithTimeout(ctx, r.timeout)
 	defer cancel()
@@ -53,19 +53,18 @@ func (r *userRepository) Create(ctx context.Context, user *user_model.User, hash
 	user.UpdatedAt = time.Now()
 	user.LastActiveAt = time.Now()
 
-	// Создаем документ для MongoDB
-	doc := bson.M{
-		"username":         user.Username,
-		"email":            user.Email,
-		"password":         hashedPassword,
-		"skills_to_learn":  user.SkillsToLearn,
-		"skills_to_share":  user.SkillsToShare,
-		"bio":              user.Bio,
-		"avatar":           user.Avatar,
-		"preferred_format": user.PreferredFormat,
-		"created_at":       user.CreatedAt,
-		"updated_at":       user.UpdatedAt,
-		"last_active_at":   user.LastActiveAt,
+	doc := user_model.UserToCreate{
+		Username:        user.Username,
+		Email:           user.Email,
+		Password:        hashedPassword,
+		SkillsToLearn:   user.SkillsToLearn,
+		SkillsToShare:   user.SkillsToShare,
+		Bio:             user.Bio,
+		Avatar:          user.Avatar,
+		PreferredFormat: user.PreferredFormat,
+		CreatedAt:       user.CreatedAt,
+		UpdatedAt:       user.UpdatedAt,
+		LastActiveAt:    user.LastActiveAt,
 	}
 
 	result, err := r.collection.InsertOne(ctx, doc)
@@ -116,26 +115,7 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*user_mo
 }
 
 func (r *userRepository) GetByEmailWithPassword(ctx context.Context, email string) (*auth_model.RegisterRequest, error) {
-	ctx, cancel := context.WithTimeout(ctx, r.timeout)
-	defer cancel()
-	user, err := r.GetByEmail(ctx, email)
-	if err != nil {
-		return nil, err
-	}
-	// Получаем только пароль
-	var doc bson.M
-	err = r.collection.FindOne(ctx, bson.M{"_id": user.ID}).Decode(&doc)
-	if err != nil {
-		return nil, err
-	}
-	password, ok := doc["password"].(string)
-	if !ok {
-		return nil, custom_errors.ErrMissingPassword
-	}
-	return &auth_model.RegisterRequest{
-		User:     *user,
-		Password: password,
-	}, nil
+	return r.getUserWithPasswordByFilter(ctx, bson.M{"email": email})
 }
 
 func (r *userRepository) GetByUsername(ctx context.Context, username string) (*user_model.User, error) {
@@ -154,14 +134,31 @@ func (r *userRepository) GetByUsername(ctx context.Context, username string) (*u
 	return &u, nil
 }
 
+func (r *userRepository) GetByUsernameWithPassword(ctx context.Context, username string) (*auth_model.RegisterRequest, error) {
+	return r.getUserWithPasswordByFilter(ctx, bson.M{"username": username})
+}
+
 func (r *userRepository) Update(ctx context.Context, user *user_model.User) error {
 	ctx, cancel := context.WithTimeout(ctx, r.timeout)
 	defer cancel()
 
 	user.UpdatedAt = time.Now()
 
-	_, err := r.collection.ReplaceOne(ctx, bson.M{"_id": user.ID}, user)
+	update := bson.M{
+		"$set": user_model.UserToUpdate{
+			Username:        user.Username,
+			Email:           user.Email,
+			SkillsToLearn:   user.SkillsToLearn,
+			SkillsToShare:   user.SkillsToShare,
+			Bio:             user.Bio,
+			Avatar:          user.Avatar,
+			PreferredFormat: user.PreferredFormat,
+			UpdatedAt:       user.UpdatedAt,
+			LastActiveAt:    user.LastActiveAt,
+		},
+	}
 
+	_, err := r.collection.UpdateOne(ctx, bson.M{"_id": user.ID}, update)
 	return err
 }
 
@@ -241,4 +238,31 @@ func (r *userRepository) FindBySkills(ctx context.Context, skillsToLearn, skills
 	}
 
 	return users, nil
+}
+
+func (r *userRepository) getUserWithPasswordByFilter(ctx context.Context, filter bson.M) (*auth_model.RegisterRequest, error) {
+	ctx, cancel := context.WithTimeout(ctx, r.timeout)
+	defer cancel()
+
+	var user user_model.User
+	if err := r.collection.FindOne(ctx, filter).Decode(&user); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, custom_errors.ErrNotFound
+		}
+		return nil, err
+	}
+
+	var doc bson.M
+	if err := r.collection.FindOne(ctx, bson.M{"_id": user.ID}).Decode(&doc); err != nil {
+		return nil, err
+	}
+	password, ok := doc["password"].(string)
+	if !ok {
+		return nil, custom_errors.ErrMissingPassword
+	}
+
+	return &auth_model.RegisterRequest{
+		User:     user,
+		Password: password,
+	}, nil
 }

@@ -22,6 +22,7 @@ type UserService interface {
 	// GetByEmailWithPassword(ctx context.Context, email string) (*user_model.UserWithPassword, error)
 	GetByEmailWithPassword(ctx context.Context, email string) (*auth_model.RegisterRequest, error)
 	GetByUsername(ctx context.Context, username string) (*user_model.User, error)
+	GetByUsernameWithPassword(ctx context.Context, username string) (*auth_model.RegisterRequest, error)
 	Update(ctx context.Context, user *user_model.User) error
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, page, limit int) ([]*user_model.User, error)
@@ -94,10 +95,11 @@ func (s *userService) GetByUsername(ctx context.Context, username string) (*user
 	return s.userRepo.GetByUsername(ctx, username)
 }
 
+func (s *userService) GetByUsernameWithPassword(ctx context.Context, username string) (*auth_model.RegisterRequest, error) {
+	return s.userRepo.GetByUsernameWithPassword(ctx, username)
+}
+
 func (s *userService) Update(ctx context.Context, user *user_model.User) error {
-
-	// добавить проверку соответствия id авторизованного пользователя и того, что хотим удалить
-
 	if err := user.Validate(); err != nil {
 		return err
 	}
@@ -149,20 +151,19 @@ func (s *userService) Update(ctx context.Context, user *user_model.User) error {
 }
 
 func (s *userService) Delete(ctx context.Context, id string) error {
-
-	// добавить проверку соответствия id авторизованного пользователя и того, что хотим удалить
-
 	// Проверяем существование пользователя
 	user, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	_, err = s.fileGRPC.DeleteAvatar(ctx, &filepb.DeleteAvatarRequest{
-		Filename: user.Avatar,
-	})
-	if err != nil {
-		return err
+	if user.Avatar != "" {
+		_, err = s.fileGRPC.DeleteAvatar(ctx, &filepb.DeleteAvatarRequest{
+			Filename: user.Avatar,
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return s.userRepo.Delete(ctx, id)

@@ -13,6 +13,7 @@ import (
 
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/config"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/logger"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/validation"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/router/middleware"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc/credentials/insecure"
@@ -21,13 +22,14 @@ import (
 	grpc_handler "github.com/Petr09Mitin/xrust-beze-back/internal/router/grpc/user"
 	http_handler "github.com/Petr09Mitin/xrust-beze-back/internal/router/http/user"
 	user_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/user"
-	authpb "github.com/Petr09Mitin/xrust-beze-back/proto/auth"
-	filepb "github.com/Petr09Mitin/xrust-beze-back/proto/file"
-	pb "github.com/Petr09Mitin/xrust-beze-back/proto/user"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"google.golang.org/grpc"
+
+	authpb "github.com/Petr09Mitin/xrust-beze-back/proto/auth"
+	filepb "github.com/Petr09Mitin/xrust-beze-back/proto/file"
+	userpb "github.com/Petr09Mitin/xrust-beze-back/proto/user"
 )
 
 var (
@@ -38,6 +40,11 @@ var (
 func main() {
 	log := logger.NewLogger()
 	log.Println("Starting user microservice...")
+
+	err := validation.Init()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to initialize validators")
+	}
 
 	cfg, err := config.NewUser()
 	if err != nil {
@@ -111,7 +118,7 @@ func main() {
 
 		grpcServer = grpc.NewServer()
 		userGrpcService := grpc_handler.NewUserService(userService, log)
-		pb.RegisterUserServiceServer(grpcServer, userGrpcService)
+		userpb.RegisterUserServiceServer(grpcServer, userGrpcService)
 
 		log.Printf("gRPC server starting on port %d...", grpcPort)
 		if err := grpcServer.Serve(lis); err != nil {
