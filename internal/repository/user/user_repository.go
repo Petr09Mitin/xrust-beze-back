@@ -26,7 +26,8 @@ type UserRepo interface {
 	Update(ctx context.Context, user *user_model.User) error
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, page, limit int) ([]*user_model.User, error)
-	FindBySkills(ctx context.Context, skillsToLearn, skillsToShare []string) ([]*user_model.User, error)
+	FindBySkills(ctx context.Context, skillsToLearn []string) ([]*user_model.User, error)
+	FindByUsername(ctx context.Context, currUserID, name string, limit, offset int64) ([]*user_model.User, error)
 }
 
 type userRepository struct {
@@ -209,16 +210,13 @@ func (r *userRepository) List(ctx context.Context, page, limit int) ([]*user_mod
 	return users, nil
 }
 
-func (r *userRepository) FindBySkills(ctx context.Context, skillsToLearn, skillsToShare []string) ([]*user_model.User, error) {
+func (r *userRepository) FindBySkills(ctx context.Context, skillsToLearn []string) ([]*user_model.User, error) {
 	ctx, cancel := context.WithTimeout(ctx, r.timeout)
 	defer cancel()
 
 	filter := bson.M{}
 	if len(skillsToLearn) > 0 {
 		filter["skills_to_share.name"] = bson.M{"$in": skillsToLearn}
-	}
-	if len(skillsToShare) > 0 {
-		filter["skills_to_learn.name"] = bson.M{"$in": skillsToShare}
 	}
 
 	cursor, err := r.collection.Find(ctx, filter)
@@ -233,6 +231,51 @@ func (r *userRepository) FindBySkills(ctx context.Context, skillsToLearn, skills
 	}()
 
 	var users []*user_model.User
+	if err = cursor.All(ctx, &users); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+func (r *userRepository) FindByUsername(ctx context.Context, currUserID, name string, limit, offset int64) ([]*user_model.User, error) {
+	ctx, cancel := context.WithTimeout(ctx, r.timeout)
+	defer cancel()
+	id, err := primitive.ObjectIDFromHex(currUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	filter := bson.D{
+		{"_id", bson.D{
+			{"$ne", id},
+		}},
+		{
+			"username", bson.D{
+				{"$regex", "^" + name},
+				{"$options", "i"},
+			},
+		},
+	}
+	cursor, err := r.collection.Find(
+		ctx,
+		filter,
+		options.
+			Find().
+			SetSkip(offset).
+			SetLimit(limit),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		err = cursor.Close(ctx)
+		if err != nil {
+			r.logger.Error().Err(err).Msg("failed to close cursor")
+		}
+	}()
+
+	users := make([]*user_model.User, 0)
 	if err = cursor.All(ctx, &users); err != nil {
 		return nil, err
 	}

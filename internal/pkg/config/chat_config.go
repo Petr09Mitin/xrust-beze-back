@@ -8,15 +8,16 @@ type HTTP struct {
 	Port int `mapstructure:"port"`
 }
 
-type Services struct {
-	UserService *GRPCService `mapstructure:"user_service"`
+type ChatServices struct {
+	UserService            *GRPCService `mapstructure:"user_service"`
+	StructurizationService *GRPCService `mapstructure:"structurization_service"`
 }
 
 type Chat struct {
-	HTTP     *HTTP     `mapstructure:"http"`
-	Services *Services `mapstructure:"services"`
-	Mongo    *Mongo    `mapstructure:"mongo"`
-	Kafka    *Kafka    `mapstructure:"kafka"`
+	HTTP     *HTTP         `mapstructure:"http"`
+	Services *ChatServices `mapstructure:"services"`
+	Mongo    *Mongo        `mapstructure:"mongo"`
+	Kafka    *Kafka        `mapstructure:"kafka"`
 }
 
 func NewChat() (*Chat, error) {

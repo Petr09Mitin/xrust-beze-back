@@ -1,9 +1,10 @@
 dev-init:
-	docker-compose up -d
+	#docker-compose up -d
 #	sleep 4 # wait for init all services
 #	docker-compose exec mongo_db sh -c "mongo < /scripts/mongo-init.js"
-	sleep 4
-	docker-compose exec mongo_db sh -c "mongo < /scripts/init-db.js"
+	#sleep 4
+	#docker-compose exec mongo_db sh -c "mongo < /scripts/init-db.js"
+	docker-compose exec mongo_db sh -c "mongo < /scripts/init-indexes.js"
 
 start:
 	docker build -t xrust_beze_chat:latest -f cmd/chat/Dockerfile . \

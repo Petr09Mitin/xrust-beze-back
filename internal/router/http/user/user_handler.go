@@ -4,10 +4,12 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/Petr09Mitin/xrust-beze-back/internal/middleware"
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/httpparser"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/validation"
 	user_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/user"
 	authpb "github.com/Petr09Mitin/xrust-beze-back/proto/auth"
@@ -29,6 +31,7 @@ func NewUserHandler(router *gin.Engine, userService user_service.UserService, au
 		userGroup.GET("/:id", handler.GetByID)
 		userGroup.GET("", handler.List)
 		userGroup.GET("/match/:id", handler.FindMatchingUsers)
+		userGroup.GET("/by-name", handler.FindByUsername)
 	}
 
 	secure := router.Group("/api/v1/users")
@@ -144,6 +147,22 @@ func (h *UserHandler) FindMatchingUsers(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, users)
+}
+
+func (h *UserHandler) FindByUsername(c *gin.Context) {
+	username := strings.TrimSpace(c.Query("username"))
+	userID := strings.TrimSpace(c.Query("user_id"))
+	if username == "" || userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "username is required"})
+		return
+	}
+	limit, offset := httpparser.GetLimitAndOffset(c)
+	users, err := h.userService.FindUsersByUsername(c.Request.Context(), userID, username, limit, offset)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"users": users})
 }
 
 // Извлекает user_id из контекста и проверяет соответствие параметру запроса

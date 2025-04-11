@@ -8,6 +8,7 @@ import (
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/logger"
 	channelrepo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/channel"
 	message_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/chat"
+	structurization_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/structurization"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/router/http/chat"
 	chat_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/chat"
 	pb "github.com/Petr09Mitin/xrust-beze-back/proto/user"
@@ -54,8 +55,10 @@ func main() {
 		return
 	}
 	userGRPCClient := pb.NewUserServiceClient(userGRPCConn)
-	chatService := chat_service.NewChatService(msgRepo, chanRepo, userGRPCClient, log)
+	structurizationRepo := structurization_repo.NewStructurizationRepository(cfg.Services.StructurizationService, log)
+	chatService := chat_service.NewChatService(msgRepo, chanRepo, structurizationRepo, userGRPCClient, log, cfg)
 	m := melody.New()
+	m.Config.MaxMessageSize = 1 << 20
 	kafkaSub, err := infrakafka.NewKafkaSubscriber(cfg.Kafka)
 	if err != nil {
 		log.Err(err).Msg("failed to connect to kafka sub")

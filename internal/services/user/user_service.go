@@ -25,6 +25,7 @@ type UserService interface {
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, page, limit int) ([]*user_model.User, error)
 	FindMatchingUsers(ctx context.Context, userID string) ([]*user_model.User, error)
+	FindUsersByUsername(ctx context.Context, userID, username string, limit, offset int64) ([]*user_model.User, error)
 }
 
 type userService struct {
@@ -165,18 +166,13 @@ func (s *userService) FindMatchingUsers(ctx context.Context, userID string) ([]*
 	}
 
 	var skillsToLearn []string
-	var skillsToShare []string
 
 	for _, skill := range currentUser.SkillsToLearn {
 		skillsToLearn = append(skillsToLearn, skill.Name)
 	}
 
-	for _, skill := range currentUser.SkillsToShare {
-		skillsToShare = append(skillsToShare, skill.Name)
-	}
-
 	// Находим пользователей с подходящими навыками
-	matchingUsers, err := s.userRepo.FindBySkills(ctx, skillsToLearn, skillsToShare)
+	matchingUsers, err := s.userRepo.FindBySkills(ctx, skillsToLearn)
 	if err != nil {
 		return nil, err
 	}
@@ -190,4 +186,14 @@ func (s *userService) FindMatchingUsers(ctx context.Context, userID string) ([]*
 	}
 
 	return filteredUsers, nil
+}
+
+func (s *userService) FindUsersByUsername(ctx context.Context, userID, username string, limit, offset int64) ([]*user_model.User, error) {
+	if limit > 1000 || limit <= 0 {
+		limit = 1000
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	return s.userRepo.FindByUsername(ctx, userID, username, limit, offset)
 }

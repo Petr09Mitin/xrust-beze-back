@@ -17,12 +17,16 @@ type Cookie struct {
 	HttpOnly bool   `mapstructure:"http_only"`
 }
 
+type AuthServiceServices struct {
+	UserService *GRPCService `mapstructure:"user_service"`
+}
+
 type Auth struct {
-	HTTP     *HTTP     `mapstructure:"http"`
-	GRPC     *GRPC     `mapstructure:"grpc"`
-	Redis    *Redis    `mapstructure:"redis"`
-	Cookie   *Cookie   `mapstructure:"cookie"`
-	Services *Services `mapstructure:"services"`
+	HTTP     *HTTP                `mapstructure:"http"`
+	GRPC     *GRPC                `mapstructure:"grpc"`
+	Redis    *Redis               `mapstructure:"redis"`
+	Cookie   *Cookie              `mapstructure:"cookie"`
+	Services *AuthServiceServices `mapstructure:"services"`
 }
 
 func NewAuth() (*Auth, error) {
