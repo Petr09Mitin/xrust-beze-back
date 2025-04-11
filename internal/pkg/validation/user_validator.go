@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"errors"
 	"log"
 	"strings"
 	"unicode"
@@ -10,6 +11,11 @@ import (
 
 var Validate *validator.Validate
 
+type ValidationErrorResponse struct {
+	Error                 string   `json:"error"`
+	ValidationErrorFields []string `json:"validation_error_fields"`
+}
+
 func Init() error {
 	Validate = validator.New()
 
@@ -18,6 +24,21 @@ func Init() error {
 	}
 	if err := Validate.RegisterValidation("validate-password", ValidatePassword); err != nil {
 		return err
+	}
+	return nil
+}
+
+func BuildValidationError(err error) *ValidationErrorResponse {
+	var validationErrs validator.ValidationErrors
+	if errors.As(err, &validationErrs) {
+		fields := make([]string, 0, len(validationErrs))
+		for _, fieldErr := range validationErrs {
+			fields = append(fields, fieldErr.StructField())
+		}
+		return &ValidationErrorResponse{
+			Error:                 "validation failed: one or more fields are invalid",
+			ValidationErrorFields: fields,
+		}
 	}
 	return nil
 }

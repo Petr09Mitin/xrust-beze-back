@@ -46,7 +46,6 @@ func NewUserService(userRepo user_repo.UserRepo, fileGRPC filepb.FileServiceClie
 }
 
 func (s *userService) Create(ctx context.Context, user *user_model.User, hashedPassword string) error {
-
 	existingUser, err := s.userRepo.GetByEmail(ctx, user.Email)
 	if err == nil && existingUser != nil {
 		return custom_errors.ErrEmailAlreadyExists
@@ -91,9 +90,6 @@ func (s *userService) GetByUsernameWithPassword(ctx context.Context, username st
 }
 
 func (s *userService) Update(ctx context.Context, user *user_model.User) error {
-	if err := user.Validate(); err != nil {
-		return err
-	}
 	// Проверяем существование пользователя
 	existingUser, err := s.userRepo.GetByID(ctx, user.ID.Hex())
 	if err != nil {

@@ -60,7 +60,6 @@ func (s *authService) Register(ctx context.Context, req *auth_model.RegisterRequ
 
 func (s *authService) Login(ctx context.Context, req *auth_model.LoginRequest) (*auth_model.Session, *user_model.User, error) {
 	var userWithPassword *user_pb.UserToLoginResponse
-	// var err error
 
 	err := req.Validate()
 	if err != nil {

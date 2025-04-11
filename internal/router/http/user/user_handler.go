@@ -8,10 +8,10 @@ import (
 	"github.com/Petr09Mitin/xrust-beze-back/internal/middleware"
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/validation"
 	user_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/user"
 	authpb "github.com/Petr09Mitin/xrust-beze-back/proto/auth"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -54,12 +54,10 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 
 func (h *UserHandler) Update(c *gin.Context) {
 	ctx := c.Request.Context()
-
 	userObjectID, err := extractAndValidateUserID(c)
 	if err != nil {
 		return // JSON-ответ уже установлен в функции
 	}
-
 	var input user_model.User
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -67,14 +65,18 @@ func (h *UserHandler) Update(c *gin.Context) {
 	}
 	input.ID = userObjectID
 
-	if err := h.userService.Update(ctx, &input); err != nil {
-		if errors.Is(err, custom_errors.ErrNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+	if err := input.Validate(); err != nil {
+		if validationResp := validation.BuildValidationError(err); validationResp != nil {
+			c.JSON(http.StatusBadRequest, validationResp)
 			return
 		}
-		// Проверяем, является ли ошибка ошибкой валидации
-		if _, ok := err.(validator.ValidationErrors); ok {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.userService.Update(ctx, &input); err != nil {
+		if errors.Is(err, custom_errors.ErrUserNotExists) {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -93,16 +95,16 @@ func (h *UserHandler) Delete(c *gin.Context) {
 	}
 
 	id := c.Param("id")
-	err = h.userService.Delete(ctx, id)
-	if errors.Is(err, custom_errors.ErrNotFound) {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+	if err = h.userService.Delete(ctx, id); err != nil {
+		if errors.Is(err, custom_errors.ErrUserNotExists) {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "user deleted successfully"})
 }
 
 // Получение списка пользователей
@@ -144,29 +146,29 @@ func (h *UserHandler) FindMatchingUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, users)
 }
 
-// ExtractAndValidateUserID извлекает user_id из контекста и проверяет соответствие параметру запроса
+// Извлекает user_id из контекста и проверяет соответствие параметру запроса
 func extractAndValidateUserID(c *gin.Context) (primitive.ObjectID, error) {
 	userIDCtx, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": custom_errors.ErrMissingUserID.Error()})
 		return primitive.NilObjectID, custom_errors.ErrMissingUserID
 	}
 
 	userIDStr, ok := userIDCtx.(string)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid user_id format"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": custom_errors.ErrInvalidUserIDType.Error()})
 		return primitive.NilObjectID, custom_errors.ErrInvalidUserIDType
 	}
 
 	paramID := c.Param("id")
 	if userIDStr != paramID {
-		c.JSON(http.StatusForbidden, gin.H{"error": "cannot update another user's data"})
+		c.JSON(http.StatusForbidden, gin.H{"error": custom_errors.ErrUserIDMismatch.Error()})
 		return primitive.NilObjectID, custom_errors.ErrUserIDMismatch
 	}
 
 	userObjectID, err := primitive.ObjectIDFromHex(userIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": custom_errors.ErrInvalidUserID.Error()})
 		return primitive.NilObjectID, custom_errors.ErrInvalidUserID
 	}
 

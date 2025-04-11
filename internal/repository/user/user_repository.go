@@ -17,11 +17,9 @@ import (
 )
 
 type UserRepo interface {
-	// Create(ctx context.Context, user *user_model.User) error
 	Create(ctx context.Context, user *user_model.User, hashedPassword string) error
 	GetByID(ctx context.Context, id string) (*user_model.User, error)
 	GetByEmail(ctx context.Context, email string) (*user_model.User, error)
-	// GetByEmailWithPassword(ctx context.Context, email string) (*user_model.UserWithPassword, error)
 	GetByEmailWithPassword(ctx context.Context, email string) (*auth_model.RegisterRequest, error)
 	GetByUsername(ctx context.Context, username string) (*user_model.User, error)
 	GetByUsernameWithPassword(ctx context.Context, username string) (*auth_model.RegisterRequest, error)
@@ -70,7 +68,7 @@ func (r *userRepository) Create(ctx context.Context, user *user_model.User, hash
 
 	result, err := r.collection.InsertOne(ctx, doc)
 	if err != nil {
-		r.logger.Error().Err(err).Msg("Failed to create user in MongoDB")
+		r.logger.Error().Err(err).Msg("failed to create user in MongoDB")
 		return err
 	}
 
@@ -90,7 +88,7 @@ func (r *userRepository) GetByID(ctx context.Context, id string) (*user_model.Us
 	var u user_model.User
 	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&u)
 	if errors.Is(err, mongo.ErrNoDocuments) {
-		return nil, custom_errors.ErrNotFound
+		return nil, custom_errors.ErrUserNotExists
 	}
 	if err != nil {
 		return nil, err
@@ -106,7 +104,7 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*user_mo
 	var u user_model.User
 	err := r.collection.FindOne(ctx, bson.M{"email": email}).Decode(&u)
 	if errors.Is(err, mongo.ErrNoDocuments) {
-		return nil, custom_errors.ErrNotFound
+		return nil, custom_errors.ErrUserNotExists
 	}
 	if err != nil {
 		return nil, err
@@ -126,7 +124,7 @@ func (r *userRepository) GetByUsername(ctx context.Context, username string) (*u
 	var u user_model.User
 	err := r.collection.FindOne(ctx, bson.M{"username": username}).Decode(&u)
 	if errors.Is(err, mongo.ErrNoDocuments) {
-		return nil, custom_errors.ErrNotFound
+		return nil, custom_errors.ErrUserNotExists
 	}
 	if err != nil {
 		return nil, err
@@ -249,7 +247,7 @@ func (r *userRepository) getUserWithPasswordByFilter(ctx context.Context, filter
 	var user user_model.User
 	if err := r.collection.FindOne(ctx, filter).Decode(&user); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, custom_errors.ErrNotFound
+			return nil, custom_errors.ErrUserNotExists
 		}
 		return nil, err
 	}

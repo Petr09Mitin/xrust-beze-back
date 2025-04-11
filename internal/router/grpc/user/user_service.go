@@ -2,6 +2,7 @@ package user_grpc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
@@ -67,11 +68,14 @@ func (s *UserService) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 	}
 
 	if err := s.userService.Create(ctx, u, req.Password); err != nil {
-		// Проверяем, является ли ошибка ошибкой валидации
-		if _, ok := err.(validator.ValidationErrors); ok {
-			return nil, status.Errorf(codes.InvalidArgument, "validation error: %v", err)
+		switch {
+		case errors.Is(err, custom_errors.ErrEmailAlreadyExists):
+			return nil, status.Errorf(codes.AlreadyExists, custom_errors.ErrEmailAlreadyExists.Error())
+		case errors.Is(err, custom_errors.ErrUsernameAlreadyExists):
+			return nil, status.Errorf(codes.AlreadyExists, custom_errors.ErrUsernameAlreadyExists.Error())
+		default:
+			return nil, status.Errorf(codes.Internal, "failed to create user: %v", err)
 		}
-		return nil, status.Errorf(codes.Internal, "failed to create user: %v", err)
 	}
 
 	return &pb.UserResponse{
@@ -140,7 +144,6 @@ func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 
 	objectID, err := primitive.ObjectIDFromHex(req.Id)
 	if err != nil {
-		s.logger.Error().Err(err).Msg("invalid ID format")
 		return nil, status.Errorf(codes.InvalidArgument, "invalid ID format: %v", err)
 	}
 

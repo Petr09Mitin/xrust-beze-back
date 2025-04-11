@@ -6,6 +6,7 @@ import (
 
 	auth_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/auth"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/config"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/validation"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/services/auth"
 	"github.com/gin-gonic/gin"
 )
@@ -38,9 +39,14 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 	if err := req.Validate(); err != nil {
+		if validationResp := validation.BuildValidationError(err); validationResp != nil {
+			c.JSON(http.StatusBadRequest, validationResp)
+			return
+		}
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
 	user, err := h.authService.Register(c.Request.Context(), &req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
