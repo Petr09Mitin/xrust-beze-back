@@ -264,15 +264,16 @@ func (c *ChatServiceImpl) createVoiceMessage(ctx context.Context, msg chat_model
 
 	createdAt := time.Now().Unix()
 	newMsg := chat_models.Message{
-		Event:     chat_models.VoiceMessageEvent,
-		Type:      msg.Type,
-		ChannelID: channel.ID,
-		UserID:    msg.UserID,
-		PeerID:    msg.PeerID,
-		Voice:     filename,
-		CreatedAt: createdAt,
-		UpdatedAt: createdAt,
-		Payload:   "",
+		Event:         chat_models.VoiceMessageEvent,
+		Type:          msg.Type,
+		ChannelID:     channel.ID,
+		UserID:        msg.UserID,
+		PeerID:        msg.PeerID,
+		Voice:         filename,
+		CreatedAt:     createdAt,
+		UpdatedAt:     createdAt,
+		VoiceDuration: msg.VoiceDuration,
+		Payload:       "",
 	}
 	newMsg.SetReceiverIDs(channel.UserIDs)
 	newMsg, err = c.msgRepo.InsertMessage(ctx, newMsg)
