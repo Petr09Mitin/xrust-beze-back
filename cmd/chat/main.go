@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/repository/file_client"
+	filepb "github.com/Petr09Mitin/xrust-beze-back/proto/file"
 
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/config"
 	infrakafka "github.com/Petr09Mitin/xrust-beze-back/internal/pkg/kafka"
@@ -55,8 +57,20 @@ func main() {
 		return
 	}
 	userGRPCClient := pb.NewUserServiceClient(userGRPCConn)
+
 	structurizationRepo := structurization_repo.NewStructurizationRepository(cfg.Services.StructurizationService, log)
-	chatService := chat_service.NewChatService(msgRepo, chanRepo, structurizationRepo, userGRPCClient, log, cfg)
+
+	fileGRPCConn, err := grpc.NewClient(
+		fmt.Sprintf("%s:%d", cfg.Services.FileService.Host, cfg.Services.FileService.Port),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to connect to file_service")
+		return
+	}
+	fileGRPCClient := filepb.NewFileServiceClient(fileGRPCConn)
+	fileServiceClient := file_client.NewFileServiceClient(fileGRPCClient, log)
+	chatService := chat_service.NewChatService(msgRepo, chanRepo, fileServiceClient, structurizationRepo, userGRPCClient, log, cfg)
 	m := melody.New()
 	m.Config.MaxMessageSize = 1 << 20
 	kafkaSub, err := infrakafka.NewKafkaSubscriber(cfg.Kafka)

@@ -137,6 +137,8 @@ func (ch *Chat) handleMessage(ctx context.Context, msg []byte) error {
 		err = ch.ChatService.ProcessTextMessage(ctx, parsedMsg)
 	case chat_models.StructurizationEvent:
 		err = ch.ChatService.ProcessStructurizationRequest(ctx, parsedMsg)
+	case chat_models.VoiceMessageEvent:
+		err = ch.ChatService.ProcessVoiceMessage(ctx, parsedMsg)
 	default:
 		err = custom_errors.ErrInvalidMessageEvent
 	}

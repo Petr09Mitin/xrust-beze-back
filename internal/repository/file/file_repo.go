@@ -11,10 +11,16 @@ import (
 type FileRepo interface {
 	UploadTemp(ctx context.Context, filepath, filename string) error
 	CopyFromTempToAvatars(ctx context.Context, filename string) (err error)
+	CopyFromTempToVoiceMessages(ctx context.Context, filename string) (err error)
 	DeleteAvatar(ctx context.Context, filename string) (err error)
+	DeleteVoiceMessage(ctx context.Context, filename string) (err error)
 	DeleteTemp(ctx context.Context, filename string) (err error)
 	CheckIfAvatarExists(ctx context.Context, filename string) (exist bool, err error)
+	CheckIfVoiceMessageExists(ctx context.Context, filename string) (exist bool, err error)
 	CheckIfTempExists(ctx context.Context, filename string) (exist bool, err error)
+	CopyFromTempToAttachments(ctx context.Context, filenames []string) (err error)
+	DeleteAttachments(ctx context.Context, filenames []string) (err error)
+	CheckIfAttachmentExists(ctx context.Context, filename string) (exist bool, err error)
 }
 
 type FileRepoImpl struct {
@@ -35,6 +41,14 @@ func NewFileRepo(minioClient *minio.Client, logger zerolog.Logger) (FileRepo, er
 	if err != nil {
 		return nil, err
 	}
+	err = fr.initVoiceMessagesBucket()
+	if err != nil {
+		return nil, err
+	}
+	err = fr.initAttachmentsBucket()
+	if err != nil {
+		return nil, err
+	}
 	return fr, nil
 }
 
@@ -48,7 +62,22 @@ func (f *FileRepoImpl) UploadTemp(ctx context.Context, filepath, filename string
 
 func (f *FileRepoImpl) CopyFromTempToAvatars(ctx context.Context, filename string) error {
 	_, err := f.minioClient.CopyObject(ctx, minio.CopyDestOptions{
-		Bucket: config.AvatarsMinioBucket,
+		Bucket: config.VoiceMessagesMinioBucket,
+		Object: filename,
+	}, minio.CopySrcOptions{
+		Bucket: config.TempMinioBucket,
+		Object: filename,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (f *FileRepoImpl) CopyFromTempToVoiceMessages(ctx context.Context, filename string) error {
+	_, err := f.minioClient.CopyObject(ctx, minio.CopyDestOptions{
+		Bucket: config.VoiceMessagesMinioBucket,
 		Object: filename,
 	}, minio.CopySrcOptions{
 		Bucket: config.TempMinioBucket,
@@ -65,6 +94,10 @@ func (f *FileRepoImpl) DeleteAvatar(ctx context.Context, filename string) error 
 	return f.minioClient.RemoveObject(ctx, config.AvatarsMinioBucket, filename, minio.RemoveObjectOptions{})
 }
 
+func (f *FileRepoImpl) DeleteVoiceMessage(ctx context.Context, filename string) error {
+	return f.minioClient.RemoveObject(ctx, config.VoiceMessagesMinioBucket, filename, minio.RemoveObjectOptions{})
+}
+
 func (f *FileRepoImpl) DeleteTemp(ctx context.Context, filename string) error {
 	return f.minioClient.RemoveObject(ctx, config.TempMinioBucket, filename, minio.RemoveObjectOptions{})
 }
@@ -75,6 +108,10 @@ func (f *FileRepoImpl) CheckIfTempExists(ctx context.Context, filename string) (
 
 func (f *FileRepoImpl) CheckIfAvatarExists(ctx context.Context, filename string) (exist bool, err error) {
 	return f.checkIfObjectExists(ctx, config.AvatarsMinioBucket, filename)
+}
+
+func (f *FileRepoImpl) CheckIfVoiceMessageExists(ctx context.Context, filename string) (exist bool, err error) {
+	return f.checkIfObjectExists(ctx, config.VoiceMessagesMinioBucket, filename)
 }
 
 func (f *FileRepoImpl) checkIfObjectExists(ctx context.Context, bucket, filename string) (exist bool, err error) {
@@ -143,6 +180,48 @@ func (f *FileRepoImpl) initAvatarsBucket() error {
 	return nil
 }
 
+func (f *FileRepoImpl) initVoiceMessagesBucket() error {
+	exists, err := f.minioClient.BucketExists(context.Background(), config.VoiceMessagesMinioBucket)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		err = f.minioClient.MakeBucket(context.Background(), config.VoiceMessagesMinioBucket, minio.MakeBucketOptions{
+			Region: "ru-central1",
+		})
+		if err != nil {
+			return err
+		}
+
+		err := f.minioClient.SetBucketPolicy(context.Background(), config.VoiceMessagesMinioBucket, f.getPublicReadPolicy(config.VoiceMessagesMinioBucket))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (f *FileRepoImpl) initAttachmentsBucket() error {
+	exists, err := f.minioClient.BucketExists(context.Background(), config.AttachmentsMinioBucket)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		err = f.minioClient.MakeBucket(context.Background(), config.AttachmentsMinioBucket, minio.MakeBucketOptions{
+			Region: "ru-central1",
+		})
+		if err != nil {
+			return err
+		}
+
+		err := f.minioClient.SetBucketPolicy(context.Background(), config.AttachmentsMinioBucket, f.getPublicReadPolicy(config.AttachmentsMinioBucket))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (f *FileRepoImpl) getPublicReadPolicy(bucketName string) string {
 	return `{
         "Version": "2012-10-17",
@@ -156,4 +235,34 @@ func (f *FileRepoImpl) getPublicReadPolicy(bucketName string) string {
             }
         ]
     }`
+}
+
+func (f *FileRepoImpl) CopyFromTempToAttachments(ctx context.Context, filenames []string) (err error) {
+	for _, filename := range filenames {
+		_, err := f.minioClient.CopyObject(ctx, minio.CopyDestOptions{
+			Bucket: config.AttachmentsMinioBucket,
+			Object: filename,
+		}, minio.CopySrcOptions{
+			Bucket: config.TempMinioBucket,
+			Object: filename,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+func (f *FileRepoImpl) DeleteAttachments(ctx context.Context, filenames []string) (err error) {
+	for _, filename := range filenames {
+		err := f.minioClient.RemoveObject(ctx, config.AttachmentsMinioBucket, filename, minio.RemoveObjectOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+func (f *FileRepoImpl) CheckIfAttachmentExists(ctx context.Context, filename string) (exist bool, err error) {
+	return f.checkIfObjectExists(ctx, config.AttachmentsMinioBucket, filename)
 }
