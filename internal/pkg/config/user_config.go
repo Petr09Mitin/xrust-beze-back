@@ -3,8 +3,9 @@ package config
 import "github.com/spf13/viper"
 
 type UserServiceServices struct {
-	File *GRPCService `mapstructure:"file_service"`
-	Auth *GRPCService `mapstructure:"auth_service"`
+	File       *GRPCService `mapstructure:"file_service"`
+	Auth       *GRPCService `mapstructure:"auth_service"`
+	Moderation *GRPCService `mapstructure:"moderation_service"`
 }
 
 type User struct {

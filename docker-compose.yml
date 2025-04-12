@@ -121,6 +121,12 @@ services:
     depends_on:
       - ml_explanator
 
+  ml_moderator:
+    image: ml_moderator:latest
+    container_name: ml_moderator
+    ports:
+      - "8066:8066"
+
   nginx_xb:
     image: nginx:1.27.4-perl
     container_name: nginx_xb

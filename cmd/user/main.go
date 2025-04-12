@@ -18,6 +18,7 @@ import (
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc/credentials/insecure"
 
+	moderation_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/moderation"
 	user_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/user"
 	grpc_handler "github.com/Petr09Mitin/xrust-beze-back/internal/router/grpc/user"
 	http_handler "github.com/Petr09Mitin/xrust-beze-back/internal/router/http/user"
@@ -81,8 +82,9 @@ func main() {
 	authClient := authpb.NewAuthServiceClient(authGRPCConn)
 	defer authGRPCConn.Close()
 
+	moderationRepo := moderation_repo.NewModerationRepository(cfg.Services.Moderation, log)
 	userRepo := user_repo.NewUserRepository(db, 10*time.Second, log)
-	userService := user_service.NewUserService(userRepo, fileGRPCClient, authClient, 10*time.Second, log)
+	userService := user_service.NewUserService(userRepo, moderationRepo, fileGRPCClient, authClient, 10*time.Second, log)
 
 	skillRepo := user_repo.NewSkillRepository(db, 10*time.Second, log)
 	skillService := user_service.NewSkillService(skillRepo, 10*time.Second, log)

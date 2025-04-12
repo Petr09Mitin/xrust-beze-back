@@ -2,6 +2,7 @@ package user_service
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
@@ -11,6 +12,7 @@ import (
 
 	auth_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/auth"
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
+	moderation_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/moderation"
 	user_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/user"
 )
 
@@ -29,24 +31,41 @@ type UserService interface {
 }
 
 type userService struct {
-	userRepo user_repo.UserRepo
-	fileGRPC filepb.FileServiceClient
-	authGRPC authpb.AuthServiceClient
-	timeout  time.Duration
-	logger   zerolog.Logger
+	userRepo       user_repo.UserRepo
+	moderationRepo moderation_repo.ModerationRepo
+	fileGRPC       filepb.FileServiceClient
+	authGRPC       authpb.AuthServiceClient
+	timeout        time.Duration
+	logger         zerolog.Logger
 }
 
-func NewUserService(userRepo user_repo.UserRepo, fileGRPC filepb.FileServiceClient, authGRPC authpb.AuthServiceClient, timeout time.Duration, logger zerolog.Logger) UserService {
+func NewUserService(userRepo user_repo.UserRepo, moderationRepo moderation_repo.ModerationRepo, fileGRPC filepb.FileServiceClient, authGRPC authpb.AuthServiceClient, timeout time.Duration, logger zerolog.Logger) UserService {
 	return &userService{
-		userRepo: userRepo,
-		fileGRPC: fileGRPC,
-		authGRPC: authGRPC,
-		timeout:  timeout,
-		logger:   logger,
+		userRepo:       userRepo,
+		moderationRepo: moderationRepo,
+		fileGRPC:       fileGRPC,
+		authGRPC:       authGRPC,
+		timeout:        timeout,
+		logger:         logger,
 	}
 }
 
 func (s *userService) Create(ctx context.Context, user *user_model.User, hashedPassword string) error {
+	// if err := s.checkForProfanity(ctx, "username", user.Username); err != nil {
+	// 	return err
+	// }
+	// if err := s.checkForProfanity(ctx, "bio", user.Bio); err != nil {
+	// 	return err
+	// }
+	// // hrefs moderation
+	// joinedHrefs := strings.Join(user.Hrefs, " ")
+	// if err := s.checkForProfanity(ctx, "hrefs", joinedHrefs); err != nil {
+	// 	return err
+	// }
+	if err := s.checkUserForProfanity(ctx, user); err != nil {
+		return err
+	}
+
 	existingUser, err := s.userRepo.GetByEmail(ctx, user.Email)
 	if err == nil && existingUser != nil {
 		return custom_errors.ErrEmailAlreadyExists
@@ -91,6 +110,9 @@ func (s *userService) GetByUsernameWithPassword(ctx context.Context, username st
 }
 
 func (s *userService) Update(ctx context.Context, user *user_model.User) error {
+	if err := s.checkUserForProfanity(ctx, user); err != nil {
+		return err
+	}
 	// Проверяем существование пользователя
 	existingUser, err := s.userRepo.GetByID(ctx, user.ID.Hex())
 	if err != nil {
@@ -111,7 +133,20 @@ func (s *userService) Update(ctx context.Context, user *user_model.User) error {
 		if err == nil && userWithUsername != nil && userWithUsername.ID != user.ID {
 			return custom_errors.ErrUsernameAlreadyExists
 		}
+		// if err := s.checkForProfanity(ctx, "username", user.Username); err != nil {
+		// 	return err
+		// }
 	}
+	// if existingUser.Bio != user.Bio {
+	// 	if err := s.checkForProfanity(ctx, "bio", user.Bio); err != nil {
+	// 		return err
+	// 	}
+	// }
+	// hrefs moderation
+	// joinedHrefs := strings.Join(user.Hrefs, " ")
+	// if err := s.checkForProfanity(ctx, "hrefs", joinedHrefs); err != nil {
+	// 	return err
+	// }
 
 	if existingUser.Avatar != user.Avatar {
 		_, err = s.fileGRPC.MoveTempFileToAvatars(ctx, &filepb.MoveTempFileToAvatarsRequest{
@@ -196,4 +231,49 @@ func (s *userService) FindUsersByUsername(ctx context.Context, userID, username 
 		offset = 0
 	}
 	return s.userRepo.FindByUsername(ctx, userID, username, limit, offset)
+}
+
+// func (s *userService) checkForProfanity(ctx context.Context, fieldName, text string) error {
+// 	if text == "" {
+// 		return nil
+// 	}
+// 	hasProfanity, err := s.moderationRepo.CheckSwearing(ctx, text)
+// 	if err != nil {
+// 		s.logger.Error().Err(err).Str("field", fieldName).Msg("failed to check field for profanity")
+// 		return custom_errors.ErrModerationUnavailable
+// 	}
+// 	if hasProfanity {
+// 		return &custom_errors.ProfanityError{FieldName: fieldName}
+// 	}
+// 	return nil
+// }
+
+func (s *userService) checkForProfanity(ctx context.Context, text string) (bool, error) {
+	if text == "" {
+		return false, nil
+	}
+	hasProfanity, err := s.moderationRepo.CheckSwearing(ctx, text)
+	if err != nil {
+		s.logger.Error().Err(err).Msg("failed to check field for profanity")
+		return false, nil // moderation недоступен — игнорируем
+	}
+	return hasProfanity, nil
+}
+
+func (s *userService) checkUserForProfanity(ctx context.Context, user *user_model.User) error {
+	profanityErr := &custom_errors.ProfanityAggregateError{}
+	if has, _ := s.checkForProfanity(ctx, user.Username); has {
+		profanityErr.Add("Username")
+	}
+	if has, _ := s.checkForProfanity(ctx, user.Bio); has {
+		profanityErr.Add("Bio")
+	}
+	joinedHrefs := strings.Join(user.Hrefs, " ")
+	if has, _ := s.checkForProfanity(ctx, joinedHrefs); has {
+		profanityErr.Add("Hrefs")
+	}
+	if !profanityErr.IsEmpty() {
+		return profanityErr
+	}
+	return nil
 }

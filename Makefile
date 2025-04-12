@@ -10,6 +10,7 @@ start:
 	docker build -t xrust_beze_chat:latest -f cmd/chat/Dockerfile . \
 	&& docker build -t ml_explanator:latest -f ml_explanator/Dockerfile . \
 	&& docker build -t ml_check:latest -f ml_check/Dockerfile . \
+	&& docker build -t ml_moderator:latest -f ml_moderator/Dockerfile . \
 	&& docker build -t xrust_beze_user:latest -f cmd/user/Dockerfile . \
 	&& docker build -t xrust_beze_file:latest -f cmd/file/Dockerfile . \
 	&& docker-compose up
@@ -30,7 +31,10 @@ build-user:
 build-file:
 	docker build -t xrust_beze_file:latest -f cmd/file/Dockerfile .
 
-start-user-only: build-user build-file
+build-moderator:
+	docker build -t ml_moderator:latest -f ml_moderator/Dockerfile .
+
+start-user-only: build-user build-file build-moderator
 	docker-compose up -d mongo_db user_service
 
 start-all-user-only:
@@ -41,5 +45,5 @@ start-all-user-only:
 build-auth:
 	docker build -t xrust_beze_auth:latest -f cmd/auth/Dockerfile .
 
-start-auth-only: build-user build-auth
+start-auth-only: build-user build-auth  build-moderator
 	docker-compose up -d redis_xb auth_service

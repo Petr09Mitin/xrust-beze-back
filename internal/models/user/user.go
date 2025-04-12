@@ -51,6 +51,14 @@ type UserToUpdate struct {
 	Hrefs           []string  `bson:"hrefs"`
 }
 
+type CheckSwearingRequest struct {
+	Text string `json:"text"`
+}
+
+type CheckSwearingResponse struct {
+	IsProfanity bool `json:"is_profanity"`
+}
+
 // Навык
 type Skill struct {
 	Name        string `json:"name" bson:"name" validate:"required"`

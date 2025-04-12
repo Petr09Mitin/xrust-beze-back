@@ -5,12 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	structurizationmodels "github.com/Petr09Mitin/xrust-beze-back/internal/models/structurization"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/config"
 	"github.com/rs/zerolog"
-	"io"
-	"net/http"
 )
 
 type StructurizationRepository interface {
@@ -36,6 +37,10 @@ func (s *StructurizationRepositoryImpl) SendStructRequest(ctx context.Context, q
 		Query:  question,
 		Answer: answer,
 	})
+	if err != nil {
+		s.logger.Error().Err(err).Msg("unable to marshal json to structurize")
+		return nil, err
+	}
 	url := fmt.Sprintf("http://%s:%d/explane", s.cfg.Host, s.cfg.Port)
 	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(marshalled))
 	if err != nil {

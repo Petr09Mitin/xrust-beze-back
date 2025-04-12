@@ -18,3 +18,9 @@ services:
   auth_service:
     host: auth_service
     port: 50051
+  moderation_service:
+    host: "ml_moderator"
+    port: 8066
+    timeout: 120
+    max_retries: 3
+
