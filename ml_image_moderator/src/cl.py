@@ -18,8 +18,8 @@ def run():
     response = stub.ProcessFile(request)
 
     # Вывод результата
-    print("NSFW:", response.is_nsfw)
-    print("Probability:", response.prob)
+    print("NSFW:", response.is_nsfw)  # Метка True/False
+    print("Probability:", response.prob)  # Вероятность [0:1]
 
 
 if __name__ == '__main__':
