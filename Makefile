@@ -35,6 +35,9 @@ build-file:
 build-moderator:
 	docker build -t ml_moderator:latest -f ml_moderator/Dockerfile .
 
+build-image-moderator:
+	docker build -t ml_image_moderator:latest -f ml_image_moderator/Dockerfile .
+
 start-user-only: build-user build-file build-moderator
 	docker-compose up -d mongo_db user_service
 

@@ -165,6 +165,18 @@ services:
       - redis_data:/data
     restart: unless-stopped
 
+
+  ml_image_moderator:
+    image: ml_image_moderator:latest
+    container_name: ml_image_moderator
+    ports:
+      - "8199:8199"
+    environment:
+      - GRPC_PORT=8199
+      - S3_ENDPOINT_URL=http://minio-xb:9000
+    env_file:
+      - ./.env
+
 volumes:
   mongo_data:
   kafka_data:
