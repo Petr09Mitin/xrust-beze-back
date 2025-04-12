@@ -11,6 +11,7 @@ type MsgEvent string
 const (
 	TextMsgEvent         = MsgEvent("EventText")
 	StructurizationEvent = MsgEvent("EventStructurization")
+	VoiceMessageEvent    = MsgEvent("EventVoice")
 
 	SendMessageType   = MsgType("send_message")
 	UpdateMessageType = MsgType("update_message")
@@ -27,6 +28,7 @@ type Message struct {
 	ReceiverIDs  map[string]any `json:"receiver_ids,omitempty" bson:"-"`
 	Payload      string         `json:"payload,omitempty" bson:"payload"`
 	Structurized string         `json:"structurized,omitempty" bson:"structurized"`
+	Voice        string         `json:"voice,omitempty" bson:"voice"`
 	CreatedAt    int64          `json:"created_at,omitempty" bson:"created_at"`
 	UpdatedAt    int64          `json:"updated_at,omitempty" bson:"updated_at"`
 }

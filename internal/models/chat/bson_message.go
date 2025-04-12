@@ -9,6 +9,7 @@ type BSONMessage struct {
 	PeerID       string        `bson:"peer_id"`
 	Payload      string        `bson:"payload"`
 	Structurized string        `bson:"structurized,omitempty"`
+	Voice        string        `bson:"voice,omitempty"`
 	CreatedAt    int64         `bson:"created_at"`
 	UpdatedAt    int64         `bson:"updated_at"`
 }
@@ -23,5 +24,6 @@ func (msg *BSONMessage) ToMessage() Message {
 		Structurized: msg.Structurized,
 		CreatedAt:    msg.CreatedAt,
 		UpdatedAt:    msg.UpdatedAt,
+		Voice:        msg.Voice,
 	}
 }

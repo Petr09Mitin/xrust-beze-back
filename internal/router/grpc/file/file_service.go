@@ -52,3 +52,33 @@ func (f *FileGRPCService) DeleteAvatar(ctx context.Context, req *pb.DeleteAvatar
 
 	return &pb.DeleteAvatarResponse{}, nil
 }
+
+func (f *FileGRPCService) MoveTempFileToVoiceMessages(ctx context.Context, req *pb.MoveTempFileToVoiceMessagesRequest) (*pb.MoveTempFileToVoiceMessagesResponse, error) {
+	filename := strings.TrimSpace(req.GetFilename())
+	if filename == "" {
+		return nil, status.Error(codes.InvalidArgument, "filename is empty")
+	}
+
+	err := f.fileService.MoveTempFileToVoiceMessages(ctx, filename)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &pb.MoveTempFileToVoiceMessagesResponse{
+		Filename: filename,
+	}, nil
+}
+
+func (f *FileGRPCService) DeleteVoiceMessage(ctx context.Context, req *pb.DeleteVoiceMessageRequest) (*pb.DeleteVoiceMessageResponse, error) {
+	filename := strings.TrimSpace(req.GetFilename())
+	if filename == "" {
+		return nil, status.Error(codes.InvalidArgument, "filename is empty")
+	}
+
+	err := f.fileService.DeleteVoiceMessage(ctx, filename)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &pb.DeleteVoiceMessageResponse{}, nil
+}

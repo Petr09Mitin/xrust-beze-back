@@ -1,8 +1,9 @@
 package config
 
 const (
-	TempMinioBucket    = "temp"
-	AvatarsMinioBucket = "avatars"
+	TempMinioBucket          = "temp"
+	AvatarsMinioBucket       = "avatars"
+	VoiceMessagesMinioBucket = "voice"
 )
 
 type Minio struct {

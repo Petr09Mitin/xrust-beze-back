@@ -12,6 +12,7 @@ start:
 	&& docker build -t ml_check:latest -f ml_check/Dockerfile . \
 	&& docker build -t xrust_beze_user:latest -f cmd/user/Dockerfile . \
 	&& docker build -t xrust_beze_file:latest -f cmd/file/Dockerfile . \
+	&& docker build -t xrust_beze_auth:latest -f cmd/auth/Dockerfile . \
 	&& docker-compose up
 
 stop:

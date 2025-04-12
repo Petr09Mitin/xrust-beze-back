@@ -11,6 +11,7 @@ type HTTP struct {
 type ChatServices struct {
 	UserService            *GRPCService `mapstructure:"user_service"`
 	StructurizationService *GRPCService `mapstructure:"structurization_service"`
+	FileService            *GRPCService `mapstructure:"file_service"`
 }
 
 type Chat struct {

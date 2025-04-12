@@ -7,6 +7,8 @@ option go_package = "proto/file";
 service FileService {
   rpc MoveTempFileToAvatars(MoveTempFileToAvatarsRequest) returns (MoveTempFileToAvatarsResponse);
   rpc DeleteAvatar(DeleteAvatarRequest) returns (DeleteAvatarResponse);
+  rpc MoveTempFileToVoiceMessages(MoveTempFileToVoiceMessagesRequest) returns (MoveTempFileToVoiceMessagesResponse);
+  rpc DeleteVoiceMessage(DeleteVoiceMessageRequest) returns (DeleteVoiceMessageResponse);
 }
 
 message MoveTempFileToAvatarsRequest {
@@ -22,3 +24,17 @@ message DeleteAvatarRequest {
 }
 
 message DeleteAvatarResponse{}
+
+message MoveTempFileToVoiceMessagesRequest {
+  string filename = 1;
+}
+
+message MoveTempFileToVoiceMessagesResponse {
+  string filename = 1;
+}
+
+message DeleteVoiceMessageRequest {
+  string filename = 1;
+}
+
+message DeleteVoiceMessageResponse{}

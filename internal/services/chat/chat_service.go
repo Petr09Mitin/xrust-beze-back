@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/repository/file_client"
 	"time"
 
 	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
@@ -21,6 +22,7 @@ import (
 type ChatService interface {
 	ProcessTextMessage(ctx context.Context, message chat_models.Message) error
 	ProcessStructurizationRequest(ctx context.Context, message chat_models.Message) error
+	ProcessVoiceMessage(ctx context.Context, message chat_models.Message) error
 	GetMessagesByChatID(ctx context.Context, chatID string, limit, offset int64) ([]chat_models.Message, error)
 	GetChannelsByUserID(ctx context.Context, userID string, limit, offset int64) ([]chat_models.Channel, error)
 	GetChannelByUserAndPeerIDs(ctx context.Context, userID, peerID string) (*chat_models.Channel, []chat_models.Message, error)
@@ -34,16 +36,18 @@ type UserService interface {
 type ChatServiceImpl struct {
 	msgRepo             message_repo.MessageRepo
 	channelRepo         channelrepo.ChannelRepository
+	fileServiceClient   file_client.FileServiceClient
 	structurizationRepo structurization_repo.StructurizationRepository
 	userService         UserService
 	cfg                 *config.Chat
 	logger              zerolog.Logger
 }
 
-func NewChatService(msgRepo message_repo.MessageRepo, channelRepo channelrepo.ChannelRepository, structurizationRepo structurization_repo.StructurizationRepository, userService UserService, logger zerolog.Logger, cfg *config.Chat) ChatService {
+func NewChatService(msgRepo message_repo.MessageRepo, channelRepo channelrepo.ChannelRepository, fileServiceClient file_client.FileServiceClient, structurizationRepo structurization_repo.StructurizationRepository, userService UserService, logger zerolog.Logger, cfg *config.Chat) ChatService {
 	return &ChatServiceImpl{
 		msgRepo:             msgRepo,
 		channelRepo:         channelRepo,
+		fileServiceClient:   fileServiceClient,
 		structurizationRepo: structurizationRepo,
 		userService:         userService,
 		cfg:                 cfg,
@@ -54,6 +58,10 @@ func NewChatService(msgRepo message_repo.MessageRepo, channelRepo channelrepo.Ch
 func (c *ChatServiceImpl) ProcessTextMessage(ctx context.Context, msg chat_models.Message) error {
 	var newMsg chat_models.Message
 	var err error
+
+	if msg.Payload == "" {
+		return custom_errors.ErrInvalidMessage
+	}
 
 	switch msg.Type {
 	case chat_models.SendMessageType:
@@ -68,6 +76,32 @@ func (c *ChatServiceImpl) ProcessTextMessage(ctx context.Context, msg chat_model
 		}
 	case chat_models.DeleteMessageType:
 		newMsg, err = c.deleteTextMessage(ctx, msg)
+		if err != nil {
+			return err
+		}
+	default:
+		return custom_errors.ErrInvalidMessageType
+	}
+
+	if err := c.msgRepo.PublishMessage(ctx, newMsg); err != nil {
+		c.logger.Err(err)
+		return custom_errors.ErrBroadcastingTextMessage
+	}
+	return nil
+}
+
+func (c *ChatServiceImpl) ProcessVoiceMessage(ctx context.Context, msg chat_models.Message) error {
+	var newMsg chat_models.Message
+	var err error
+
+	switch msg.Type {
+	case chat_models.SendMessageType:
+		newMsg, err = c.createVoiceMessage(ctx, msg)
+		if err != nil {
+			return err
+		}
+	case chat_models.DeleteMessageType:
+		newMsg, err = c.deleteVoiceMessage(ctx, msg)
 		if err != nil {
 			return err
 		}
@@ -174,9 +208,79 @@ func (c *ChatServiceImpl) createTextMessage(ctx context.Context, msg chat_models
 	return newMsg, nil
 }
 
+func (c *ChatServiceImpl) createVoiceMessage(ctx context.Context, msg chat_models.Message) (chat_models.Message, error) {
+	var channel chat_models.Channel
+	var err error
+	if msg.Voice == "" {
+		c.logger.Error().Msg("empty voice msg in create")
+		return chat_models.Message{}, custom_errors.ErrInvalidMessage
+	}
+
+	if msg.ChannelID == "" {
+		if msg.UserID == "" || msg.PeerID == "" {
+			return chat_models.Message{}, custom_errors.ErrInvalidMessage
+		}
+		channel, err = c.channelRepo.GetByUserIDs(ctx, []string{msg.UserID, msg.PeerID})
+		if err != nil {
+			if errors.Is(err, custom_errors.ErrNotFound) {
+				created := time.Now().Unix()
+				channel, err = c.channelRepo.InsertChannel(ctx, chat_models.Channel{
+					UserIDs: []string{
+						msg.UserID,
+						msg.PeerID,
+					},
+					Created: created,
+					Updated: created,
+				})
+				if err != nil {
+					return msg, err
+				}
+			} else {
+				return msg, err
+			}
+		}
+	} else {
+		channel, err = c.channelRepo.GetChannelByID(ctx, msg.ChannelID)
+		if err != nil {
+			return msg, err
+		}
+	}
+
+	filename, err := c.fileServiceClient.MoveTempFileToVoiceMessages(ctx, msg.Voice)
+	if err != nil {
+		return chat_models.Message{}, err
+	}
+
+	createdAt := time.Now().Unix()
+	newMsg := chat_models.Message{
+		Event:     chat_models.VoiceMessageEvent,
+		Type:      msg.Type,
+		ChannelID: channel.ID,
+		UserID:    msg.UserID,
+		PeerID:    msg.PeerID,
+		Voice:     filename,
+		CreatedAt: createdAt,
+		UpdatedAt: createdAt,
+		Payload:   "",
+	}
+	newMsg.SetReceiverIDs(channel.UserIDs)
+	newMsg, err = c.msgRepo.InsertMessage(ctx, newMsg)
+	if err != nil {
+		c.logger.Err(err)
+		return msg, custom_errors.ErrBroadcastingTextMessage
+	}
+	c.logger.Printf("new message saved: %+v\n", newMsg)
+	return newMsg, nil
+}
+
 func (c *ChatServiceImpl) updateTextMessage(ctx context.Context, msg chat_models.Message) (chat_models.Message, error) {
 	var channel chat_models.Channel
 	var err error
+
+	if msg.MessageID == "" {
+		return msg, custom_errors.ErrNoMessageID
+	}
+
 	if msg.ChannelID == "" {
 		return msg, custom_errors.ErrNoChannelID
 	}
@@ -190,11 +294,11 @@ func (c *ChatServiceImpl) updateTextMessage(ctx context.Context, msg chat_models
 	}
 	updatedAt := time.Now().Unix()
 	newMsg := chat_models.Message{
-		MessageID: msg.MessageID,
+		MessageID: oldMsg.MessageID,
 		Event:     msg.Event,
 		Type:      msg.Type,
 		ChannelID: channel.ID,
-		UserID:    msg.UserID,
+		UserID:    oldMsg.UserID,
 		Payload:   msg.Payload,
 		CreatedAt: oldMsg.CreatedAt,
 		UpdatedAt: updatedAt,
@@ -211,18 +315,64 @@ func (c *ChatServiceImpl) updateTextMessage(ctx context.Context, msg chat_models
 func (c *ChatServiceImpl) deleteTextMessage(ctx context.Context, msg chat_models.Message) (chat_models.Message, error) {
 	var channel chat_models.Channel
 	var err error
-	if msg.ChannelID == "" {
-		return msg, custom_errors.ErrNoChannelID
+
+	if msg.MessageID == "" {
+		return msg, custom_errors.ErrNoMessageID
 	}
-	channel, err = c.channelRepo.GetChannelByID(ctx, msg.ChannelID)
+
+	oldMsg, err := c.msgRepo.GetMessageByID(ctx, msg.MessageID)
 	if err != nil {
 		return msg, err
 	}
-	err = c.msgRepo.DeleteMessage(ctx, msg)
+
+	if msg.ChannelID == "" {
+		return msg, custom_errors.ErrNoChannelID
+	}
+	channel, err = c.channelRepo.GetChannelByID(ctx, oldMsg.ChannelID)
+	if err != nil {
+		return msg, err
+	}
+	err = c.msgRepo.DeleteMessage(ctx, *oldMsg)
 	if err != nil {
 		return msg, custom_errors.ErrBroadcastingTextMessage
 	}
 	c.logger.Printf("message deleted: %+v\n", msg)
+	msg.SetReceiverIDs(channel.UserIDs)
+	return msg, nil
+}
+
+func (c *ChatServiceImpl) deleteVoiceMessage(ctx context.Context, msg chat_models.Message) (chat_models.Message, error) {
+	var channel chat_models.Channel
+	var err error
+
+	if msg.MessageID == "" {
+		return msg, custom_errors.ErrNoMessageID
+	}
+
+	oldMsg, err := c.msgRepo.GetMessageByID(ctx, msg.MessageID)
+	if err != nil {
+		return msg, err
+	}
+
+	if oldMsg.ChannelID == "" {
+		return msg, custom_errors.ErrNoChannelID
+	}
+	channel, err = c.channelRepo.GetChannelByID(ctx, oldMsg.ChannelID)
+	if err != nil {
+		return msg, err
+	}
+
+	err = c.fileServiceClient.DeleteVoiceMessage(ctx, oldMsg.Voice)
+	if err != nil {
+		return msg, err
+	}
+
+	err = c.msgRepo.DeleteMessage(ctx, *oldMsg)
+	if err != nil {
+		return msg, custom_errors.ErrBroadcastingTextMessage
+	}
+
+	c.logger.Printf("message deleted: %+v\n", oldMsg)
 	msg.SetReceiverIDs(channel.UserIDs)
 	return msg, nil
 }

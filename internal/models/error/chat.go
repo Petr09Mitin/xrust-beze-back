@@ -11,5 +11,6 @@ var (
 	ErrBroadcastingTextMessage    = errors.New("error broadcasting text message")
 	ErrInvalidMessageType         = errors.New("invalid message type")
 	ErrNoChannelID                = errors.New("no channel id")
+	ErrNoMessageID                = errors.New("no message id")
 	ErrStructurizationUnavailable = errors.New("structurization is temporary unavailable, try again later")
 )
