@@ -11,6 +11,8 @@ type FileServiceClient interface {
 	DeleteAvatar(ctx context.Context, filename string) error
 	MoveTempFileToVoiceMessages(ctx context.Context, filename string) (string, error)
 	DeleteVoiceMessage(ctx context.Context, filename string) error
+	MoveTempFilesToAttachments(ctx context.Context, filenames []string) ([]string, error)
+	DeleteAttachments(ctx context.Context, filenames []string) error
 }
 
 type FileServiceClientImpl struct {
@@ -61,6 +63,28 @@ func (f *FileServiceClientImpl) DeleteAvatar(ctx context.Context, filename strin
 func (f *FileServiceClientImpl) DeleteVoiceMessage(ctx context.Context, filename string) error {
 	_, err := f.fileGRPC.DeleteVoiceMessage(ctx, &filepb.DeleteVoiceMessageRequest{
 		Filename: filename,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (f *FileServiceClientImpl) MoveTempFilesToAttachments(ctx context.Context, filenames []string) ([]string, error) {
+	res, err := f.fileGRPC.MoveTempFilesToAttachments(ctx, &filepb.MoveTempFilesToAttachmentsRequest{
+		Filenames: filenames,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return res.GetFilenames(), nil
+}
+
+func (f *FileServiceClientImpl) DeleteAttachments(ctx context.Context, filenames []string) error {
+	_, err := f.fileGRPC.DeleteAttachments(ctx, &filepb.DeleteAttachmentsRequest{
+		Filenames: filenames,
 	})
 	if err != nil {
 		return err

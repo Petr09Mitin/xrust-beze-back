@@ -10,6 +10,7 @@ type BSONMessage struct {
 	Payload      string        `bson:"payload"`
 	Structurized string        `bson:"structurized,omitempty"`
 	Voice        string        `bson:"voice,omitempty"`
+	Attachments  []string      `bson:"attachments,omitempty"`
 	CreatedAt    int64         `bson:"created_at"`
 	UpdatedAt    int64         `bson:"updated_at"`
 }
@@ -25,5 +26,6 @@ func (msg *BSONMessage) ToMessage() Message {
 		CreatedAt:    msg.CreatedAt,
 		UpdatedAt:    msg.UpdatedAt,
 		Voice:        msg.Voice,
+		Attachments:  msg.Attachments,
 	}
 }

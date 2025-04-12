@@ -59,10 +59,6 @@ func (c *ChatServiceImpl) ProcessTextMessage(ctx context.Context, msg chat_model
 	var newMsg chat_models.Message
 	var err error
 
-	if msg.Payload == "" {
-		return custom_errors.ErrInvalidMessage
-	}
-
 	switch msg.Type {
 	case chat_models.SendMessageType:
 		newMsg, err = c.createTextMessage(ctx, msg)
@@ -157,6 +153,11 @@ func (c *ChatServiceImpl) ProcessStructurizationRequest(ctx context.Context, mes
 func (c *ChatServiceImpl) createTextMessage(ctx context.Context, msg chat_models.Message) (chat_models.Message, error) {
 	var channel chat_models.Channel
 	var err error
+
+	if msg.Payload == "" && len(msg.Attachments) == 0 {
+		return chat_models.Message{}, custom_errors.ErrInvalidMessage
+	}
+
 	if msg.ChannelID == "" {
 		if msg.UserID == "" || msg.PeerID == "" {
 			return chat_models.Message{}, custom_errors.ErrInvalidMessage
@@ -187,16 +188,26 @@ func (c *ChatServiceImpl) createTextMessage(ctx context.Context, msg chat_models
 		}
 	}
 
+	if len(msg.Attachments) > 0 {
+		msg.Attachments, err = c.fileServiceClient.MoveTempFilesToAttachments(ctx, msg.Attachments)
+		if err != nil {
+			return chat_models.Message{}, err
+		}
+	} else {
+		msg.Attachments = make([]string, 0)
+	}
+
 	createdAt := time.Now().Unix()
 	newMsg := chat_models.Message{
-		Event:     chat_models.TextMsgEvent,
-		Type:      msg.Type,
-		ChannelID: channel.ID,
-		UserID:    msg.UserID,
-		PeerID:    msg.PeerID,
-		Payload:   msg.Payload,
-		CreatedAt: createdAt,
-		UpdatedAt: createdAt,
+		Event:       chat_models.TextMsgEvent,
+		Type:        msg.Type,
+		ChannelID:   channel.ID,
+		UserID:      msg.UserID,
+		PeerID:      msg.PeerID,
+		Payload:     msg.Payload,
+		Attachments: msg.Attachments,
+		CreatedAt:   createdAt,
+		UpdatedAt:   createdAt,
 	}
 	newMsg.SetReceiverIDs(channel.UserIDs)
 	newMsg, err = c.msgRepo.InsertMessage(ctx, newMsg)
@@ -281,6 +292,10 @@ func (c *ChatServiceImpl) updateTextMessage(ctx context.Context, msg chat_models
 		return msg, custom_errors.ErrNoMessageID
 	}
 
+	if msg.Payload == "" && len(msg.Attachments) == 0 {
+		return chat_models.Message{}, custom_errors.ErrInvalidMessage
+	}
+
 	if msg.ChannelID == "" {
 		return msg, custom_errors.ErrNoChannelID
 	}
@@ -292,16 +307,50 @@ func (c *ChatServiceImpl) updateTextMessage(ctx context.Context, msg chat_models
 	if err != nil {
 		return msg, err
 	}
+
+	newAttachmentsMap := make(map[string]any, len(msg.Attachments))
+	for _, attachment := range msg.Attachments {
+		newAttachmentsMap[attachment] = struct{}{}
+	}
+	attachmentsToDelete := make([]string, 0)
+	attachmentsToPreserve := make([]string, 0, len(oldMsg.Attachments))
+	oldAttachmentsMap := make(map[string]any, len(oldMsg.Attachments))
+	for _, attachment := range oldMsg.Attachments {
+		oldAttachmentsMap[attachment] = struct{}{}
+		// если старого аттача нет в новых - удаляем
+		if _, ok := newAttachmentsMap[attachment]; !ok {
+			attachmentsToDelete = append(attachmentsToDelete, attachment)
+		} else {
+			attachmentsToPreserve = append(attachmentsToPreserve, attachment)
+		}
+	}
+	err = c.fileServiceClient.DeleteAttachments(ctx, attachmentsToDelete)
+	if err != nil {
+		return chat_models.Message{}, err
+	}
+	attachmentsToCreate := make([]string, 0, len(oldMsg.Attachments))
+	for _, attachment := range msg.Attachments {
+		// если нового аттача нет в старых - создаем
+		if _, ok := oldAttachmentsMap[attachment]; !ok {
+			attachmentsToCreate = append(attachmentsToCreate, attachment)
+		}
+	}
+	filenames, err := c.fileServiceClient.MoveTempFilesToAttachments(ctx, attachmentsToCreate)
+	if err != nil {
+		return chat_models.Message{}, err
+	}
+
 	updatedAt := time.Now().Unix()
 	newMsg := chat_models.Message{
-		MessageID: oldMsg.MessageID,
-		Event:     msg.Event,
-		Type:      msg.Type,
-		ChannelID: channel.ID,
-		UserID:    oldMsg.UserID,
-		Payload:   msg.Payload,
-		CreatedAt: oldMsg.CreatedAt,
-		UpdatedAt: updatedAt,
+		MessageID:   oldMsg.MessageID,
+		Event:       msg.Event,
+		Type:        msg.Type,
+		ChannelID:   channel.ID,
+		UserID:      oldMsg.UserID,
+		Payload:     msg.Payload,
+		CreatedAt:   oldMsg.CreatedAt,
+		UpdatedAt:   updatedAt,
+		Attachments: append(attachmentsToPreserve, filenames...),
 	}
 	err = c.msgRepo.UpdateMessage(ctx, newMsg)
 	if err != nil {
@@ -319,7 +368,6 @@ func (c *ChatServiceImpl) deleteTextMessage(ctx context.Context, msg chat_models
 	if msg.MessageID == "" {
 		return msg, custom_errors.ErrNoMessageID
 	}
-
 	oldMsg, err := c.msgRepo.GetMessageByID(ctx, msg.MessageID)
 	if err != nil {
 		return msg, err
@@ -332,10 +380,19 @@ func (c *ChatServiceImpl) deleteTextMessage(ctx context.Context, msg chat_models
 	if err != nil {
 		return msg, err
 	}
+
+	if len(oldMsg.Attachments) > 0 {
+		err = c.fileServiceClient.DeleteAttachments(ctx, oldMsg.Attachments)
+		if err != nil {
+			return msg, err
+		}
+	}
+
 	err = c.msgRepo.DeleteMessage(ctx, *oldMsg)
 	if err != nil {
 		return msg, custom_errors.ErrBroadcastingTextMessage
 	}
+
 	c.logger.Printf("message deleted: %+v\n", msg)
 	msg.SetReceiverIDs(channel.UserIDs)
 	return msg, nil

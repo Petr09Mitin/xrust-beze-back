@@ -9,6 +9,8 @@ service FileService {
   rpc DeleteAvatar(DeleteAvatarRequest) returns (DeleteAvatarResponse);
   rpc MoveTempFileToVoiceMessages(MoveTempFileToVoiceMessagesRequest) returns (MoveTempFileToVoiceMessagesResponse);
   rpc DeleteVoiceMessage(DeleteVoiceMessageRequest) returns (DeleteVoiceMessageResponse);
+  rpc MoveTempFilesToAttachments(MoveTempFilesToAttachmentsRequest) returns (MoveTempFilesToAttachmentsResponse);
+  rpc DeleteAttachments(DeleteAttachmentsRequest) returns (DeleteAttachmentsResponse);
 }
 
 message MoveTempFileToAvatarsRequest {
@@ -38,3 +40,17 @@ message DeleteVoiceMessageRequest {
 }
 
 message DeleteVoiceMessageResponse{}
+
+message MoveTempFilesToAttachmentsRequest {
+  repeated string filenames = 1;
+}
+
+message MoveTempFilesToAttachmentsResponse {
+  repeated string filenames = 1;
+}
+
+message DeleteAttachmentsRequest {
+  repeated string filenames = 1;
+}
+
+message DeleteAttachmentsResponse {}

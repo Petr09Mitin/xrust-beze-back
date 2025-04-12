@@ -357,6 +357,174 @@ func (*DeleteVoiceMessageResponse) Descriptor() ([]byte, []int) {
 	return file_proto_file_file_proto_rawDescGZIP(), []int{7}
 }
 
+type MoveTempFilesToAttachmentsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Filenames     []string               `protobuf:"bytes,1,rep,name=filenames,proto3" json:"filenames,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MoveTempFilesToAttachmentsRequest) Reset() {
+	*x = MoveTempFilesToAttachmentsRequest{}
+	mi := &file_proto_file_file_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MoveTempFilesToAttachmentsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MoveTempFilesToAttachmentsRequest) ProtoMessage() {}
+
+func (x *MoveTempFilesToAttachmentsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_file_file_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MoveTempFilesToAttachmentsRequest.ProtoReflect.Descriptor instead.
+func (*MoveTempFilesToAttachmentsRequest) Descriptor() ([]byte, []int) {
+	return file_proto_file_file_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *MoveTempFilesToAttachmentsRequest) GetFilenames() []string {
+	if x != nil {
+		return x.Filenames
+	}
+	return nil
+}
+
+type MoveTempFilesToAttachmentsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Filenames     []string               `protobuf:"bytes,1,rep,name=filenames,proto3" json:"filenames,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MoveTempFilesToAttachmentsResponse) Reset() {
+	*x = MoveTempFilesToAttachmentsResponse{}
+	mi := &file_proto_file_file_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MoveTempFilesToAttachmentsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MoveTempFilesToAttachmentsResponse) ProtoMessage() {}
+
+func (x *MoveTempFilesToAttachmentsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_file_file_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MoveTempFilesToAttachmentsResponse.ProtoReflect.Descriptor instead.
+func (*MoveTempFilesToAttachmentsResponse) Descriptor() ([]byte, []int) {
+	return file_proto_file_file_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *MoveTempFilesToAttachmentsResponse) GetFilenames() []string {
+	if x != nil {
+		return x.Filenames
+	}
+	return nil
+}
+
+type DeleteAttachmentsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Filenames     []string               `protobuf:"bytes,1,rep,name=filenames,proto3" json:"filenames,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteAttachmentsRequest) Reset() {
+	*x = DeleteAttachmentsRequest{}
+	mi := &file_proto_file_file_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteAttachmentsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteAttachmentsRequest) ProtoMessage() {}
+
+func (x *DeleteAttachmentsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_file_file_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteAttachmentsRequest.ProtoReflect.Descriptor instead.
+func (*DeleteAttachmentsRequest) Descriptor() ([]byte, []int) {
+	return file_proto_file_file_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *DeleteAttachmentsRequest) GetFilenames() []string {
+	if x != nil {
+		return x.Filenames
+	}
+	return nil
+}
+
+type DeleteAttachmentsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteAttachmentsResponse) Reset() {
+	*x = DeleteAttachmentsResponse{}
+	mi := &file_proto_file_file_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteAttachmentsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteAttachmentsResponse) ProtoMessage() {}
+
+func (x *DeleteAttachmentsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_file_file_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteAttachmentsResponse.ProtoReflect.Descriptor instead.
+func (*DeleteAttachmentsResponse) Descriptor() ([]byte, []int) {
+	return file_proto_file_file_proto_rawDescGZIP(), []int{11}
+}
+
 var File_proto_file_file_proto protoreflect.FileDescriptor
 
 const file_proto_file_file_proto_rawDesc = "" +
@@ -375,12 +543,21 @@ const file_proto_file_file_proto_rawDesc = "" +
 	"\bfilename\x18\x01 \x01(\tR\bfilename\"7\n" +
 	"\x19DeleteVoiceMessageRequest\x12\x1a\n" +
 	"\bfilename\x18\x01 \x01(\tR\bfilename\"\x1c\n" +
-	"\x1aDeleteVoiceMessageResponse2\x83\x03\n" +
+	"\x1aDeleteVoiceMessageResponse\"A\n" +
+	"!MoveTempFilesToAttachmentsRequest\x12\x1c\n" +
+	"\tfilenames\x18\x01 \x03(\tR\tfilenames\"B\n" +
+	"\"MoveTempFilesToAttachmentsResponse\x12\x1c\n" +
+	"\tfilenames\x18\x01 \x03(\tR\tfilenames\"8\n" +
+	"\x18DeleteAttachmentsRequest\x12\x1c\n" +
+	"\tfilenames\x18\x01 \x03(\tR\tfilenames\"\x1b\n" +
+	"\x19DeleteAttachmentsResponse2\xca\x04\n" +
 	"\vFileService\x12`\n" +
 	"\x15MoveTempFileToAvatars\x12\".file.MoveTempFileToAvatarsRequest\x1a#.file.MoveTempFileToAvatarsResponse\x12E\n" +
 	"\fDeleteAvatar\x12\x19.file.DeleteAvatarRequest\x1a\x1a.file.DeleteAvatarResponse\x12r\n" +
 	"\x1bMoveTempFileToVoiceMessages\x12(.file.MoveTempFileToVoiceMessagesRequest\x1a).file.MoveTempFileToVoiceMessagesResponse\x12W\n" +
-	"\x12DeleteVoiceMessage\x12\x1f.file.DeleteVoiceMessageRequest\x1a .file.DeleteVoiceMessageResponseB\fZ\n" +
+	"\x12DeleteVoiceMessage\x12\x1f.file.DeleteVoiceMessageRequest\x1a .file.DeleteVoiceMessageResponse\x12o\n" +
+	"\x1aMoveTempFilesToAttachments\x12'.file.MoveTempFilesToAttachmentsRequest\x1a(.file.MoveTempFilesToAttachmentsResponse\x12T\n" +
+	"\x11DeleteAttachments\x12\x1e.file.DeleteAttachmentsRequest\x1a\x1f.file.DeleteAttachmentsResponseB\fZ\n" +
 	"proto/fileb\x06proto3"
 
 var (
@@ -395,7 +572,7 @@ func file_proto_file_file_proto_rawDescGZIP() []byte {
 	return file_proto_file_file_proto_rawDescData
 }
 
-var file_proto_file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_proto_file_file_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_proto_file_file_proto_goTypes = []any{
 	(*MoveTempFileToAvatarsRequest)(nil),        // 0: file.MoveTempFileToAvatarsRequest
 	(*MoveTempFileToAvatarsResponse)(nil),       // 1: file.MoveTempFileToAvatarsResponse
@@ -405,21 +582,29 @@ var file_proto_file_file_proto_goTypes = []any{
 	(*MoveTempFileToVoiceMessagesResponse)(nil), // 5: file.MoveTempFileToVoiceMessagesResponse
 	(*DeleteVoiceMessageRequest)(nil),           // 6: file.DeleteVoiceMessageRequest
 	(*DeleteVoiceMessageResponse)(nil),          // 7: file.DeleteVoiceMessageResponse
+	(*MoveTempFilesToAttachmentsRequest)(nil),   // 8: file.MoveTempFilesToAttachmentsRequest
+	(*MoveTempFilesToAttachmentsResponse)(nil),  // 9: file.MoveTempFilesToAttachmentsResponse
+	(*DeleteAttachmentsRequest)(nil),            // 10: file.DeleteAttachmentsRequest
+	(*DeleteAttachmentsResponse)(nil),           // 11: file.DeleteAttachmentsResponse
 }
 var file_proto_file_file_proto_depIdxs = []int32{
-	0, // 0: file.FileService.MoveTempFileToAvatars:input_type -> file.MoveTempFileToAvatarsRequest
-	2, // 1: file.FileService.DeleteAvatar:input_type -> file.DeleteAvatarRequest
-	4, // 2: file.FileService.MoveTempFileToVoiceMessages:input_type -> file.MoveTempFileToVoiceMessagesRequest
-	6, // 3: file.FileService.DeleteVoiceMessage:input_type -> file.DeleteVoiceMessageRequest
-	1, // 4: file.FileService.MoveTempFileToAvatars:output_type -> file.MoveTempFileToAvatarsResponse
-	3, // 5: file.FileService.DeleteAvatar:output_type -> file.DeleteAvatarResponse
-	5, // 6: file.FileService.MoveTempFileToVoiceMessages:output_type -> file.MoveTempFileToVoiceMessagesResponse
-	7, // 7: file.FileService.DeleteVoiceMessage:output_type -> file.DeleteVoiceMessageResponse
-	4, // [4:8] is the sub-list for method output_type
-	0, // [0:4] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0,  // 0: file.FileService.MoveTempFileToAvatars:input_type -> file.MoveTempFileToAvatarsRequest
+	2,  // 1: file.FileService.DeleteAvatar:input_type -> file.DeleteAvatarRequest
+	4,  // 2: file.FileService.MoveTempFileToVoiceMessages:input_type -> file.MoveTempFileToVoiceMessagesRequest
+	6,  // 3: file.FileService.DeleteVoiceMessage:input_type -> file.DeleteVoiceMessageRequest
+	8,  // 4: file.FileService.MoveTempFilesToAttachments:input_type -> file.MoveTempFilesToAttachmentsRequest
+	10, // 5: file.FileService.DeleteAttachments:input_type -> file.DeleteAttachmentsRequest
+	1,  // 6: file.FileService.MoveTempFileToAvatars:output_type -> file.MoveTempFileToAvatarsResponse
+	3,  // 7: file.FileService.DeleteAvatar:output_type -> file.DeleteAvatarResponse
+	5,  // 8: file.FileService.MoveTempFileToVoiceMessages:output_type -> file.MoveTempFileToVoiceMessagesResponse
+	7,  // 9: file.FileService.DeleteVoiceMessage:output_type -> file.DeleteVoiceMessageResponse
+	9,  // 10: file.FileService.MoveTempFilesToAttachments:output_type -> file.MoveTempFilesToAttachmentsResponse
+	11, // 11: file.FileService.DeleteAttachments:output_type -> file.DeleteAttachmentsResponse
+	6,  // [6:12] is the sub-list for method output_type
+	0,  // [0:6] is the sub-list for method input_type
+	0,  // [0:0] is the sub-list for extension type_name
+	0,  // [0:0] is the sub-list for extension extendee
+	0,  // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_proto_file_file_proto_init() }
@@ -433,7 +618,7 @@ func file_proto_file_file_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_file_file_proto_rawDesc), len(file_proto_file_file_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

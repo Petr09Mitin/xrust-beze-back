@@ -4,6 +4,7 @@ const (
 	TempMinioBucket          = "temp"
 	AvatarsMinioBucket       = "avatars"
 	VoiceMessagesMinioBucket = "voice"
+	AttachmentsMinioBucket   = "attachments"
 )
 
 type Minio struct {
