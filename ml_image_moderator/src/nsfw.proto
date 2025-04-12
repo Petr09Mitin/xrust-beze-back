@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+service S3Processor {
+  rpc ProcessFile (FileRequest) returns (ProcessResult) {}
+}
+
+message FileRequest {
+  string bucket_name = 1;
+  string file_id = 2;
+}
+
+message ProcessResult {
+  bool is_nsfw = 1;
+  float prob = 2;
+}
