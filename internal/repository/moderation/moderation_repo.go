@@ -43,7 +43,7 @@ func (m *moderationRepository) CheckSwearing(ctx context.Context, text string) (
 		return false, err
 	}
 
-	url := fmt.Sprintf("http://%s:%d/check_swearing", m.cfg.Host, m.cfg.Port)
+	url := fmt.Sprintf("http://%s:%d/check", m.cfg.Host, m.cfg.Port)
 	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(jsonBody))
 	if err != nil {
 		m.logger.Error().Err(err).Msg("unable to build ml_moderation req")

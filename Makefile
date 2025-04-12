@@ -46,4 +46,4 @@ build-auth:
 	docker build -t xrust_beze_auth:latest -f cmd/auth/Dockerfile .
 
 start-auth-only: build-user build-auth  build-moderator
-	docker-compose up -d redis_xb auth_service
+	docker-compose up -d redis_xb auth_service ml_moderator

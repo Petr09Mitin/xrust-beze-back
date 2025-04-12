@@ -51,17 +51,6 @@ func NewUserService(userRepo user_repo.UserRepo, moderationRepo moderation_repo.
 }
 
 func (s *userService) Create(ctx context.Context, user *user_model.User, hashedPassword string) error {
-	// if err := s.checkForProfanity(ctx, "username", user.Username); err != nil {
-	// 	return err
-	// }
-	// if err := s.checkForProfanity(ctx, "bio", user.Bio); err != nil {
-	// 	return err
-	// }
-	// // hrefs moderation
-	// joinedHrefs := strings.Join(user.Hrefs, " ")
-	// if err := s.checkForProfanity(ctx, "hrefs", joinedHrefs); err != nil {
-	// 	return err
-	// }
 	if err := s.checkUserForProfanity(ctx, user); err != nil {
 		return err
 	}
@@ -133,20 +122,7 @@ func (s *userService) Update(ctx context.Context, user *user_model.User) error {
 		if err == nil && userWithUsername != nil && userWithUsername.ID != user.ID {
 			return custom_errors.ErrUsernameAlreadyExists
 		}
-		// if err := s.checkForProfanity(ctx, "username", user.Username); err != nil {
-		// 	return err
-		// }
 	}
-	// if existingUser.Bio != user.Bio {
-	// 	if err := s.checkForProfanity(ctx, "bio", user.Bio); err != nil {
-	// 		return err
-	// 	}
-	// }
-	// hrefs moderation
-	// joinedHrefs := strings.Join(user.Hrefs, " ")
-	// if err := s.checkForProfanity(ctx, "hrefs", joinedHrefs); err != nil {
-	// 	return err
-	// }
 
 	if existingUser.Avatar != user.Avatar {
 		_, err = s.fileGRPC.MoveTempFileToAvatars(ctx, &filepb.MoveTempFileToAvatarsRequest{

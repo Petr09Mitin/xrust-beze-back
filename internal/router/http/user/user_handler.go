@@ -82,6 +82,14 @@ func (h *UserHandler) Update(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
+		var profanityErr *custom_errors.ProfanityAggregateError
+		if errors.As(err, &profanityErr) {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":                  profanityErr.Error(),
+				"profanity_error_fields": profanityErr.Fields,
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

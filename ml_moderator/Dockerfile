@@ -4,11 +4,10 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Скопируем файлы проекта в контейнер
-COPY .. /app
+COPY ./ml_moderator /app
 
 # Устанавливаем зависимости
-# RUN pip install --no-cache-dir -r ml_moderator/requirements.txt // TODO !!!!!!
-RUN pip install -r ml_moderator/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Команда для запуска FastAPI сервера
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8066"]
