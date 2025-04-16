@@ -143,6 +143,7 @@ services:
     volumes:
       - ./dev/nginx:/etc/nginx
       - /etc/letsencrypt:/etc/letsencrypt
+      - ../XRUST_BEZE_frontend/skillsharing/dist:/dist
 
   auth_service:
     image: xrust_beze_auth:latest  # предположим, что билдится как и другие сервисы
