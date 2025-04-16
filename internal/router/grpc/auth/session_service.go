@@ -22,7 +22,7 @@ func NewAuthService(authService auth.AuthService, logger zerolog.Logger) *AuthSe
 }
 
 func (s *AuthService) ValidateSession(ctx context.Context, req *authpb.SessionRequest) (*authpb.SessionResponse, error) {
-	session, err := s.authService.ValidateSession(ctx, req.SessionId)
+	session, _, err := s.authService.ValidateSession(ctx, req.SessionId)
 	if err != nil || session == nil {
 		return &authpb.SessionResponse{
 			UserId: "",
