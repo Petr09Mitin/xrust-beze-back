@@ -138,7 +138,7 @@ func (h *AuthHandler) Validate(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "no session found"})
 		return
 	}
-	session, err := h.authService.ValidateSession(c.Request.Context(), sessionID)
+	session, user, err := h.authService.ValidateSession(c.Request.Context(), sessionID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to validate session"})
 		return
@@ -147,7 +147,7 @@ func (h *AuthHandler) Validate(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired session"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"user_id": session.UserID})
+	c.JSON(http.StatusOK, gin.H{"user_id": session.UserID, "user": user})
 }
 
 func (h *AuthHandler) resolveCookieSettings(c *gin.Context) (domain string, secure bool) {

@@ -19,7 +19,7 @@ type AuthService interface {
 	Register(ctx context.Context, req *auth_model.RegisterRequest) (*user_model.User, error)
 	Login(ctx context.Context, req *auth_model.LoginRequest) (*auth_model.Session, *user_model.User, error)
 	CreateSession(ctx context.Context, userID string) (*auth_model.Session, error)
-	ValidateSession(ctx context.Context, sessionID string) (*auth_model.Session, error)
+	ValidateSession(ctx context.Context, sessionID string) (*auth_model.Session, *user_model.User, error)
 	DeleteSession(ctx context.Context, sessionID string) error
 	TestUserConnection(ctx context.Context) ([]*user_model.User, error)
 }
@@ -120,15 +120,25 @@ func (s *authService) CreateSession(ctx context.Context, userID string) (*auth_m
 	return sess, nil
 }
 
-func (s *authService) ValidateSession(ctx context.Context, sessionID string) (*auth_model.Session, error) {
+func (s *authService) ValidateSession(ctx context.Context, sessionID string) (*auth_model.Session, *user_model.User, error) {
 	sess, err := s.sessionRepo.Get(ctx, sessionID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if sess == nil || time.Now().After(sess.ExpiresAt) {
-		return nil, nil
+		return nil, nil, nil
 	}
-	return sess, nil
+	userRes, err := s.userGRPC.GetUserByID(ctx, &user_pb.GetUserByIDRequest{
+		Id: sess.UserID,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	convertedUser, err := user_grpc.ConvertProtoToDomain(userRes.GetUser())
+	if err != nil {
+		return nil, nil, err
+	}
+	return sess, convertedUser, nil
 }
 
 func (s *authService) DeleteSession(ctx context.Context, sessionID string) error {
