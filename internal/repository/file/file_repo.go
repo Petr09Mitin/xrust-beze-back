@@ -62,7 +62,7 @@ func (f *FileRepoImpl) UploadTemp(ctx context.Context, filepath, filename string
 
 func (f *FileRepoImpl) CopyFromTempToAvatars(ctx context.Context, filename string) error {
 	_, err := f.minioClient.CopyObject(ctx, minio.CopyDestOptions{
-		Bucket: config.VoiceMessagesMinioBucket,
+		Bucket: config.AvatarsMinioBucket,
 		Object: filename,
 	}, minio.CopySrcOptions{
 		Bucket: config.TempMinioBucket,
