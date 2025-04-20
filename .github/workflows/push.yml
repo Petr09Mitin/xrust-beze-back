@@ -89,11 +89,6 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            sudo su
             cd ./xrust-beze-back
-            git checkout main
-            git pull
-            export PATH=$PATH:/usr/local/go/bin
-            export PATH=$PATH:$(go env GOPATH)/bin
-            docker compose pull
-            docker compose up -d
+            sudo docker compose pull
+            sudo docker compose up -d

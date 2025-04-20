@@ -10,13 +10,13 @@ clear-mongo:
 	docker compose exec mongo_db sh -c "mongo < /scripts/clear-db.js"
 
 start:
-	docker build -t xrust_beze_chat:latest -f cmd/chat/Dockerfile . \
-	&& docker build -t ml_explanator:latest -f ml_explanator/Dockerfile . \
-	&& docker build -t ml_check:latest -f ml_check/Dockerfile . \
-	&& docker build -t ml_moderator:latest -f ml_moderator/Dockerfile . \
-	&& docker build -t xrust_beze_user:latest -f cmd/user/Dockerfile . \
-	&& docker build -t xrust_beze_file:latest -f cmd/file/Dockerfile . \
-	&& docker build -t xrust_beze_auth:latest -f cmd/auth/Dockerfile . \
+	docker build -t petr09mitin/xrust_beze_chat:latest -f cmd/chat/Dockerfile . \
+	&& docker build -t petr09mitin/ml_explanator:latest -f ml_explanator/Dockerfile . \
+	&& docker build -t petr09mitin/ml_check:latest -f ml_check/Dockerfile . \
+	&& docker build -t petr09mitin/ml_moderator:latest -f ml_moderator/Dockerfile . \
+	&& docker build -t petr09mitin/xrust_beze_user:latest -f cmd/user/Dockerfile . \
+	&& docker build -t petr09mitin/xrust_beze_file:latest -f cmd/file/Dockerfile . \
+	&& docker build -t petr09mitin/xrust_beze_auth:latest -f cmd/auth/Dockerfile . \
 	&& docker-compose up
 
 stop:
@@ -30,27 +30,27 @@ proto: $(PROTO_FILES)
 
 # микросервис user
 build-user:
-	docker build -t xrust_beze_user:latest -f cmd/user/Dockerfile .
+	docker build -t petr09mitin/xrust_beze_user:latest -f cmd/user/Dockerfile .
 
 build-file:
-	docker build -t xrust_beze_file:latest -f cmd/file/Dockerfile .
+	docker build -t petr09mitin/xrust_beze_file:latest -f cmd/file/Dockerfile .
 
 build-moderator:
-	docker build -t ml_moderator:latest -f ml_moderator/Dockerfile .
+	docker build -t petr09mitin/ml_moderator:latest -f ml_moderator/Dockerfile .
 
 build-image-moderator:
-	docker build -t ml_image_moderator:latest -f ml_image_moderator/Dockerfile .
+	docker build -t petr09mitin/ml_image_moderator:latest -f ml_image_moderator/Dockerfile .
 
 start-user-only: build-user build-file build-moderator
 	docker-compose up -d mongo_db user_service
 
 start-all-user-only:
-	docker build -t xrust_beze_user:latest -f cmd/user/Dockerfile . \
-	&& docker build -t xrust_beze_file:latest -f cmd/file/Dockerfile . \
+	docker build -t petr09mitin/xrust_beze_user:latest -f cmd/user/Dockerfile . \
+	&& docker build -t petr09mitin/xrust_beze_file:latest -f cmd/file/Dockerfile . \
 	&& docker-compose up
 
 build-auth:
-	docker build -t xrust_beze_auth:latest -f cmd/auth/Dockerfile .
+	docker build -t petr09mitin/xrust_beze_auth:latest -f cmd/auth/Dockerfile .
 
 start-auth-only: build-user build-auth  build-moderator
 	docker-compose up -d redis_xb auth_service ml_moderator
