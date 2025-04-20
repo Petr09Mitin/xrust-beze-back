@@ -2,9 +2,14 @@ package config
 
 import "github.com/spf13/viper"
 
+type StudyMaterialServices struct {
+	FileService *GRPCService `mapstructure:"file_service"`
+}
+
 type StudyMaterial struct {
-	Mongo *Mongo `mapstructure:"mongo"`
-	Kafka *Kafka `mapstructure:"kafka"`
+	Mongo    *Mongo                 `mapstructure:"mongo"`
+	Kafka    *Kafka                 `mapstructure:"kafka"`
+	Services *StudyMaterialServices `mapstructure:"services"`
 }
 
 func NewStudyMaterial() (*StudyMaterial, error) {

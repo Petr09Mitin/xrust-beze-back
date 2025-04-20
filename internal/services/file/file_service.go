@@ -18,6 +18,7 @@ type FileService interface {
 	DeleteVoiceMessage(ctx context.Context, filename string) (err error)
 	MoveTempFilesToAttachments(ctx context.Context, filenames []string) (err error)
 	DeleteAttachments(ctx context.Context, filenames []string) (err error)
+	CopyAttachmentToStudyMaterials(ctx context.Context, filename string) (string, error)
 }
 
 type FileServiceImpl struct {
@@ -158,4 +159,8 @@ func (f *FileServiceImpl) DeleteAttachments(ctx context.Context, filenames []str
 		return err
 	}
 	return nil
+}
+
+func (f *FileServiceImpl) CopyAttachmentToStudyMaterials(ctx context.Context, filename string) (string, error) {
+	return filename, f.fileRepo.CopyFromAttachmentsToStudyMaterials(ctx, filename)
 }

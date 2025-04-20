@@ -19,12 +19,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	FileService_MoveTempFileToAvatars_FullMethodName       = "/file.FileService/MoveTempFileToAvatars"
-	FileService_DeleteAvatar_FullMethodName                = "/file.FileService/DeleteAvatar"
-	FileService_MoveTempFileToVoiceMessages_FullMethodName = "/file.FileService/MoveTempFileToVoiceMessages"
-	FileService_DeleteVoiceMessage_FullMethodName          = "/file.FileService/DeleteVoiceMessage"
-	FileService_MoveTempFilesToAttachments_FullMethodName  = "/file.FileService/MoveTempFilesToAttachments"
-	FileService_DeleteAttachments_FullMethodName           = "/file.FileService/DeleteAttachments"
+	FileService_MoveTempFileToAvatars_FullMethodName          = "/file.FileService/MoveTempFileToAvatars"
+	FileService_DeleteAvatar_FullMethodName                   = "/file.FileService/DeleteAvatar"
+	FileService_MoveTempFileToVoiceMessages_FullMethodName    = "/file.FileService/MoveTempFileToVoiceMessages"
+	FileService_DeleteVoiceMessage_FullMethodName             = "/file.FileService/DeleteVoiceMessage"
+	FileService_MoveTempFilesToAttachments_FullMethodName     = "/file.FileService/MoveTempFilesToAttachments"
+	FileService_DeleteAttachments_FullMethodName              = "/file.FileService/DeleteAttachments"
+	FileService_CopyAttachmentToStudyMaterials_FullMethodName = "/file.FileService/CopyAttachmentToStudyMaterials"
 )
 
 // FileServiceClient is the client API for FileService service.
@@ -37,6 +38,7 @@ type FileServiceClient interface {
 	DeleteVoiceMessage(ctx context.Context, in *DeleteVoiceMessageRequest, opts ...grpc.CallOption) (*DeleteVoiceMessageResponse, error)
 	MoveTempFilesToAttachments(ctx context.Context, in *MoveTempFilesToAttachmentsRequest, opts ...grpc.CallOption) (*MoveTempFilesToAttachmentsResponse, error)
 	DeleteAttachments(ctx context.Context, in *DeleteAttachmentsRequest, opts ...grpc.CallOption) (*DeleteAttachmentsResponse, error)
+	CopyAttachmentToStudyMaterials(ctx context.Context, in *CopyAttachmentToStudyMaterialsRequest, opts ...grpc.CallOption) (*CopyAttachmentToStudyMaterialsResponse, error)
 }
 
 type fileServiceClient struct {
@@ -107,6 +109,16 @@ func (c *fileServiceClient) DeleteAttachments(ctx context.Context, in *DeleteAtt
 	return out, nil
 }
 
+func (c *fileServiceClient) CopyAttachmentToStudyMaterials(ctx context.Context, in *CopyAttachmentToStudyMaterialsRequest, opts ...grpc.CallOption) (*CopyAttachmentToStudyMaterialsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CopyAttachmentToStudyMaterialsResponse)
+	err := c.cc.Invoke(ctx, FileService_CopyAttachmentToStudyMaterials_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FileServiceServer is the server API for FileService service.
 // All implementations must embed UnimplementedFileServiceServer
 // for forward compatibility.
@@ -117,6 +129,7 @@ type FileServiceServer interface {
 	DeleteVoiceMessage(context.Context, *DeleteVoiceMessageRequest) (*DeleteVoiceMessageResponse, error)
 	MoveTempFilesToAttachments(context.Context, *MoveTempFilesToAttachmentsRequest) (*MoveTempFilesToAttachmentsResponse, error)
 	DeleteAttachments(context.Context, *DeleteAttachmentsRequest) (*DeleteAttachmentsResponse, error)
+	CopyAttachmentToStudyMaterials(context.Context, *CopyAttachmentToStudyMaterialsRequest) (*CopyAttachmentToStudyMaterialsResponse, error)
 	mustEmbedUnimplementedFileServiceServer()
 }
 
@@ -144,6 +157,9 @@ func (UnimplementedFileServiceServer) MoveTempFilesToAttachments(context.Context
 }
 func (UnimplementedFileServiceServer) DeleteAttachments(context.Context, *DeleteAttachmentsRequest) (*DeleteAttachmentsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteAttachments not implemented")
+}
+func (UnimplementedFileServiceServer) CopyAttachmentToStudyMaterials(context.Context, *CopyAttachmentToStudyMaterialsRequest) (*CopyAttachmentToStudyMaterialsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CopyAttachmentToStudyMaterials not implemented")
 }
 func (UnimplementedFileServiceServer) mustEmbedUnimplementedFileServiceServer() {}
 func (UnimplementedFileServiceServer) testEmbeddedByValue()                     {}
@@ -274,6 +290,24 @@ func _FileService_DeleteAttachments_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FileService_CopyAttachmentToStudyMaterials_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CopyAttachmentToStudyMaterialsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileServiceServer).CopyAttachmentToStudyMaterials(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileService_CopyAttachmentToStudyMaterials_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileServiceServer).CopyAttachmentToStudyMaterials(ctx, req.(*CopyAttachmentToStudyMaterialsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FileService_ServiceDesc is the grpc.ServiceDesc for FileService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -304,6 +338,10 @@ var FileService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteAttachments",
 			Handler:    _FileService_DeleteAttachments_Handler,
+		},
+		{
+			MethodName: "CopyAttachmentToStudyMaterials",
+			Handler:    _FileService_CopyAttachmentToStudyMaterials_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

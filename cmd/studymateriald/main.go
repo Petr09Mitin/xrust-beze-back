@@ -9,8 +9,11 @@ import (
 	study_material_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/study_material"
 	study_materiald "github.com/Petr09Mitin/xrust-beze-back/internal/router/daemons/study_material"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/services/study_material"
+	filepb "github.com/Petr09Mitin/xrust-beze-back/proto/file"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -51,7 +54,22 @@ func main() {
 		return
 	}
 
-	studyMaterialService := study_material.NewStudyMaterialService(studyMaterialRepo, log)
+	// init file service client
+	fileGRPCConn, err := grpc.NewClient(
+		fmt.Sprintf("%s:%d", cfg.Services.FileService.Host, cfg.Services.FileService.Port),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to connect to file_service")
+		return
+	}
+	fileGRPCClient := filepb.NewFileServiceClient(fileGRPCConn)
+	fileServiceClient := study_material_repo.NewFileRepo(fileGRPCClient, log)
+
+	// init ML repo
+	mlTaggerRepo := study_material_repo.NewMLTaggerRepo()
+
+	studyMaterialService := study_material.NewStudyMaterialService(studyMaterialRepo, mlTaggerRepo, fileServiceClient, log)
 	d := study_materiald.NewStudyMaterialD(studyMaterialService, cfg.Kafka.StudyMaterialTopic, brokerRouter, kafkaSub, log)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer func() {

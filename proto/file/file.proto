@@ -11,6 +11,7 @@ service FileService {
   rpc DeleteVoiceMessage(DeleteVoiceMessageRequest) returns (DeleteVoiceMessageResponse);
   rpc MoveTempFilesToAttachments(MoveTempFilesToAttachmentsRequest) returns (MoveTempFilesToAttachmentsResponse);
   rpc DeleteAttachments(DeleteAttachmentsRequest) returns (DeleteAttachmentsResponse);
+  rpc CopyAttachmentToStudyMaterials(CopyAttachmentToStudyMaterialsRequest) returns (CopyAttachmentToStudyMaterialsResponse);
 }
 
 message MoveTempFileToAvatarsRequest {
@@ -54,3 +55,11 @@ message DeleteAttachmentsRequest {
 }
 
 message DeleteAttachmentsResponse {}
+
+message CopyAttachmentToStudyMaterialsRequest {
+  string filename = 1;
+}
+
+message CopyAttachmentToStudyMaterialsResponse {
+  string filename = 1;
+}

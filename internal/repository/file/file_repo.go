@@ -21,6 +21,7 @@ type FileRepo interface {
 	CopyFromTempToAttachments(ctx context.Context, filenames []string) (err error)
 	DeleteAttachments(ctx context.Context, filenames []string) (err error)
 	CheckIfAttachmentExists(ctx context.Context, filename string) (exist bool, err error)
+	CopyFromAttachmentsToStudyMaterials(ctx context.Context, filename string) (err error)
 }
 
 type FileRepoImpl struct {
@@ -46,6 +47,10 @@ func NewFileRepo(minioClient *minio.Client, logger zerolog.Logger) (FileRepo, er
 		return nil, err
 	}
 	err = fr.initAttachmentsBucket()
+	if err != nil {
+		return nil, err
+	}
+	err = fr.initStudyMaterialsBucket()
 	if err != nil {
 		return nil, err
 	}
@@ -222,6 +227,31 @@ func (f *FileRepoImpl) initAttachmentsBucket() error {
 	return nil
 }
 
+func (f *FileRepoImpl) initStudyMaterialsBucket() error {
+	exists, err := f.minioClient.BucketExists(context.Background(), config.StudyMaterialsMinioBucket)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		err = f.minioClient.MakeBucket(context.Background(), config.StudyMaterialsMinioBucket, minio.MakeBucketOptions{
+			Region: "ru-central1",
+		})
+		if err != nil {
+			return err
+		}
+
+		err := f.minioClient.SetBucketPolicy(
+			context.Background(),
+			config.StudyMaterialsMinioBucket,
+			f.getPublicReadPolicy(config.StudyMaterialsMinioBucket),
+		)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (f *FileRepoImpl) getPublicReadPolicy(bucketName string) string {
 	return `{
         "Version": "2012-10-17",
@@ -265,4 +295,18 @@ func (f *FileRepoImpl) DeleteAttachments(ctx context.Context, filenames []string
 }
 func (f *FileRepoImpl) CheckIfAttachmentExists(ctx context.Context, filename string) (exist bool, err error) {
 	return f.checkIfObjectExists(ctx, config.AttachmentsMinioBucket, filename)
+}
+
+func (f *FileRepoImpl) CopyFromAttachmentsToStudyMaterials(ctx context.Context, filename string) (err error) {
+	_, err = f.minioClient.CopyObject(ctx, minio.CopyDestOptions{
+		Bucket: config.StudyMaterialsMinioBucket,
+		Object: filename,
+	}, minio.CopySrcOptions{
+		Bucket: config.AttachmentsMinioBucket,
+		Object: filename,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -9,3 +9,8 @@ kafka:
   addresses: ["kafka_xb:9092"]
   version: "3.8.0"
   study_material_topic: "xb.studymaterial.pub"
+
+services:
+  file_service:
+    host: "file_service"
+    port: 50051

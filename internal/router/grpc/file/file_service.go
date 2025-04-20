@@ -112,3 +112,19 @@ func (f *FileGRPCService) DeleteAttachments(ctx context.Context, req *pb.DeleteA
 
 	return &pb.DeleteAttachmentsResponse{}, nil
 }
+
+func (f *FileGRPCService) CopyAttachmentToStudyMaterials(ctx context.Context, req *pb.CopyAttachmentToStudyMaterialsRequest) (*pb.CopyAttachmentToStudyMaterialsResponse, error) {
+	filename := strings.TrimSpace(req.GetFilename())
+	if len(filename) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "filename is empty")
+	}
+
+	filename, err := f.fileService.CopyAttachmentToStudyMaterials(ctx, filename)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &pb.CopyAttachmentToStudyMaterialsResponse{
+		Filename: filename,
+	}, nil
+}

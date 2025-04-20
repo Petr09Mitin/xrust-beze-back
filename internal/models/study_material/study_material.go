@@ -6,7 +6,7 @@ import (
 )
 
 type StudyMaterial struct {
-	ID       string          `json:"id" bson:"_id"`
+	ID       string          `json:"id" bson:"_id,omitempty"`
 	Name     string          `json:"name" bson:"name"`
 	Filename string          `json:"filename" bson:"filename"`
 	Tags     []string        `json:"tags" bson:"tags"`
