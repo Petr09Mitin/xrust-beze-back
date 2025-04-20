@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import logging
 import fitz
+import os
 
 
 import mistral_api
@@ -48,5 +49,7 @@ async def tag(input_data: TextInput):
 
 
     tag = await mistral_api.set_tag(exstracted_text.strip())
+
+    os.remove(local_path)
 
     return tag
