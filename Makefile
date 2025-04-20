@@ -12,11 +12,12 @@ clear-mongo:
 start:
 	docker build -t petr09mitin/xrust_beze_chat:latest -f cmd/chat/Dockerfile . \
 	&& docker build -t petr09mitin/ml_explanator:latest -f ml_explanator/Dockerfile . \
-	&& docker build -t petr09mitin/ml_check:latest -f ml_check/Dockerfile . \
+	&& docker build -t petr09mitin/ml_image_moderator:latest -f ml_image_moderator/Dockerfile . \
 	&& docker build -t petr09mitin/ml_moderator:latest -f ml_moderator/Dockerfile . \
 	&& docker build -t petr09mitin/xrust_beze_user:latest -f cmd/user/Dockerfile . \
 	&& docker build -t petr09mitin/xrust_beze_file:latest -f cmd/file/Dockerfile . \
 	&& docker build -t petr09mitin/xrust_beze_auth:latest -f cmd/auth/Dockerfile . \
+	&& docker build -t petr09mitin/xrust_beze_studymateriald:latest -f cmd/studymateriald/Dockerfile . \
 	&& docker-compose up
 
 stop:

@@ -55,6 +55,9 @@ func (r *ChannelRepositoryImpl) GetChannelByID(ctx context.Context, id string) (
 	curr := chat_models.BSONChannel{}
 	err = res.Decode(&curr)
 	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return chat_models.Channel{}, custom_errors.ErrNotFound
+		}
 		return chat_models.Channel{}, err
 	}
 	channel := curr.ToChannel()

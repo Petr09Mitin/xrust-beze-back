@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/repository/file_client"
+	study_material_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/study_material"
 	filepb "github.com/Petr09Mitin/xrust-beze-back/proto/file"
 
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/config"
@@ -28,11 +29,13 @@ func main() {
 		log.Fatal().Msg(fmt.Sprintf("failed to load config: %v", err))
 		return
 	}
+
 	kafkaPub, err := infrakafka.NewKafkaPublisher(cfg.Kafka)
 	if err != nil {
 		log.Fatal().Msg(fmt.Sprintf("failed to create kafka publisher: %v", err))
 		return
 	}
+	studyMaterialPub := study_material_repo.NewStudyMaterialPub(cfg.Kafka.StudyMaterialTopic, kafkaPub, log)
 	client, err := mongo.Connect(options.Client().ApplyURI(fmt.Sprintf(
 		"mongodb://%s:%s@%s:%d",
 		cfg.Mongo.Username,
@@ -70,7 +73,7 @@ func main() {
 	}
 	fileGRPCClient := filepb.NewFileServiceClient(fileGRPCConn)
 	fileServiceClient := file_client.NewFileServiceClient(fileGRPCClient, log)
-	chatService := chat_service.NewChatService(msgRepo, chanRepo, fileServiceClient, structurizationRepo, userGRPCClient, log, cfg)
+	chatService := chat_service.NewChatService(msgRepo, chanRepo, fileServiceClient, structurizationRepo, userGRPCClient, studyMaterialPub, log, cfg)
 	m := melody.New()
 	m.Config.MaxMessageSize = 1 << 20
 	kafkaSub, err := infrakafka.NewKafkaSubscriber(cfg.Kafka)

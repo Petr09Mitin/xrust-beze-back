@@ -2,7 +2,9 @@ package message_repo
 
 import (
 	"context"
+	"errors"
 	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
+	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/rs/zerolog"
@@ -50,6 +52,9 @@ func (m *MessageRepoImpl) GetMessageByID(ctx context.Context, id string) (*chat_
 	bsonMsg := &chat_models.BSONMessage{}
 	err = res.Decode(bsonMsg)
 	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, custom_errors.ErrNotFound
+		}
 		return nil, err
 	}
 	msg := bsonMsg.ToMessage()

@@ -1,0 +1,11 @@
+mongo:
+  host: "mongo_db"
+  port: 27017
+  username: "admin"
+  password: "admin"
+  database: "xrust_beze"
+
+kafka:
+  addresses: ["kafka_xb:9092"]
+  version: "3.8.0"
+  study_material_topic: "xb.studymaterial.pub"

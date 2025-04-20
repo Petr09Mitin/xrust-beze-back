@@ -1,7 +1,7 @@
 package study_material_models
 
 import (
-	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
+	"encoding/json"
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
 )
 
@@ -16,9 +16,26 @@ type StudyMaterial struct {
 	Updated  int64           `json:"updated" bson:"updated"`
 }
 
+// ParsedAttachmentResponse is a type that represents response from ML service
+type ParsedAttachmentResponse struct {
+	IsStudyMaterial bool           `json:"is_study_material"`
+	StudyMaterial   *StudyMaterial `json:"study_material,omitempty"`
+}
+
 type AttachmentToParse struct {
-	Filename         string                `json:"filename"`
-	AuthorID         string                `json:"author_id"`
-	CurrMessageText  string                `json:"curr_message_text"`
-	PrevMessageTexts []chat_models.Message `json:"prev_messages_texts,omitempty"`
+	Filename         string   `json:"filename"`
+	AuthorID         string   `json:"author_id"`
+	CurrMessageText  string   `json:"curr_message_text"`
+	PrevMessageTexts []string `json:"prev_messages_texts"`
+}
+
+func (a *AttachmentToParse) Encode() []byte {
+	data, _ := json.Marshal(a)
+	return data
+}
+
+func DecodeToAttachmentToParse(data []byte) (*AttachmentToParse, error) {
+	result := &AttachmentToParse{}
+	err := json.Unmarshal(data, result)
+	return result, err
 }

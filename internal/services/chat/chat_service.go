@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	study_material_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/study_material"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/repository/file_client"
+	study_material_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/study_material"
 	"time"
 
 	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
@@ -39,17 +41,27 @@ type ChatServiceImpl struct {
 	fileServiceClient   file_client.FileServiceClient
 	structurizationRepo structurization_repo.StructurizationRepository
 	userService         UserService
+	studyMaterialPub    study_material_repo.StudyMaterialPub
 	cfg                 *config.Chat
 	logger              zerolog.Logger
 }
 
-func NewChatService(msgRepo message_repo.MessageRepo, channelRepo channelrepo.ChannelRepository, fileServiceClient file_client.FileServiceClient, structurizationRepo structurization_repo.StructurizationRepository, userService UserService, logger zerolog.Logger, cfg *config.Chat) ChatService {
+func NewChatService(
+	msgRepo message_repo.MessageRepo,
+	channelRepo channelrepo.ChannelRepository,
+	fileServiceClient file_client.FileServiceClient,
+	structurizationRepo structurization_repo.StructurizationRepository,
+	userService UserService,
+	studyMaterialPub study_material_repo.StudyMaterialPub,
+	logger zerolog.Logger,
+	cfg *config.Chat) ChatService {
 	return &ChatServiceImpl{
 		msgRepo:             msgRepo,
 		channelRepo:         channelRepo,
 		fileServiceClient:   fileServiceClient,
 		structurizationRepo: structurizationRepo,
 		userService:         userService,
+		studyMaterialPub:    studyMaterialPub,
 		cfg:                 cfg,
 		logger:              logger,
 	}
@@ -188,16 +200,27 @@ func (c *ChatServiceImpl) createTextMessage(ctx context.Context, msg chat_models
 		}
 	}
 
+	createdAt := time.Now().Unix()
 	if len(msg.Attachments) > 0 {
 		msg.Attachments, err = c.fileServiceClient.MoveTempFilesToAttachments(ctx, msg.Attachments)
 		if err != nil {
 			return chat_models.Message{}, err
 		}
+		// publish potential materials for studymateriald to process
+		// if we failed - log and continue
+		prevMsgs, err := c.msgRepo.GetPreviousMessagesByMessageCreatedAt(ctx, channel.ID, createdAt, 10)
+		if err != nil {
+			c.logger.Error().Err(err).Str("channel_id", channel.ID).Msg("unable to get previous messages in studymateriald sending")
+		} else {
+			err = c.publishAttachmentsToProcess(ctx, &msg, prevMsgs)
+			if err != nil {
+				c.logger.Error().Err(err).Any("msg", msg).Msg("unable to publish for studymateriald in create msg")
+			}
+		}
 	} else {
 		msg.Attachments = make([]string, 0)
 	}
 
-	createdAt := time.Now().Unix()
 	newMsg := chat_models.Message{
 		Event:       chat_models.TextMsgEvent,
 		Type:        msg.Type,
@@ -336,9 +359,23 @@ func (c *ChatServiceImpl) updateTextMessage(ctx context.Context, msg chat_models
 			attachmentsToCreate = append(attachmentsToCreate, attachment)
 		}
 	}
-	filenames, err := c.fileServiceClient.MoveTempFilesToAttachments(ctx, attachmentsToCreate)
-	if err != nil {
-		return chat_models.Message{}, err
+	var filenames []string
+	if len(attachmentsToCreate) > 0 {
+		filenames, err = c.fileServiceClient.MoveTempFilesToAttachments(ctx, attachmentsToCreate)
+		if err != nil {
+			return chat_models.Message{}, err
+		}
+		// publish potential materials for studymateriald to process
+		// if we failed - log and continue
+		prevMsgs, err := c.msgRepo.GetPreviousMessagesByMessageCreatedAt(ctx, channel.ID, oldMsg.CreatedAt, 10)
+		if err != nil {
+			c.logger.Error().Err(err).Str("channel_id", channel.ID).Msg("unable to get previous messages in studymateriald sending")
+		} else {
+			err = c.publishAttachmentsToProcess(ctx, &msg, prevMsgs)
+			if err != nil {
+				c.logger.Error().Err(err).Any("msg", msg).Msg("unable to publish for studymateriald in update msg")
+			}
+		}
 	}
 
 	updatedAt := time.Now().Unix()
@@ -544,4 +581,25 @@ func (c *ChatServiceImpl) GetChannelByUserAndPeerIDs(ctx context.Context, userID
 
 func (c *ChatServiceImpl) GetMessageByID(ctx context.Context, messageID string) (*chat_models.Message, error) {
 	return c.msgRepo.GetMessageByID(ctx, messageID)
+}
+
+func (c *ChatServiceImpl) publishAttachmentsToProcess(ctx context.Context, msg *chat_models.Message, prevMsgs []chat_models.Message) error {
+	prevMsgsTexts := make([]string, 0, len(prevMsgs))
+	for _, prevMsg := range prevMsgs {
+		prevMsgsTexts = append(prevMsgsTexts, prevMsg.Payload)
+	}
+	for _, attachment := range msg.Attachments {
+		err := c.studyMaterialPub.PublishAttachmentToParse(ctx, &study_material_models.AttachmentToParse{
+			Filename:         attachment,
+			AuthorID:         msg.UserID,
+			CurrMessageText:  msg.Payload,
+			PrevMessageTexts: prevMsgsTexts,
+		})
+		if err != nil {
+			c.logger.Error().Err(err).Msg(fmt.Sprintf("unable to publish attachment to process: %s", attachment))
+			return err
+		}
+	}
+
+	return nil
 }

@@ -164,6 +164,18 @@ services:
     env_file:
       - ./.env
 
+  studymateriald:
+    image: petr09mitin/xrust_beze_studymateriald:latest
+    container_name: studymateriald
+    tty: true
+    restart: always
+    volumes:
+      - .:/app
+    depends_on:
+      - mongo_db
+      - kafka_xb
+      - file_service
+
 volumes:
   mongo_data:
   kafka_data:

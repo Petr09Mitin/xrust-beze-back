@@ -9,11 +9,11 @@ RUN apk update && apk add bash && apk add build-base
 COPY . .
 
 RUN --mount=type=cache,target="/go/pkg/mod" \
-    CGO_ENABLED=0 go build -o /build/study_material ./cmd/study_material/main.go
+    CGO_ENABLED=0 go build -o /build/studymateriald ./cmd/studymateriald/main.go
 
 FROM gcr.io/distroless/base-debian11 AS build-release-stage
 
-COPY --from=build-stage /build/study_material /build/study_material
+COPY --from=build-stage /build/studymateriald /build/studymateriald
 
 # Run the executable
-CMD ["/build/study_material"]
+CMD ["/build/studymateriald"]
