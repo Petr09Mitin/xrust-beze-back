@@ -41,15 +41,12 @@ async def tag(input_data: TextInput):
 
     exstracted_text = extract_text_from_pdf(local_path)
 
-    logging.info(f'text: {exstracted_text}')
+    logging.info(f'text[:1000]: {exstracted_text[:1000]}')
 
     if len(exstracted_text) == 0:
         raise HTTPException(status_code=500, detail="Can't extract text from .pdf")
 
 
-    try:
-        tag = await mistral_api.set_tag(exstracted_text.strip())
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Can't set tag by LLM api")
+    tag = await mistral_api.set_tag(exstracted_text.strip())
 
     return tag
