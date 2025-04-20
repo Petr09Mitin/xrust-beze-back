@@ -13,4 +13,5 @@ var (
 	ErrNoChannelID                = errors.New("no channel id")
 	ErrNoMessageID                = errors.New("no message id")
 	ErrStructurizationUnavailable = errors.New("structurization is temporary unavailable, try again later")
+	ErrNoUserIDOrPeerID           = fmt.Errorf("%w: no user id or peer id", ErrBadRequest)
 )

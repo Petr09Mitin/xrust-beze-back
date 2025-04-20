@@ -48,7 +48,7 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 
 	user, err := h.userService.GetByID(ctx, id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 
@@ -63,7 +63,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 	}
 	var input user_model.User
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 	input.ID = userObjectID
@@ -73,15 +73,11 @@ func (h *UserHandler) Update(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, validationResp)
 			return
 		}
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 
 	if err := h.userService.Update(ctx, &input); err != nil {
-		if errors.Is(err, custom_errors.ErrUserNotExists) {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-			return
-		}
 		var profanityErr *custom_errors.ProfanityAggregateError
 		if errors.As(err, &profanityErr) {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -90,7 +86,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 			})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 
@@ -107,11 +103,7 @@ func (h *UserHandler) Delete(c *gin.Context) {
 
 	id := c.Param("id")
 	if err = h.userService.Delete(ctx, id); err != nil {
-		if errors.Is(err, custom_errors.ErrUserNotExists) {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 
@@ -136,7 +128,7 @@ func (h *UserHandler) List(c *gin.Context) {
 
 	users, err := h.userService.List(ctx, page, limit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 
@@ -150,7 +142,7 @@ func (h *UserHandler) FindMatchingUsers(c *gin.Context) {
 
 	users, err := h.userService.FindMatchingUsers(ctx, id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 
@@ -161,13 +153,13 @@ func (h *UserHandler) FindByUsername(c *gin.Context) {
 	username := strings.TrimSpace(c.Query("username"))
 	userID := strings.TrimSpace(c.Query("user_id"))
 	if username == "" || userID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "username is required"})
+		custom_errors.WriteHTTPError(c, custom_errors.ErrNoUsername)
 		return
 	}
 	limit, offset := httpparser.GetLimitAndOffset(c)
 	users, err := h.userService.FindUsersByUsername(c.Request.Context(), userID, username, limit, offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"users": users})
@@ -177,25 +169,21 @@ func (h *UserHandler) FindByUsername(c *gin.Context) {
 func extractAndValidateUserID(c *gin.Context) (primitive.ObjectID, error) {
 	userIDCtx, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": custom_errors.ErrMissingUserID.Error()})
 		return primitive.NilObjectID, custom_errors.ErrMissingUserID
 	}
 
 	userIDStr, ok := userIDCtx.(string)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": custom_errors.ErrInvalidUserIDType.Error()})
 		return primitive.NilObjectID, custom_errors.ErrInvalidUserIDType
 	}
 
 	paramID := c.Param("id")
 	if userIDStr != paramID {
-		c.JSON(http.StatusForbidden, gin.H{"error": custom_errors.ErrUserIDMismatch.Error()})
 		return primitive.NilObjectID, custom_errors.ErrUserIDMismatch
 	}
 
 	userObjectID, err := primitive.ObjectIDFromHex(userIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": custom_errors.ErrInvalidUserID.Error()})
 		return primitive.NilObjectID, custom_errors.ErrInvalidUserID
 	}
 

@@ -1,6 +1,7 @@
 package user_http
 
 import (
+	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	"net/http"
 
 	user_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/user"
@@ -28,7 +29,7 @@ func (h *SkillHandler) GetAllSkills(c *gin.Context) {
 	ctx := c.Request.Context()
 	allSkills, err := h.skillService.GetAll(ctx)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, allSkills)
@@ -39,7 +40,7 @@ func (h *SkillHandler) GetSkillsByCategory(c *gin.Context) {
 	category := c.Param("category")
 	skills, err := h.skillService.GetByCategory(ctx, category)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 	response := gin.H{category: skills}
@@ -49,7 +50,7 @@ func (h *SkillHandler) GetSkillsByCategory(c *gin.Context) {
 func (h *SkillHandler) GetAllCategories(c *gin.Context) {
 	categories, err := h.skillService.GetAllCategories(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get categories"})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 

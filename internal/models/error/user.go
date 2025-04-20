@@ -2,6 +2,7 @@ package custom_errors
 
 import (
 	"errors"
+	"fmt"
 )
 
 // type ProfanityError struct {
@@ -32,6 +33,7 @@ var (
 	ErrEmailAlreadyExists    = errors.New("email already exists")
 	ErrUsernameAlreadyExists = errors.New("username already exists")
 	ErrUserNotExists         = errors.New("user does not exist")
+	ErrNoUsername            = fmt.Errorf("%w: no username provided", ErrBadRequest)
 	ErrMissingPassword       = errors.New("password field missing or not a string")
 	ErrValidationFailed      = errors.New("validation failed: one or more fields are invalid")
 	ErrModerationUnavailable = errors.New("ml moderation service unavailable")

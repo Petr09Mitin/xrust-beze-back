@@ -1,6 +1,7 @@
 package auth_http
 
 import (
+	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	"net/http"
 	"strings"
 
@@ -35,7 +36,7 @@ func NewAuthHandler(router *gin.Engine, authService auth.AuthService, config *co
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req auth_model.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 	if err := req.Validate(); err != nil {
@@ -43,7 +44,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, validationResp)
 			return
 		}
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 
@@ -57,13 +58,13 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		// 	})
 		// 	return
 		// }
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 
 	session, err := h.authService.CreateSession(c.Request.Context(), user.ID.Hex())
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 	domain, secure := h.resolveCookieSettings(c)
@@ -83,13 +84,13 @@ func (h *AuthHandler) Register(c *gin.Context) {
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req auth_model.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 
 	session, user, err := h.authService.Login(c.Request.Context(), &req)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 
@@ -110,11 +111,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 func (h *AuthHandler) Logout(c *gin.Context) {
 	sessionID, err := c.Cookie(h.config.Cookie.Name)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "no session found"})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 	if err := h.authService.DeleteSession(c.Request.Context(), sessionID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete session"})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 
@@ -135,16 +136,16 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 func (h *AuthHandler) Validate(c *gin.Context) {
 	sessionID, err := c.Cookie(h.config.Cookie.Name)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "no session found"})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 	session, user, err := h.authService.ValidateSession(c.Request.Context(), sessionID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to validate session"})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 	if session == nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired session"})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"user_id": session.UserID, "user": user})

@@ -1,6 +1,7 @@
 package filehandler
 
 import (
+	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/services/file"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -30,9 +31,7 @@ func (f *FileHandler) UploadTempFile(c *gin.Context) {
 	ff, err := c.FormFile("file")
 	if err != nil {
 		f.logger.Error().Err(err).Msg("form file error")
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "form file error",
-		})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 
@@ -40,9 +39,7 @@ func (f *FileHandler) UploadTempFile(c *gin.Context) {
 	err = c.SaveUploadedFile(ff, filepath)
 	if err != nil {
 		f.logger.Error().Err(err).Msg("form file error")
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "unable to upload file",
-		})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 	defer func() {
@@ -56,9 +53,8 @@ func (f *FileHandler) UploadTempFile(c *gin.Context) {
 	filename, err := f.fileService.UploadTempFile(c.Request.Context(), filepath)
 	if err != nil {
 		f.logger.Error().Err(err).Msg("upload file error")
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "unable to upload file",
-		})
+		custom_errors.WriteHTTPError(c, err)
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{

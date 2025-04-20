@@ -112,9 +112,7 @@ func (ch *Chat) HandleWSConn(c *gin.Context) {
 	err := ch.M.HandleRequest(c.Writer, c.Request)
 	if err != nil {
 		ch.logger.Err(err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"err": err.Error(),
-		})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 }
@@ -161,18 +159,14 @@ func (ch *Chat) Stop() error {
 func (ch *Chat) HandleGetMessagesByChannelID(c *gin.Context) {
 	channelID := strings.TrimSpace(c.Param("channelID"))
 	if channelID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid channelID",
-		})
+		custom_errors.WriteHTTPError(c, custom_errors.ErrNoChannelID)
 		return
 	}
 
 	limit, offset := httpparser.GetLimitAndOffset(c)
 	messages, err := ch.ChatService.GetMessagesByChatID(c.Request.Context(), channelID, limit, offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -183,17 +177,13 @@ func (ch *Chat) HandleGetMessagesByChannelID(c *gin.Context) {
 func (ch *Chat) HandleGetChannelsByUserID(c *gin.Context) {
 	userID := strings.TrimSpace(c.Query(userIDQueryParam))
 	if userID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid userID",
-		})
+		custom_errors.WriteHTTPError(c, custom_errors.ErrInvalidUserID)
 		return
 	}
 	limit, offset := httpparser.GetLimitAndOffset(c)
 	channels, err := ch.ChatService.GetChannelsByUserID(c.Request.Context(), userID, limit, offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -205,17 +195,13 @@ func (ch *Chat) handleGetChannelByUserAndPeerIDs(c *gin.Context) {
 	userID := strings.TrimSpace(c.Query(userIDQueryParam))
 	peerID := strings.TrimSpace(c.Query(peerIDQueryParam))
 	if userID == "" || peerID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid userID or peerID",
-		})
+		custom_errors.WriteHTTPError(c, custom_errors.ErrNoUserIDOrPeerID)
 		return
 	}
 
 	channel, msgs, err := ch.ChatService.GetChannelByUserAndPeerIDs(c.Request.Context(), userID, peerID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid userID or peerID",
-		})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -227,17 +213,13 @@ func (ch *Chat) handleGetChannelByUserAndPeerIDs(c *gin.Context) {
 func (ch *Chat) GetMessagebyID(c *gin.Context) {
 	messageID := strings.TrimSpace(c.Param("messageID"))
 	if messageID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid messageID",
-		})
+		custom_errors.WriteHTTPError(c, custom_errors.ErrNoMessageID)
 		return
 	}
 
 	message, err := ch.ChatService.GetMessageByID(c.Request.Context(), messageID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		custom_errors.WriteHTTPError(c, err)
 		return
 	}
 
