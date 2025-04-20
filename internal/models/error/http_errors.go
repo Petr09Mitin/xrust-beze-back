@@ -9,8 +9,9 @@ import (
 var (
 	ErrorsToHTTPStatusCodes = map[error]int{
 		// common
-		ErrNotFound:   http.StatusNotFound,
-		ErrBadRequest: http.StatusBadRequest,
+		ErrNotFound:     http.StatusNotFound,
+		ErrUnauthorized: http.StatusUnauthorized,
+		ErrBadRequest:   http.StatusBadRequest,
 
 		// auth
 		ErrWrongPassword:      http.StatusBadRequest,

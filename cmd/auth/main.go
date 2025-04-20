@@ -72,7 +72,7 @@ func main() {
 
 	go func() {
 		router := gin.Default()
-		auth_http.NewAuthHandler(router, authService, cfg)
+		auth_http.NewAuthHandler(router, authService, cfg, log)
 
 		httpServer = &http.Server{
 			Addr:    fmt.Sprintf(":%d", cfg.HTTP.Port),

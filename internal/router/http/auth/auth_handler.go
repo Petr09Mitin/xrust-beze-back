@@ -2,6 +2,7 @@ package auth_http
 
 import (
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
+	"github.com/rs/zerolog"
 	"net/http"
 	"strings"
 
@@ -15,12 +16,14 @@ import (
 type AuthHandler struct {
 	authService auth.AuthService
 	config      *config.Auth
+	logger      zerolog.Logger
 }
 
-func NewAuthHandler(router *gin.Engine, authService auth.AuthService, config *config.Auth) {
+func NewAuthHandler(router *gin.Engine, authService auth.AuthService, config *config.Auth, logger zerolog.Logger) {
 	handler := &AuthHandler{
 		authService: authService,
 		config:      config,
+		logger:      logger,
 	}
 
 	auth := router.Group("/api/v1/auth")
@@ -36,7 +39,8 @@ func NewAuthHandler(router *gin.Engine, authService auth.AuthService, config *co
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req auth_model.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		custom_errors.WriteHTTPError(c, err)
+		h.logger.Info().Err(err).Msg("unable to bind json body in registration")
+		custom_errors.WriteHTTPError(c, custom_errors.ErrInvalidBody)
 		return
 	}
 	if err := req.Validate(); err != nil {
@@ -84,7 +88,8 @@ func (h *AuthHandler) Register(c *gin.Context) {
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req auth_model.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		custom_errors.WriteHTTPError(c, err)
+		h.logger.Info().Err(err).Msg("unable to bind json body in login")
+		custom_errors.WriteHTTPError(c, custom_errors.ErrInvalidBody)
 		return
 	}
 
@@ -111,7 +116,8 @@ func (h *AuthHandler) Login(c *gin.Context) {
 func (h *AuthHandler) Logout(c *gin.Context) {
 	sessionID, err := c.Cookie(h.config.Cookie.Name)
 	if err != nil {
-		custom_errors.WriteHTTPError(c, err)
+		h.logger.Info().Err(err).Msg("unable to get cookie in logout")
+		custom_errors.WriteHTTPError(c, custom_errors.ErrNoAuthCookie)
 		return
 	}
 	if err := h.authService.DeleteSession(c.Request.Context(), sessionID); err != nil {
@@ -136,16 +142,18 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 func (h *AuthHandler) Validate(c *gin.Context) {
 	sessionID, err := c.Cookie(h.config.Cookie.Name)
 	if err != nil {
-		custom_errors.WriteHTTPError(c, err)
+		h.logger.Info().Err(err).Msg("unable to get cookie in validate")
+		custom_errors.WriteHTTPError(c, custom_errors.ErrNoAuthCookie)
 		return
 	}
 	session, user, err := h.authService.ValidateSession(c.Request.Context(), sessionID)
 	if err != nil {
-		custom_errors.WriteHTTPError(c, err)
+		h.logger.Error().Err(err).Msg("invalid session in validate")
+		custom_errors.WriteHTTPError(c, custom_errors.ErrInvalidAuthCookie)
 		return
 	}
 	if session == nil {
-		custom_errors.WriteHTTPError(c, err)
+		custom_errors.WriteHTTPError(c, custom_errors.ErrNoAuthCookie)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"user_id": session.UserID, "user": user})
