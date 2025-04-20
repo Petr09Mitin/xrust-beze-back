@@ -2,96 +2,98 @@ name: Build and Deploy
 on:
   push:
     branches: [ main ]
-    build:
-      name: Build Docker images
-      runs-on: ubuntu-latest
-      steps:
-        - name: Checkout
-          uses: actions/checkout@v4
 
-        - name: Login to Docker Hub
-          uses: docker/login-action@v2
-          with:
-            username: ${{ secrets.DOCKERHUB_USERNAME }}
-            password: ${{ secrets.DOCKERHUB_TOKEN }}
+jobs:
+  build:
+    name: Build Docker images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-        - name: Set up Docker Buildx
-          uses: docker/setup-buildx-action@v2
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-        - name: Build and push auth
-          uses: docker/build-push-action@v4
-          with:
-            context: .
-            file: ./cmd/auth/Dockerfile
-            push: true
-            tags: petr09mitin/xrust_beze_auth:latest
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-        - name: Build and push chat
-          uses: docker/build-push-action@v4
-          with:
-            context: .
-            file: ./cmd/chat/Dockerfile
-            push: true
-            tags: petr09mitin/xrust_beze_chat:latest
+      - name: Build and push auth
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./cmd/auth/Dockerfile
+          push: true
+          tags: petr09mitin/xrust_beze_auth:latest
 
-        - name: Build and push file
-          uses: docker/build-push-action@v4
-          with:
-            context: .
-            file: ./cmd/file/Dockerfile
-            push: true
-            tags: petr09mitin/xrust_beze_file:latest
+      - name: Build and push chat
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./cmd/chat/Dockerfile
+          push: true
+          tags: petr09mitin/xrust_beze_chat:latest
 
-        - name: Build and push user
-          uses: docker/build-push-action@v4
-          with:
-            context: .
-            file: ./cmd/user/Dockerfile
-            push: true
-            tags: petr09mitin/xrust_beze_user:latest
+      - name: Build and push file
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./cmd/file/Dockerfile
+          push: true
+          tags: petr09mitin/xrust_beze_file:latest
 
-        - name: Build and push ml_explanator
-          uses: docker/build-push-action@v4
-          with:
-            context: .
-            file: ./ml_explanator/Dockerfile
-            push: true
-            tags: petr09mitin/ml_explanator:latest
+      - name: Build and push user
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./cmd/user/Dockerfile
+          push: true
+          tags: petr09mitin/xrust_beze_user:latest
 
-        - name: Build and push ml_moderator
-          uses: docker/build-push-action@v4
-          with:
-            context: .
-            file: ./ml_moderator/Dockerfile
-            push: true
-            tags: petr09mitin/ml_moderator:latest
+      - name: Build and push ml_explanator
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./ml_explanator/Dockerfile
+          push: true
+          tags: petr09mitin/ml_explanator:latest
 
-        - name: Build and push ml_image_moderator
-          uses: docker/build-push-action@v4
-          with:
-            context: .
-            file: ./ml_image_moderator/Dockerfile
-            push: true
-            tags: petr09mitin/ml_image_moderator:latest
+      - name: Build and push ml_moderator
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./ml_moderator/Dockerfile
+          push: true
+          tags: petr09mitin/ml_moderator:latest
 
-    deploy:
-      name: Deploy to VM
-      needs: [ build ]
-      runs-on: ubuntu-latest
+      - name: Build and push ml_image_moderator
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./ml_image_moderator/Dockerfile
+          push: true
+          tags: petr09mitin/ml_image_moderator:latest
 
-      steps:
-        - name: Migrate, build and run
-          uses: appleboy/ssh-action@v1.2.0
-          with:
-            host: ${{ secrets.SSH_HOST }}
-            username: ${{ secrets.SSH_USERNAME }}
-            key: ${{ secrets.SSH_KEY }}
-            script: |
-              sudo su
-              cd ./xrust-beze-back
-              git checkout main
-              git pull
-              export PATH=$PATH:/usr/local/go/bin
-              export PATH=$PATH:$(go env GOPATH)/bin
-              docker compose pull
-              docker compose up -d
+  deploy:
+    name: Deploy to VM
+    needs: [ build ]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Migrate, build and run
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            sudo su
+            cd ./xrust-beze-back
+            git checkout main
+            git pull
+            export PATH=$PATH:/usr/local/go/bin
+            export PATH=$PATH:$(go env GOPATH)/bin
+            docker compose pull
+            docker compose up -d
