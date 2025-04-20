@@ -90,5 +90,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             cd ./xrust-beze-back
+            sudo git checkout main
+            sudo git pull
             sudo docker compose pull
             sudo docker compose up -d
