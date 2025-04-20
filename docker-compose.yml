@@ -110,17 +110,6 @@ services:
     env_file:
       - ./ml_explanator.env
 
-  # WEB интерфейс для взаимодействия с ml_explanator. Но проде - отключить!
-  ml_check:
-    image: ml_check:latest
-    container_name: ml_check
-    ports:
-      - "8501:8501"
-    environment:
-      - EXPLANATION_API_URL=httpparser://ml_explanator:8091/explane
-    depends_on:
-      - ml_explanator
-
   ml_moderator:
     image: ml_moderator:latest
     container_name: ml_moderator
