@@ -54,8 +54,13 @@ func (s *StudyMaterialD) handleMessage(msg *message.Message) error {
 	decodedMsg, err := study_material_models.DecodeToAttachmentToParse(msg.Payload)
 	if err != nil {
 		s.logger.Err(err).Msg("failed to decode message")
-		return err
+		return nil // need to send ack to watermill
 	}
 	s.logger.Info().Interface("decodedMsg", decodedMsg).Msg("decoded message")
-	return s.studyMaterialService.ProcessAttachmentToParse(msg.Context(), decodedMsg)
+	err = s.studyMaterialService.ProcessAttachmentToParse(msg.Context(), decodedMsg)
+	if err != nil {
+		s.logger.Err(err).Msg("failed to ProcessAttachmentToParse")
+		return nil // need to send ack to watermill
+	}
+	return nil
 }

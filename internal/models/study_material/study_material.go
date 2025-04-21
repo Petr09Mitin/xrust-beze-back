@@ -29,6 +29,11 @@ type AttachmentToParse struct {
 	PrevMessageTexts []string `json:"prev_messages_texts"`
 }
 
+type AttachmentToParseRequest struct {
+	Filename string `json:"file_id"`
+	S3Bucket string `json:"bucket_name"`
+}
+
 func (a *AttachmentToParse) Encode() []byte {
 	data, _ := json.Marshal(a)
 	return data

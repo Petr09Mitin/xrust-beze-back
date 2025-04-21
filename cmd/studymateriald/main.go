@@ -67,7 +67,7 @@ func main() {
 	fileServiceClient := study_material_repo.NewFileRepo(fileGRPCClient, log)
 
 	// init ML repo
-	mlTaggerRepo := study_material_repo.NewMLTaggerRepo()
+	mlTaggerRepo := study_material_repo.NewMLTaggerRepo(cfg.Services.MLTags, log)
 
 	studyMaterialService := study_material.NewStudyMaterialService(studyMaterialRepo, mlTaggerRepo, fileServiceClient, log)
 	d := study_materiald.NewStudyMaterialD(studyMaterialService, cfg.Kafka.StudyMaterialTopic, brokerRouter, kafkaSub, log)

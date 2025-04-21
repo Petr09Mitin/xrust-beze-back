@@ -175,6 +175,7 @@ services:
       - mongo_db
       - kafka_xb
       - file_service
+      - ai_tags
 
   ai_tags:
     image: ai_tags:latest
@@ -186,6 +187,8 @@ services:
       - ./.env
     environment:
       - S3_ENDPOINT_URL=http://minio-xb:9000
+    depends_on:
+      - minio-xb
 
 volumes:
   mongo_data:

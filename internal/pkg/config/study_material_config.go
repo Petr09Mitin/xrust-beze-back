@@ -4,6 +4,7 @@ import "github.com/spf13/viper"
 
 type StudyMaterialServices struct {
 	FileService *GRPCService `mapstructure:"file_service"`
+	MLTags      *GRPCService `mapstructure:"ai_tags_service"`
 }
 
 type StudyMaterial struct {

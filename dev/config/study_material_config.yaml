@@ -14,3 +14,8 @@ services:
   file_service:
     host: "file_service"
     port: 50051
+  ai_tags_service:
+    host: "ai_tags"
+    port: 8087
+    timeout: 120
+    max_retries: 3
