@@ -48,8 +48,23 @@ async def tag(input_data: TextInput):
         raise HTTPException(status_code=500, detail="Can't extract text from .pdf")
 
 
-    tag = await mistral_api.set_tag(exstracted_text.strip())
+    is_study_material_bool, tag, name = await mistral_api.set_tag(exstracted_text.strip())
+
+    if is_study_material_bool:
+        response = {"is_study_material": is_study_material_bool,
+        "study_material": {
+            "name": name,
+            "tags": [tag]
+        }}
+    else:
+        response = {"is_study_material": is_study_material_bool,
+        "study_material": {
+            "name": "",
+            "tags": []
+        }}
 
     os.remove(local_path)
+    if not os.path.exists(local_path):
+        logging.info(f'Файл успешно удалён')
 
-    return tag
+    return response

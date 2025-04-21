@@ -57,15 +57,16 @@ async def set_tag(text, model="mistral-small-latest", max_len=1000):
 
         if is_study_material == "yes":
             is_study_material_bool = True
+            tag = list_response[1]
+            name = list_response[2]
         elif is_study_material == "no":
             is_study_material_bool = False
+            tag = ""
+            name = ""
         else:
             raise HTTPException(status_code=500, detail="Response 'is_study_material' is invalid")
-        
-        tag = list_response[1]
 
-        if tag not in valid_tags:
+        if is_study_material_bool and tag not in valid_tags:
             raise HTTPException(status_code=500, detail="Response tag is invalid")
         else:
-            return {"is_study_material": is_study_material_bool,
-                    "study_material,omitempty": tag}
+            return is_study_material_bool, tag, name

@@ -39,6 +39,6 @@ system_prompt = (
     "1. Read the input text.\n"
     "2. Decide if it is technical or natural language educational material:\n"
     "   - If **no**, output `no` on the first line, then output 'other' and stop.\n"
-    "   - If **yes**, output `yes` on the first line, then output one topic\n"
+    "   - If **yes**, output `yes` on the first line, then output one topic on the second line, then output the most appropriate name (name in Russian) for this material on the third line, and stop\n"
     "3. Only output labels, no explanations or extra text.\n"
 )
