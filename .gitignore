@@ -10,7 +10,6 @@ tempfiles/*
 load_skills_to_mongo.go
 ml_moderator/vect.pkl
 
-requirements.txt
 ml_check/__pycache__
 ml_explanator/__pycache__
 ml_moderator/__pycache__
