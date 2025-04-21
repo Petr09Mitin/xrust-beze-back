@@ -90,7 +90,7 @@ jobs:
           context: .
           file: ./cmd/studymateriald/Dockerfile
           push: true
-          tags: petr09mitin/studymateriald:latest
+          tags: petr09mitin/xrust_beze_studymateriald:latest
 
   deploy:
     name: Deploy to VM
