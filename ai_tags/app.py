@@ -16,7 +16,7 @@ app = FastAPI()
 
 class TextInput(BaseModel):
     file_id: str
-    backet_name: str
+    bucket_name: str
 
 def extract_text_from_pdf(pdf_path):
     text = ""
@@ -29,26 +29,26 @@ def extract_text_from_pdf(pdf_path):
 
 @app.post("/set-tag")
 async def tag(input_data: TextInput):
-    if not input_data.file_id.strip() or not input_data.backet_name.strip():
+    if not input_data.file_id.strip() or not input_data.bucket_name.strip():
         raise HTTPException(status_code=400, detail="Fields can't be empty")
 
     local_path = f"/tmp/{input_data.file_id}"
 
-    success = s3_utils.download_file_from_s3(input_data.backet_name, input_data.file_id, local_path)
+    success = s3_utils.download_file_from_s3(input_data.bucket_name, input_data.file_id, local_path)
 
     if not success:
         logging.error('Something went wrong')
         raise HTTPException(status_code=500, detail="Can't download file from S3")
 
-    exstracted_text = extract_text_from_pdf(local_path)
+    extracted_text = extract_text_from_pdf(local_path)
 
-    logging.info(f'text[:1000]: {exstracted_text[:1000]}')
+    logging.info(f'text[:1000]: {extracted_text[:1000]}')
 
-    if len(exstracted_text) == 0:
+    if len(extracted_text) == 0:
         raise HTTPException(status_code=500, detail="Can't extract text from .pdf")
 
 
-    is_study_material_bool, tag, name = await mistral_api.set_tag(exstracted_text.strip())
+    is_study_material_bool, tag, name = await mistral_api.set_tag(extracted_text.strip())
 
     if is_study_material_bool:
         response = {"is_study_material": is_study_material_bool,

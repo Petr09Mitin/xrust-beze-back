@@ -14,7 +14,7 @@ MODEL_API_KEY = os.environ.get('MODEL_API_KEY')
 
 client = Mistral(api_key=MODEL_API_KEY)
 
-valid_tags = set(['analytics', 'backend', 'architecture', 'database', 'design', 'devops', 'hardware', 'frontend', 'gamedev', 'integration', 'natural_languages', 'management', 'tools_for_buisness', 'ml', 'mobile', 'tools', 'testing', 'lowcode', 'math', 'security', 'other'])
+valid_tags = set(['analytics', 'backend', 'architecture', 'database', 'design', 'devops', 'hardware', 'frontend', 'gamedev', 'integration', 'natural_languages', 'management', 'tools_for_business', 'ml', 'mobile', 'tools', 'testing', 'lowcode', 'math', 'security', 'other'])
 
 
 
