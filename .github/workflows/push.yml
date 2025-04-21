@@ -76,6 +76,22 @@ jobs:
           push: true
           tags: petr09mitin/ml_image_moderator:latest
 
+      - name: Build and push ai_tags
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./ai_tags/Dockerfile
+          push: true
+          tags: petr09mitin/ai_tags:latest
+
+      - name: Build and push studymateriald
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./cmd/studymateriald/Dockerfile
+          push: true
+          tags: petr09mitin/studymateriald:latest
+
   deploy:
     name: Deploy to VM
     needs: [ build ]

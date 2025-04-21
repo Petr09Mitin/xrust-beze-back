@@ -178,7 +178,7 @@ services:
       - ai_tags
 
   ai_tags:
-    image: ai_tags:latest
+    image: petr09mitin/ai_tags:latest
     container_name: ai_tags
     ports:
       - "8087:8087"
