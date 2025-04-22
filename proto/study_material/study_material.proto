@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package study_material;
+
+option go_package = "proto/study_material";
+
+service StudyMaterialService {
+  rpc GetStudyMaterialByID(GetStudyMaterialByIDRequest) returns (StudyMaterialResponse);
+  rpc GetStudyMaterialsByTags(GetStudyMaterialsByTagsRequest) returns (StudyMaterialListResponse);
+  rpc GetStudyMaterialsByName(GetStudyMaterialsByNameRequest) returns (StudyMaterialListResponse);
+  rpc GetStudyMaterialsByAuthorID(GetStudyMaterialsByAuthorIDRequest) returns (StudyMaterialListResponse);
+  rpc CreateStudyMaterial(CreateStudyMaterialRequest) returns (StudyMaterialResponse);
+  rpc DeleteStudyMaterial(DeleteStudyMaterialRequest) returns (DeleteStudyMaterialResponse);
+}
+
+message StudyMaterial {
+  string id = 1;
+  string name = 2;
+  string filename = 3;
+  repeated string tags = 4;
+  string author_id = 5;
+  User author = 6;
+  int64 created = 7;
+  int64 updated = 8;
+}
+
+message User {
+  string id = 1;
+  string username = 2;
+  string email = 3;
+  string avatar = 4;
+}
+
+message GetStudyMaterialByIDRequest {
+  string id = 1;
+}
+
+message GetStudyMaterialsByTagsRequest {
+  repeated string tags = 1;
+}
+
+message GetStudyMaterialsByNameRequest {
+  string name = 1;
+}
+
+message GetStudyMaterialsByAuthorIDRequest {
+  string author_id = 1;
+}
+
+message CreateStudyMaterialRequest {
+  string name = 1;
+  string filename = 2;
+  repeated string tags = 3;
+  string author_id = 4;
+}
+
+message StudyMaterialResponse {
+  StudyMaterial study_material = 1;
+}
+
+message StudyMaterialListResponse {
+  repeated StudyMaterial study_materials = 1;
+}
+
+message DeleteStudyMaterialRequest {
+  string id = 1;
+  string author_id = 2;
+}
+
+message DeleteStudyMaterialResponse {
+  bool success = 1;
+} 

@@ -2,6 +2,7 @@ package study_material_models
 
 import (
 	"encoding/json"
+
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
 )
 

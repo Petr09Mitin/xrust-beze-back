@@ -1,12 +1,13 @@
-package study_material
+package study_material_service
 
 import (
 	"context"
+	"strings"
+	"time"
+
 	study_material_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/study_material"
 	study_material_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/study_material"
 	"github.com/rs/zerolog"
-	"strings"
-	"time"
 )
 
 type StudyMaterialService interface {

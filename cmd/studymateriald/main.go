@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/config"
 	infrakafka "github.com/Petr09Mitin/xrust-beze-back/internal/pkg/kafka"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/logger"
 	study_material_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/study_material"
 	study_materiald "github.com/Petr09Mitin/xrust-beze-back/internal/router/daemons/study_material"
-	"github.com/Petr09Mitin/xrust-beze-back/internal/services/study_material"
+	study_material_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/study_material"
 	filepb "github.com/Petr09Mitin/xrust-beze-back/proto/file"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -69,7 +70,7 @@ func main() {
 	// init ML repo
 	mlTaggerRepo := study_material_repo.NewMLTaggerRepo(cfg.Services.MLTags, log)
 
-	studyMaterialService := study_material.NewStudyMaterialService(studyMaterialRepo, mlTaggerRepo, fileServiceClient, log)
+	studyMaterialService := study_material_service.NewStudyMaterialService(studyMaterialRepo, mlTaggerRepo, fileServiceClient, log)
 	d := study_materiald.NewStudyMaterialD(studyMaterialService, cfg.Kafka.StudyMaterialTopic, brokerRouter, kafkaSub, log)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer func() {

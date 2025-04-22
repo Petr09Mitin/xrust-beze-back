@@ -2,14 +2,15 @@ package study_materiald
 
 import (
 	"context"
+
 	study_material_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/study_material"
-	"github.com/Petr09Mitin/xrust-beze-back/internal/services/study_material"
+	study_material_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/study_material"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/rs/zerolog"
 )
 
 type StudyMaterialD struct {
-	studyMaterialService study_material.StudyMaterialService
+	studyMaterialService study_material_service.StudyMaterialService
 	subTopicID           string
 	router               *message.Router
 	sub                  message.Subscriber
@@ -17,7 +18,7 @@ type StudyMaterialD struct {
 }
 
 func NewStudyMaterialD(
-	studyMaterialService study_material.StudyMaterialService,
+	studyMaterialService study_material_service.StudyMaterialService,
 	subTopicID string,
 	router *message.Router,
 	sub message.Subscriber,
