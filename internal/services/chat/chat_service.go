@@ -315,11 +315,9 @@ func (c *ChatServiceImpl) updateTextMessage(ctx context.Context, msg chat_models
 	if msg.MessageID == "" {
 		return msg, custom_errors.ErrNoMessageID
 	}
-
 	if msg.Payload == "" && len(msg.Attachments) == 0 {
 		return chat_models.Message{}, custom_errors.ErrInvalidMessage
 	}
-
 	if msg.ChannelID == "" {
 		return msg, custom_errors.ErrNoChannelID
 	}
@@ -348,9 +346,11 @@ func (c *ChatServiceImpl) updateTextMessage(ctx context.Context, msg chat_models
 			attachmentsToPreserve = append(attachmentsToPreserve, attachment)
 		}
 	}
-	err = c.fileServiceClient.DeleteAttachments(ctx, attachmentsToDelete)
-	if err != nil {
-		return chat_models.Message{}, err
+	if len(attachmentsToDelete) > 0 {
+		err = c.fileServiceClient.DeleteAttachments(ctx, attachmentsToDelete)
+		if err != nil {
+			return chat_models.Message{}, err
+		}
 	}
 	attachmentsToCreate := make([]string, 0, len(oldMsg.Attachments))
 	for _, attachment := range msg.Attachments {

@@ -167,16 +167,16 @@ services:
       - redis_data:/data
     restart: unless-stopped
 
-  ml_image_moderator:
-    image: petr09mitin/ml_image_moderator:latest
-    container_name: ml_image_moderator
-    ports:
-      - "8199:8199"
-    environment:
-      - GRPC_PORT=8199
-      - S3_ENDPOINT_URL=http://minio-xb:9000
-    env_file:
-      - ./.env
+#  ml_image_moderator:
+#    image: petr09mitin/ml_image_moderator:latest
+#    container_name: ml_image_moderator
+#    ports:
+#      - "8199:8199"
+#    environment:
+#      - GRPC_PORT=8199
+#      - S3_ENDPOINT_URL=http://minio-xb:9000
+#    env_file:
+#      - ./.env
 
   studymateriald:
     image: petr09mitin/xrust_beze_studymateriald:latest

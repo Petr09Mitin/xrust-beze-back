@@ -68,13 +68,13 @@ jobs:
           push: true
           tags: petr09mitin/ml_moderator:latest
 
-      - name: Build and push ml_image_moderator
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: ./ml_image_moderator/Dockerfile
-          push: true
-          tags: petr09mitin/ml_image_moderator:latest
+#      - name: Build and push ml_image_moderator
+#        uses: docker/build-push-action@v4
+#        with:
+#          context: .
+#          file: ./ml_image_moderator/Dockerfile
+#          push: true
+#          tags: petr09mitin/ml_image_moderator:latest
 
       - name: Build and push ai_tags
         uses: docker/build-push-action@v4
@@ -91,6 +91,14 @@ jobs:
           file: ./cmd/studymateriald/Dockerfile
           push: true
           tags: petr09mitin/xrust_beze_studymateriald:latest
+
+      - name: Build and push study_material
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./cmd/study_material/Dockerfile
+          push: true
+          tags: petr09mitin/xrust_beze_study_material:latest
 
   deploy:
     name: Deploy to VM
