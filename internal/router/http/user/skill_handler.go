@@ -2,6 +2,7 @@ package user_http
 
 import (
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
+	middleware2 "github.com/Petr09Mitin/xrust-beze-back/internal/router/middleware"
 	"net/http"
 
 	user_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/user"
@@ -17,6 +18,7 @@ func NewSkillHandler(router *gin.Engine, service user_service.SkillService) {
 		skillService: service,
 	}
 
+	router.Use(middleware2.CORSMiddleware())
 	skillGroup := router.Group("/api/v1/skills")
 	{
 		skillGroup.GET("", handler.GetAllSkills)

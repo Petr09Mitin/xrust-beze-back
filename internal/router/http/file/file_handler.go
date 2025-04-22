@@ -2,6 +2,7 @@ package filehandler
 
 import (
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/router/middleware"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/services/file"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -21,6 +22,7 @@ func NewFileHandler(router *gin.Engine, fileService file.FileService, logger zer
 		logger:      logger,
 	}
 
+	router.Use(middleware.CORSMiddleware())
 	gr := router.Group("/api/v1/file")
 	{
 		gr.POST("/temp", h.UploadTempFile)

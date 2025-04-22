@@ -2,6 +2,7 @@ package auth_http
 
 import (
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/router/middleware"
 	"github.com/rs/zerolog"
 	"net/http"
 	"strings"
@@ -26,6 +27,7 @@ func NewAuthHandler(router *gin.Engine, authService auth.AuthService, config *co
 		logger:      logger,
 	}
 
+	router.Use(middleware.CORSMiddleware())
 	auth := router.Group("/api/v1/auth")
 	{
 		auth.POST("/register", handler.Register)

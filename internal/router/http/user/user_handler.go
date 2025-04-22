@@ -11,6 +11,7 @@ import (
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/httpparser"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/validation"
+	middleware2 "github.com/Petr09Mitin/xrust-beze-back/internal/router/middleware"
 	user_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/user"
 	authpb "github.com/Petr09Mitin/xrust-beze-back/proto/auth"
 	"github.com/gin-gonic/gin"
@@ -26,6 +27,7 @@ func NewUserHandler(router *gin.Engine, userService user_service.UserService, au
 		userService: userService,
 	}
 
+	router.Use(middleware2.CORSMiddleware())
 	userGroup := router.Group("/api/v1/users")
 	{
 		userGroup.GET("/:id", handler.GetByID)
