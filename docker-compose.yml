@@ -86,6 +86,9 @@ services:
       - kafka_xb
       - file_service
       - user_service
+      - ml_explanator
+      - auth_service
+      - studymateriald
 
   user_service:
     image: petr09mitin/xrust_beze_user:latest
@@ -148,6 +151,7 @@ services:
       - file_service
       - study_material
       - studymateriald
+      - auth_service
     volumes:
       - ./dev/nginx:/etc/nginx
       - /etc/letsencrypt:/etc/letsencrypt
