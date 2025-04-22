@@ -127,6 +127,8 @@ services:
     container_name: ml_moderator
     ports:
       - "8066:8066"
+    volumes:
+      - ./ml_moderator:/app
 
   nginx_xb:
     image: nginx:1.27.4-perl
