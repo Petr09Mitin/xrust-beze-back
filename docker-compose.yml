@@ -99,6 +99,20 @@ services:
       - mongo_db
       - file_service
 
+  study_material:
+    image: petr09mitin/xrust_beze_study_material:latest
+    container_name: study_material
+    ports:
+      - "8086:8080"
+    volumes:
+      - .:/app
+    restart: always
+    depends_on:
+      - mongo_db
+      - file_service
+      - user_service
+      - auth_service
+
   # Сервис для AI дополнения ответов эксперта
   ml_explanator:
     image: petr09mitin/ml_explanator:latest
@@ -126,16 +140,17 @@ services:
       - ml_explanator
       - user_service
       - file_service
+      - study_material
     volumes:
       - ./dev/nginx:/etc/nginx
       - /etc/letsencrypt:/etc/letsencrypt
       - ../XRUST_BEZE_frontend/skillsharing/dist:/dist
 
   auth_service:
-    image: petr09mitin/xrust_beze_auth:latest  # предположим, что билдится как и другие сервисы
+    image: petr09mitin/xrust_beze_auth:latest
     container_name: auth_service
     ports:
-      - "8082:8080"  # или любой другой, чтобы не конфликтовать
+      - "8082:8080"
     volumes:
       - .:/app
     restart: always
@@ -151,7 +166,6 @@ services:
     volumes:
       - redis_data:/data
     restart: unless-stopped
-
 
   ml_image_moderator:
     image: petr09mitin/ml_image_moderator:latest

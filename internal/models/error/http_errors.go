@@ -2,8 +2,9 @@ package custom_errors
 
 import (
 	"errors"
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 var (
@@ -17,7 +18,7 @@ var (
 		ErrWrongPassword:      http.StatusBadRequest,
 		ErrMissingUserID:      http.StatusUnauthorized,
 		ErrInvalidUserIDType:  http.StatusBadRequest,
-		ErrUserIDMismatch:     http.StatusUnauthorized,
+		ErrUserIDMismatch:     http.StatusForbidden,
 		ErrInvalidUserID:      http.StatusBadRequest,
 		ErrMissingLoginField:  http.StatusBadRequest,
 		ErrTooManyLoginFields: http.StatusBadRequest,

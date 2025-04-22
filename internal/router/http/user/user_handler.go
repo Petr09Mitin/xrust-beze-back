@@ -59,7 +59,8 @@ func (h *UserHandler) Update(c *gin.Context) {
 	ctx := c.Request.Context()
 	userObjectID, err := extractAndValidateUserID(c)
 	if err != nil {
-		return // JSON-ответ уже установлен в функции
+		custom_errors.WriteHTTPError(c, err)
+		return
 	}
 	var input user_model.User
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -98,7 +99,8 @@ func (h *UserHandler) Delete(c *gin.Context) {
 
 	_, err := extractAndValidateUserID(c)
 	if err != nil {
-		return // JSON-ответ уже установлен в функции
+		custom_errors.WriteHTTPError(c, err)
+		return
 	}
 
 	id := c.Param("id")

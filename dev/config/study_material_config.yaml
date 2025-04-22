@@ -1,0 +1,30 @@
+http:
+  port: 8080
+
+grpc:
+  port: 50051
+
+mongo:
+  host: "mongo_db"
+  port: 27017
+  username: "admin"
+  password: "admin"
+  database: "xrust_beze"
+
+services:
+  file_service:
+    host: file_service
+    port: 50051
+    timeout: 10
+    max_retries: 3
+  auth_service:
+    host: auth_service
+    port: 50051
+    timeout: 10
+    max_retries: 3
+  user_service:
+    host: user_service
+    port: 50051
+    timeout: 10
+    max_retries: 3
+

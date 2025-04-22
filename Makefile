@@ -17,18 +17,19 @@ start:
 	&& docker build -t petr09mitin/xrust_beze_user:latest -f cmd/user/Dockerfile . \
 	&& docker build -t petr09mitin/xrust_beze_file:latest -f cmd/file/Dockerfile . \
 	&& docker build -t petr09mitin/xrust_beze_auth:latest -f cmd/auth/Dockerfile . \
+	&& docker build -t petr09mitin/xrust_beze_study_material:latest -f cmd/study_material/Dockerfile . \
 	&& docker-compose up
 
 stop:
 	docker-compose down
 
-PROTO_FILES := proto/user/user.proto proto/file/file.proto proto/auth/auth.proto
+PROTO_FILES := proto/user/user.proto proto/file/file.proto proto/auth/auth.proto proto/study_material/study_material.proto
 proto: $(PROTO_FILES)
 	protoc --go_out=. --go-grpc_out=. proto/user/user.proto
 	protoc --go_out=. --go-grpc_out=. proto/file/file.proto
 	protoc --go_out=. --go-grpc_out=. proto/auth/auth.proto
+	protoc --go_out=. --go-grpc_out=. proto/study_material/study_material.proto
 
-# микросервис user
 build-user:
 	docker build -t petr09mitin/xrust_beze_user:latest -f cmd/user/Dockerfile .
 
@@ -44,13 +45,14 @@ build-image-moderator:
 start-user-only: build-user build-file build-moderator
 	docker-compose up -d mongo_db user_service
 
-start-all-user-only:
-	docker build -t petr09mitin/xrust_beze_user:latest -f cmd/user/Dockerfile . \
-	&& docker build -t petr09mitin/xrust_beze_file:latest -f cmd/file/Dockerfile . \
-	&& docker-compose up
-
 build-auth:
 	docker build -t petr09mitin/xrust_beze_auth:latest -f cmd/auth/Dockerfile .
 
 start-auth-only: build-user build-auth  build-moderator
 	docker-compose up -d redis_xb auth_service ml_moderator
+
+build-study-material:
+	docker build -t petr09mitin/xrust_beze_study_material:latest -f cmd/study_material/Dockerfile .
+
+start-study-material-only: build-study-material
+	docker-compose up -d mongo_db auth_service user_service file_service study_material
