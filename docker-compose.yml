@@ -85,6 +85,7 @@ services:
       - mongo_db
       - kafka_xb
       - file_service
+      - user_service
 
   user_service:
     image: petr09mitin/xrust_beze_user:latest
@@ -119,6 +120,7 @@ services:
     container_name: ml_explanator
     ports:
       - "8091:8091"
+    restart: always
     env_file:
       - ./ml_explanator.env
 
@@ -127,22 +129,25 @@ services:
     container_name: ml_moderator
     ports:
       - "8066:8066"
+    restart: always
     volumes:
       - ./ml_moderator:/app
 
   nginx_xb:
     image: nginx:1.27.4-perl
     container_name: nginx_xb
-    restart: on-failure
+    restart: always
     ports:
       - "80:80"
       - "443:443"
     depends_on:
       - chat_service
       - ml_explanator
+      - ml_moderator
       - user_service
       - file_service
       - study_material
+      - studymateriald
     volumes:
       - ./dev/nginx:/etc/nginx
       - /etc/letsencrypt:/etc/letsencrypt
