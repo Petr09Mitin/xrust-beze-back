@@ -64,11 +64,11 @@ func (r *studyMaterialAPIRepository) GetByName(ctx context.Context, name string)
 }
 
 func (r *studyMaterialAPIRepository) GetByAuthorID(ctx context.Context, authorID string) ([]*study_material_models.StudyMaterial, error) {
-	objectAuthorID, err := primitive.ObjectIDFromHex(authorID)
-	if err != nil {
-		return nil, err
-	}
-	filter := bson.M{"author_id": objectAuthorID}
+	// objectAuthorID, err := primitive.ObjectIDFromHex(authorID)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	filter := bson.M{"author_id": authorID}
 	return r.find(ctx, filter)
 }
 
