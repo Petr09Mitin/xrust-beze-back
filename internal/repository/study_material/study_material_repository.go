@@ -37,7 +37,7 @@ func (r *studyMaterialAPIRepository) GetByID(ctx context.Context, id string) (*s
 	var material study_material_models.StudyMaterial
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, err
+		return nil, custom_errors.ErrInvalidIDType
 	}
 	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&material)
 	if err != nil {

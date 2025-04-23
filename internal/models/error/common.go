@@ -1,6 +1,9 @@
 package custom_errors
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 var (
 	ErrBadRequest         = errors.New("bad request")
@@ -9,4 +12,5 @@ var (
 	ErrMaxRetriesExceeded = errors.New("max retries count exceeded")
 	ErrRequestTimeout     = errors.New("request timed out")
 	ErrInternal           = errors.New("internal error")
+	ErrInvalidIDType      = fmt.Errorf("%w: the provided hex string is not a valid ObjectID", ErrBadRequest)
 )
