@@ -31,6 +31,8 @@ type UserService interface {
 	FindMatchingUsers(ctx context.Context, userID string) ([]*user_model.User, error)
 	FindUsersByUsername(ctx context.Context, userID, username string, limit, offset int64) ([]*user_model.User, error)
 	CreateReview(ctx context.Context, review *user_model.Review) (*user_model.Review, error)
+	UpdateReview(ctx context.Context, userID string, review *user_model.Review) (*user_model.Review, error)
+	DeleteReview(ctx context.Context, userID string, reviewID string) error
 }
 
 type userService struct {
@@ -366,6 +368,39 @@ func (s *userService) fillUsersRatings(ctx context.Context, users []*user_model.
 	}
 	for _, user := range users {
 		user.Rating = ratings[user.ID.Hex()]
+	}
+	return nil
+}
+
+func (s *userService) UpdateReview(ctx context.Context, userID string, review *user_model.Review) (*user_model.Review, error) {
+	oldReview, err := s.reviewRepo.GetByID(ctx, review.ID)
+	if err != nil {
+		return nil, err
+	}
+	if oldReview.UserIDBy != userID {
+		return nil, custom_errors.ErrUnauthorized
+	}
+	oldReview.Text = review.Text
+	oldReview.Rating = review.Rating
+	oldReview.Updated = time.Now().Unix()
+	err = s.reviewRepo.Update(ctx, oldReview)
+	if err != nil {
+		return nil, err
+	}
+	return oldReview, nil
+}
+
+func (s *userService) DeleteReview(ctx context.Context, userID string, reviewID string) error {
+	oldReview, err := s.reviewRepo.GetByID(ctx, reviewID)
+	if err != nil {
+		return err
+	}
+	if oldReview.UserIDBy != userID {
+		return custom_errors.ErrUnauthorized
+	}
+	err = s.reviewRepo.DeleteByID(ctx, reviewID)
+	if err != nil {
+		return err
 	}
 	return nil
 }

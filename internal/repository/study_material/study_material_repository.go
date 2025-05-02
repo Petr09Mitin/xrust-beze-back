@@ -2,15 +2,13 @@ package study_material_repo
 
 import (
 	"context"
-
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	study_material_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/study_material"
 	"github.com/rs/zerolog"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type StudyMaterialAPIRepository interface {
@@ -35,7 +33,7 @@ func NewStudyMaterialAPIRepository(db *mongo.Database, logger zerolog.Logger) St
 
 func (r *studyMaterialAPIRepository) GetByID(ctx context.Context, id string) (*study_material_models.StudyMaterial, error) {
 	var material study_material_models.StudyMaterial
-	objectID, err := primitive.ObjectIDFromHex(id)
+	objectID, err := bson.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, custom_errors.ErrInvalidIDType
 	}
@@ -73,7 +71,7 @@ func (r *studyMaterialAPIRepository) GetByAuthorID(ctx context.Context, authorID
 }
 
 func (r *studyMaterialAPIRepository) Delete(ctx context.Context, materialID string) error {
-	objectMaterialID, err := primitive.ObjectIDFromHex(materialID)
+	objectMaterialID, err := bson.ObjectIDFromHex(materialID)
 	if err != nil {
 		return err
 	}

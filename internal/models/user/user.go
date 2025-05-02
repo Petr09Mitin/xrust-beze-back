@@ -2,27 +2,28 @@ package user
 
 import (
 	"errors"
+	"go.mongodb.org/mongo-driver/v2/bson"
+
 	"time"
 
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/validation"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type User struct {
-	ID              primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	Username        string             `json:"username" bson:"username" validate:"required,validate-username"`
-	Email           string             `json:"email" bson:"email" validate:"required,email"`
-	SkillsToLearn   []Skill            `json:"skills_to_learn" bson:"skills_to_learn"`
-	SkillsToShare   []Skill            `json:"skills_to_share" bson:"skills_to_share"`
-	Bio             string             `json:"bio" bson:"bio" validate:"max=1000"`
-	Avatar          string             `json:"avatar" bson:"avatar"`
-	CreatedAt       time.Time          `json:"created_at" bson:"created_at"`
-	UpdatedAt       time.Time          `json:"updated_at" bson:"updated_at"`
-	LastActiveAt    time.Time          `json:"last_active_at" bson:"last_active_at"`
-	PreferredFormat string             `json:"preferred_format" bson:"preferred_format" validate:"omitempty,oneof=text voice video"`
-	Hrefs           []string           `json:"hrefs" bson:"hrefs"`
-	Rating          float64            `json:"rating" bson:"-"`
-	Reviews         []*Review          `json:"reviews,omitempty" bson:"-"`
+	ID              bson.ObjectID `json:"id" bson:"_id,omitempty"`
+	Username        string        `json:"username" bson:"username" validate:"required,validate-username"`
+	Email           string        `json:"email" bson:"email" validate:"required,email"`
+	SkillsToLearn   []Skill       `json:"skills_to_learn" bson:"skills_to_learn"`
+	SkillsToShare   []Skill       `json:"skills_to_share" bson:"skills_to_share"`
+	Bio             string        `json:"bio" bson:"bio" validate:"max=1000"`
+	Avatar          string        `json:"avatar" bson:"avatar"`
+	CreatedAt       time.Time     `json:"created_at" bson:"created_at"`
+	UpdatedAt       time.Time     `json:"updated_at" bson:"updated_at"`
+	LastActiveAt    time.Time     `json:"last_active_at" bson:"last_active_at"`
+	PreferredFormat string        `json:"preferred_format" bson:"preferred_format" validate:"omitempty,oneof=text voice video"`
+	Hrefs           []string      `json:"hrefs" bson:"hrefs"`
+	Rating          float64       `json:"rating" bson:"-"`
+	Reviews         []*Review     `json:"reviews,omitempty" bson:"-"`
 }
 
 type UserToCreate struct {

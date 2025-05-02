@@ -24,8 +24,8 @@ import (
 	authpb "github.com/Petr09Mitin/xrust-beze-back/proto/auth"
 	filepb "github.com/Petr09Mitin/xrust-beze-back/proto/file"
 	userpb "github.com/Petr09Mitin/xrust-beze-back/proto/user"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 var (
@@ -160,7 +160,7 @@ func initMongo(log zerolog.Logger, cfg *config.Mongo) (*mongo.Database, error) {
 
 	log.Printf("Connecting to MongoDB with URI: %s", uri)
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	client, err := mongo.Connect(options.Client().ApplyURI(uri))
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to connect to MongoDB")
 		return nil, err

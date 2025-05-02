@@ -6,8 +6,8 @@ import (
 	"time"
 
 	skill_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 type SkillRepo interface {
@@ -71,18 +71,14 @@ func (r *skillRepository) GetAllCategories(ctx context.Context) ([]string, error
 	defer cancel()
 
 	// Используем Distinct для получения уникальных категорий
-	categories, err := r.collection.Distinct(ctx, "category", bson.M{})
+	res := r.collection.Distinct(ctx, "category", bson.M{})
+	if err := res.Err(); err != nil {
+		return nil, err
+	}
+	result := make([]string, 0)
+	err := res.Decode(&result)
 	if err != nil {
 		return nil, err
 	}
-
-	// Конвертируем interface{} в []string
-	var result []string
-	for _, cat := range categories {
-		if str, ok := cat.(string); ok {
-			result = append(result, str)
-		}
-	}
-
 	return result, nil
 }

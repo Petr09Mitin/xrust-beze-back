@@ -77,6 +77,7 @@ func (s *authService) Login(ctx context.Context, req *auth_model.LoginRequest) (
 	}
 
 	if err != nil {
+		s.logger.Error().Err(err).Msg("grpc err GetUserByUsernameToLogin or GetUserByEmailToLogin")
 		return nil, nil, err
 	}
 	if userWithPassword == nil {
@@ -90,6 +91,7 @@ func (s *authService) Login(ctx context.Context, req *auth_model.LoginRequest) (
 		Id: userWithPassword.UserToLogin.Id,
 	})
 	if err != nil {
+		s.logger.Error().Err(err).Msg("grpc err GetUserByID")
 		return nil, nil, err
 	}
 

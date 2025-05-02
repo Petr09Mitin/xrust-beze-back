@@ -2,6 +2,7 @@ package user_http
 
 import (
 	"errors"
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"net/http"
 	"strconv"
 	"strings"
@@ -15,7 +16,6 @@ import (
 	user_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/user"
 	authpb "github.com/Petr09Mitin/xrust-beze-back/proto/auth"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type UserHandler struct {
@@ -42,6 +42,8 @@ func NewUserHandler(router *gin.Engine, userService user_service.UserService, au
 		secure.PUT("/:id", handler.Update)
 		secure.DELETE("/:id", handler.Delete)
 		secure.POST("/review", handler.CreateReview)
+		secure.PUT("/review/:id", handler.UpdateReview)
+		secure.DELETE("/review/:id", handler.DeleteReview)
 	}
 }
 
@@ -150,6 +152,53 @@ func (h *UserHandler) CreateReview(c *gin.Context) {
 	c.JSON(http.StatusCreated, review)
 }
 
+func (h *UserHandler) UpdateReview(c *gin.Context) {
+	ctx := c.Request.Context()
+	userIDCtx, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	userIDStr, ok := userIDCtx.(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	id := c.Param("id")
+	var input user_model.Review
+	if err := c.ShouldBindJSON(&input); err != nil {
+		custom_errors.WriteHTTPError(c, custom_errors.ErrBadRequest)
+		return
+	}
+	input.ID = id
+	review, err := h.userService.UpdateReview(ctx, userIDStr, &input)
+	if err != nil {
+		custom_errors.WriteHTTPError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, review)
+}
+
+func (h *UserHandler) DeleteReview(c *gin.Context) {
+	ctx := c.Request.Context()
+	userIDCtx, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	userIDStr, ok := userIDCtx.(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	id := c.Param("id")
+	if err := h.userService.DeleteReview(ctx, userIDStr, id); err != nil {
+		custom_errors.WriteHTTPError(c, err)
+		return
+	}
+	c.JSON(http.StatusNoContent, gin.H{"message": "review deleted successfully"})
+}
+
 // Получение списка пользователей
 func (h *UserHandler) List(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -206,49 +255,26 @@ func (h *UserHandler) FindByUsername(c *gin.Context) {
 }
 
 // Извлекает user_id из контекста и проверяет соответствие параметру запроса
-func extractAndValidateUserID(c *gin.Context) (primitive.ObjectID, error) {
+func extractAndValidateUserID(c *gin.Context) (bson.ObjectID, error) {
 	userIDCtx, exists := c.Get("user_id")
 	if !exists {
-		return primitive.NilObjectID, custom_errors.ErrMissingUserID
+		return bson.NilObjectID, custom_errors.ErrMissingUserID
 	}
 
 	userIDStr, ok := userIDCtx.(string)
 	if !ok {
-		return primitive.NilObjectID, custom_errors.ErrInvalidUserIDType
+		return bson.NilObjectID, custom_errors.ErrInvalidUserIDType
 	}
 
 	paramID := c.Param("id")
 	if userIDStr != paramID {
-		return primitive.NilObjectID, custom_errors.ErrUserIDMismatch
+		return bson.NilObjectID, custom_errors.ErrUserIDMismatch
 	}
 
-	userObjectID, err := primitive.ObjectIDFromHex(userIDStr)
+	userObjectID, err := bson.ObjectIDFromHex(userIDStr)
 	if err != nil {
-		return primitive.NilObjectID, custom_errors.ErrInvalidUserID
+		return bson.NilObjectID, custom_errors.ErrInvalidUserID
 	}
 
 	return userObjectID, nil
 }
-
-// ручка для тестов, регистрация в сервисе auth
-// func (h *UserHandler) Create(c *gin.Context) {
-// 	ctx := c.Request.Context()
-// 	var input user_model.User
-// 	if err := c.ShouldBindJSON(&input); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
-
-// 	hashedPassword := "dummy"
-// if err := h.userService.Create(ctx, &input, hashedPassword); err != nil {
-// 		// Проверяем, является ли ошибка ошибкой валидации
-// 		if _, ok := err.(validator.ValidationErrors); ok {
-// 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 			return
-// 		}
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusCreated, input)
-// }

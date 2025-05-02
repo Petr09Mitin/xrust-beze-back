@@ -10,10 +10,9 @@ import (
 
 	auth_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/auth"
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type UserRepo interface {
@@ -73,7 +72,7 @@ func (r *userRepository) Create(ctx context.Context, user *user_model.User, hash
 		return err
 	}
 
-	user.ID = result.InsertedID.(primitive.ObjectID)
+	user.ID = result.InsertedID.(bson.ObjectID)
 	return nil
 }
 
@@ -81,7 +80,7 @@ func (r *userRepository) GetByID(ctx context.Context, id string) (*user_model.Us
 	ctx, cancel := context.WithTimeout(ctx, r.timeout)
 	defer cancel()
 
-	objectID, err := primitive.ObjectIDFromHex(id)
+	objectID, err := bson.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +166,7 @@ func (r *userRepository) Delete(ctx context.Context, id string) error {
 	ctx, cancel := context.WithTimeout(ctx, r.timeout)
 	defer cancel()
 
-	objectID, err := primitive.ObjectIDFromHex(id)
+	objectID, err := bson.ObjectIDFromHex(id)
 	if err != nil {
 		return err
 	}
@@ -241,7 +240,7 @@ func (r *userRepository) FindBySkills(ctx context.Context, skillsToLearn []strin
 func (r *userRepository) FindByUsername(ctx context.Context, currUserID, name string, limit, offset int64) ([]*user_model.User, error) {
 	ctx, cancel := context.WithTimeout(ctx, r.timeout)
 	defer cancel()
-	id, err := primitive.ObjectIDFromHex(currUserID)
+	id, err := bson.ObjectIDFromHex(currUserID)
 	if err != nil {
 		return nil, err
 	}
@@ -289,6 +288,7 @@ func (r *userRepository) getUserWithPasswordByFilter(ctx context.Context, filter
 
 	var user user_model.User
 	if err := r.collection.FindOne(ctx, filter).Decode(&user); err != nil {
+		r.logger.Error().Err(err).Msg("failed to find user")
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, custom_errors.ErrUserNotExists
 		}

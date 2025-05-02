@@ -6,10 +6,9 @@ import (
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
 	"github.com/rs/zerolog"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type ReviewRepo interface {
@@ -17,6 +16,9 @@ type ReviewRepo interface {
 	GetByUserIDByAndUserIDTo(ctx context.Context, userIDBy string, UserIDTo string) (*user_model.Review, error)
 	GetReviewsByUserIDTo(ctx context.Context, userIDTo string) ([]*user_model.Review, error)
 	GetAvgRatingsByUserIDs(ctx context.Context, userIDs []string) (map[string]float64, error)
+	GetByID(ctx context.Context, id string) (*user_model.Review, error)
+	Update(ctx context.Context, review *user_model.Review) error
+	DeleteByID(ctx context.Context, id string) error
 }
 
 type ReviewRepoImpl struct {
@@ -37,7 +39,7 @@ func (r *ReviewRepoImpl) Create(ctx context.Context, review *user_model.Review) 
 		r.logger.Error().Err(err).Msg("failed to create review in MongoDB")
 		return nil, err
 	}
-	review.ID = result.InsertedID.(primitive.ObjectID).Hex()
+	review.ID = result.InsertedID.(bson.ObjectID).Hex()
 	return review, nil
 }
 
@@ -145,4 +147,60 @@ func (r *ReviewRepoImpl) GetAvgRatingsByUserIDs(ctx context.Context, userIDs []s
 		ratingsMap[rating.UserID] = rating.Rating
 	}
 	return ratingsMap, nil
+}
+
+func (r *ReviewRepoImpl) GetByID(ctx context.Context, id string) (*user_model.Review, error) {
+	objID, err := bson.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+	res := r.mongoDB.FindOne(ctx, bson.M{
+		"_id": objID,
+	})
+	bsonReview := &user_model.BSONReview{}
+	err = res.Decode(bsonReview)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, custom_errors.ErrNotFound
+		}
+		return nil, err
+	}
+	msg := bsonReview.ToReview()
+
+	return msg, nil
+}
+
+func (r *ReviewRepoImpl) Update(ctx context.Context, review *user_model.Review) error {
+	objID, err := bson.ObjectIDFromHex(review.ID)
+	if err != nil {
+		return err
+	}
+	_, err = r.mongoDB.UpdateByID(ctx, objID, bson.M{
+		"$set": bson.M{
+			"rating":  review.Rating,
+			"text":    review.Text,
+			"updated": review.Updated,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *ReviewRepoImpl) DeleteByID(ctx context.Context, id string) error {
+	objID, err := bson.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+	filter := bson.D{
+		{"_id", objID},
+	}
+	_, err = r.mongoDB.DeleteOne(ctx, filter)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
