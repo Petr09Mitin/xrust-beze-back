@@ -3,6 +3,7 @@ from pydantic import BaseModel
 import logging
 import fitz
 import os
+from docx import Document
 
 
 import mistral_api
@@ -26,6 +27,29 @@ def extract_text_from_pdf(pdf_path):
     return text
 
 
+def extract_text_from_docx(docx_path):
+    text = ""
+    doc = Document(docx_path)
+    for paragraph in doc.paragraphs:
+        text += paragraph.text + "\n"
+    return text
+
+
+def extract_text_from_txt(txt_path):
+    with open(txt_path, 'r', encoding='utf-8') as f:
+        return f.read()
+
+def extract_text(file_path):
+    ext = os.path.splitext(file_path)[1].lower()
+
+    if ext == '.pdf':
+        return extract_text_from_pdf(file_path)
+    elif ext == '.docx':
+        return extract_text_from_docx(file_path)
+    elif ext == '.txt':
+        return extract_text_from_txt(file_path)
+    else:
+        raise ValueError(f"Unsupported file type: {ext}")
 
 @app.post("/set-tag")
 async def tag(input_data: TextInput):
@@ -41,7 +65,7 @@ async def tag(input_data: TextInput):
             logging.error('Something went wrong')
             raise HTTPException(status_code=400, detail="Can't download file from S3")
 
-        extracted_text = extract_text_from_pdf(local_path)
+        extracted_text = extract_text(local_path)
 
         logging.info(f'text[:1000]: {extracted_text[:1000]}')
 
@@ -63,6 +87,8 @@ async def tag(input_data: TextInput):
                 "name": "",
                 "tags": []
             }}
+
+        # TODO additional tags
 
         os.remove(local_path)
         if not os.path.exists(local_path):
