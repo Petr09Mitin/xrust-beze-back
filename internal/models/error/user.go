@@ -40,4 +40,5 @@ var (
 	// ErrUsernameProfanityDetected = errors.New("profanity detected in username")
 	// ErrBioProfanityDetected      = errors.New("profanity detected in bio")
 	// ErrProfanityDetected = &ProfanityError{FieldName: ""}
+	ErrDuplicateReview = fmt.Errorf("%w: duplicate review", ErrBadRequest)
 )

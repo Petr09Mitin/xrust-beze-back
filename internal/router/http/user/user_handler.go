@@ -41,6 +41,7 @@ func NewUserHandler(router *gin.Engine, userService user_service.UserService, au
 	{
 		secure.PUT("/:id", handler.Update)
 		secure.DELETE("/:id", handler.Delete)
+		secure.POST("/review", handler.CreateReview)
 	}
 }
 
@@ -112,6 +113,41 @@ func (h *UserHandler) Delete(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "user deleted successfully"})
+}
+
+func (h *UserHandler) CreateReview(c *gin.Context) {
+	ctx := c.Request.Context()
+	userIDCtx, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	userIDStr, ok := userIDCtx.(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	var input user_model.Review
+	if err := c.ShouldBindJSON(&input); err != nil {
+		custom_errors.WriteHTTPError(c, custom_errors.ErrBadRequest)
+		return
+	}
+	input.UserIDBy = strings.TrimSpace(userIDStr)
+	input.UserIDTo = strings.TrimSpace(input.UserIDTo)
+	if err := validation.Validate.Struct(input); err != nil {
+		if validationResp := validation.BuildValidationError(err); validationResp != nil {
+			c.JSON(http.StatusBadRequest, validationResp)
+			return
+		}
+		custom_errors.WriteHTTPError(c, err)
+		return
+	}
+	review, err := h.userService.CreateReview(ctx, &input)
+	if err != nil {
+		custom_errors.WriteHTTPError(c, err)
+		return
+	}
+	c.JSON(http.StatusCreated, review)
 }
 
 // Получение списка пользователей

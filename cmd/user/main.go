@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	review_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/review"
 	"net"
 	"net/http"
 	"os"
@@ -84,7 +85,9 @@ func main() {
 
 	moderationRepo := moderation_repo.NewModerationRepository(cfg.Services.Moderation, log)
 	userRepo := user_repo.NewUserRepository(db, 10*time.Second, log)
-	userService := user_service.NewUserService(userRepo, moderationRepo, fileGRPCClient, authClient, 10*time.Second, log)
+	reviewColl := db.Collection("reviews")
+	reviewRepo := review_repo.NewReviewRepo(reviewColl, log)
+	userService := user_service.NewUserService(userRepo, moderationRepo, reviewRepo, fileGRPCClient, authClient, 10*time.Second, log)
 
 	skillRepo := user_repo.NewSkillRepository(db, 10*time.Second, log)
 	skillService := user_service.NewSkillService(skillRepo, 10*time.Second, log)

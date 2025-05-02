@@ -2,6 +2,8 @@ package user_service
 
 import (
 	"context"
+	"errors"
+	review_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/review"
 	"strings"
 	"time"
 
@@ -28,21 +30,24 @@ type UserService interface {
 	List(ctx context.Context, page, limit int) ([]*user_model.User, error)
 	FindMatchingUsers(ctx context.Context, userID string) ([]*user_model.User, error)
 	FindUsersByUsername(ctx context.Context, userID, username string, limit, offset int64) ([]*user_model.User, error)
+	CreateReview(ctx context.Context, review *user_model.Review) (*user_model.Review, error)
 }
 
 type userService struct {
 	userRepo       user_repo.UserRepo
 	moderationRepo moderation_repo.ModerationRepo
+	ReviewRepo     review_repo.ReviewRepo
 	fileGRPC       filepb.FileServiceClient
 	authGRPC       authpb.AuthServiceClient
 	timeout        time.Duration
 	logger         zerolog.Logger
 }
 
-func NewUserService(userRepo user_repo.UserRepo, moderationRepo moderation_repo.ModerationRepo, fileGRPC filepb.FileServiceClient, authGRPC authpb.AuthServiceClient, timeout time.Duration, logger zerolog.Logger) UserService {
+func NewUserService(userRepo user_repo.UserRepo, moderationRepo moderation_repo.ModerationRepo, reviewRepo review_repo.ReviewRepo, fileGRPC filepb.FileServiceClient, authGRPC authpb.AuthServiceClient, timeout time.Duration, logger zerolog.Logger) UserService {
 	return &userService{
 		userRepo:       userRepo,
 		moderationRepo: moderationRepo,
+		ReviewRepo:     reviewRepo,
 		fileGRPC:       fileGRPC,
 		authGRPC:       authGRPC,
 		timeout:        timeout,
@@ -252,4 +257,27 @@ func (s *userService) checkUserForProfanity(ctx context.Context, user *user_mode
 		return profanityErr
 	}
 	return nil
+}
+
+func (s *userService) CreateReview(ctx context.Context, review *user_model.Review) (*user_model.Review, error) {
+	_, err := s.userRepo.GetByID(ctx, review.UserIDBy)
+	if err != nil {
+		return nil, custom_errors.ErrUserNotExists
+	}
+	_, err = s.userRepo.GetByID(ctx, review.UserIDTo)
+	if err != nil {
+		return nil, custom_errors.ErrUserNotExists
+	}
+	_, err = s.ReviewRepo.GetByUserIDByAndUserIDTo(ctx, review.UserIDBy, review.UserIDTo)
+	if !errors.Is(err, custom_errors.ErrNotFound) {
+		return nil, custom_errors.ErrDuplicateReview
+	}
+	created := time.Now().Unix()
+	review.Created = created
+	review.Updated = created
+	newReview, err := s.ReviewRepo.Create(ctx, review)
+	if err != nil {
+		return nil, err
+	}
+	return newReview, nil
 }

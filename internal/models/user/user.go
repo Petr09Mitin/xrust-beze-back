@@ -21,6 +21,7 @@ type User struct {
 	LastActiveAt    time.Time          `json:"last_active_at" bson:"last_active_at"`
 	PreferredFormat string             `json:"preferred_format" bson:"preferred_format" validate:"omitempty,oneof=text voice video"`
 	Hrefs           []string           `json:"hrefs" bson:"hrefs"`
+	Reviews         []Review           `json:"reviews,omitempty" bson:"-"`
 }
 
 type UserToCreate struct {
