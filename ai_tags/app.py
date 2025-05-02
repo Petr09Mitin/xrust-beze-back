@@ -19,6 +19,7 @@ class TextInput(BaseModel):
     file_id: str
     bucket_name: str
 
+
 def extract_text_from_pdf(pdf_path):
     text = ""
     with fitz.open(pdf_path) as doc:
@@ -39,6 +40,7 @@ def extract_text_from_txt(txt_path):
     with open(txt_path, 'r', encoding='utf-8') as f:
         return f.read()
 
+
 def extract_text(file_path):
     ext = os.path.splitext(file_path)[1].lower()
 
@@ -50,6 +52,7 @@ def extract_text(file_path):
         return extract_text_from_txt(file_path)
     else:
         raise ValueError(f"Unsupported file type: {ext}")
+
 
 @app.post("/set-tag")
 async def tag(input_data: TextInput):
@@ -73,13 +76,18 @@ async def tag(input_data: TextInput):
             raise HTTPException(status_code=400, detail="Can't extract text from .pdf")
 
 
-        is_study_material_bool, tag, name = await mistral_api.set_tag(extracted_text.strip())
+        is_study_material_bool, main_tag, name = await mistral_api.set_tag(extracted_text.strip())
 
         if is_study_material_bool:
+
+            additional_tags = mistral_api.extract_relevant_skills(extracted_text, main_tag)
+
+            logging.info(f'additional_tags: {additional_tags}')
+
             response = {"is_study_material": is_study_material_bool,
             "study_material": {
                 "name": name,
-                "tags": [tag]
+                "tags": [main_tag] + additional_tags
             }}
         else:
             response = {"is_study_material": is_study_material_bool,
