@@ -2,6 +2,7 @@ package study_material_repo
 
 import (
 	"context"
+	"errors"
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	study_material_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/study_material"
 	"github.com/rs/zerolog"
@@ -32,20 +33,20 @@ func NewStudyMaterialAPIRepository(db *mongo.Database, logger zerolog.Logger) St
 }
 
 func (r *studyMaterialAPIRepository) GetByID(ctx context.Context, id string) (*study_material_models.StudyMaterial, error) {
-	var material study_material_models.StudyMaterial
+	var bsonMaterial study_material_models.BSONStudyMaterial
 	objectID, err := bson.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, custom_errors.ErrInvalidIDType
 	}
-	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&material)
+	err = r.collection.FindOne(ctx, bson.M{"_id": objectID}).Decode(&bsonMaterial)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, custom_errors.ErrNotFound
 		}
 		return nil, err
 	}
 
-	return &material, nil
+	return bsonMaterial.ToStudyMaterial(), nil
 }
 
 func (r *studyMaterialAPIRepository) GetByTags(ctx context.Context, tags []string) ([]*study_material_models.StudyMaterial, error) {
@@ -88,8 +89,16 @@ func (r *studyMaterialAPIRepository) find(ctx context.Context, filter interface{
 	}
 	defer cursor.Close(ctx)
 
-	var materials []*study_material_models.StudyMaterial
-	if err := cursor.All(ctx, &materials); err != nil {
+	materials := make([]*study_material_models.StudyMaterial, 0, cursor.RemainingBatchLength())
+	for cursor.Next(ctx) {
+		curr := study_material_models.BSONStudyMaterial{}
+		err = cursor.Decode(&curr)
+		if err != nil {
+			return nil, err
+		}
+		materials = append(materials, curr.ToStudyMaterial())
+	}
+	if err := cursor.Err(); err != nil {
 		return nil, err
 	}
 
