@@ -23,7 +23,7 @@ type User struct {
 	PreferredFormat string        `json:"preferred_format" bson:"preferred_format" validate:"omitempty,oneof=text voice video"`
 	Hrefs           []string      `json:"hrefs" bson:"hrefs"`
 	Rating          float64       `json:"rating" bson:"-"`
-	Reviews         []*Review     `json:"reviews,omitempty" bson:"-"`
+	Reviews         []*Review     `json:"reviews" bson:"-"`
 }
 
 type UserToCreate struct {

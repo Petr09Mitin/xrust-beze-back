@@ -344,6 +344,13 @@ func (s *userService) fillUserReviews(ctx context.Context, user *user_model.User
 	if len(reviews) == 0 {
 		reviews = make([]*user_model.Review, 0)
 	}
+	for _, review := range reviews {
+		review.UserBy, err = s.userRepo.GetByID(ctx, review.UserIDBy)
+		if err != nil {
+			s.logger.Error().Err(err).Msg("failed to get user by id")
+			return nil, err
+		}
+	}
 	user.Reviews = reviews
 	ratings, err := s.reviewRepo.GetAvgRatingsByUserIDs(ctx, []string{user.ID.Hex()})
 	if err != nil {
