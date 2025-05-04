@@ -136,6 +136,10 @@ func (h *UserHandler) CreateReview(c *gin.Context) {
 	}
 	input.UserIDBy = strings.TrimSpace(userIDStr)
 	input.UserIDTo = strings.TrimSpace(input.UserIDTo)
+	if input.UserIDBy == input.UserIDTo {
+		custom_errors.WriteHTTPError(c, custom_errors.ErrCanNotSelfReview)
+		return
+	}
 	if err := validation.Validate.Struct(input); err != nil {
 		if validationResp := validation.BuildValidationError(err); validationResp != nil {
 			c.JSON(http.StatusBadRequest, validationResp)
