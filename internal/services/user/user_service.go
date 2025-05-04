@@ -333,6 +333,10 @@ func (s *userService) CreateReview(ctx context.Context, review *user_model.Revie
 	if err != nil {
 		return nil, err
 	}
+	newReview.UserBy, err = s.userRepo.GetByID(ctx, newReview.UserIDBy)
+	if err != nil {
+		return nil, err
+	}
 	return newReview, nil
 }
 
@@ -391,6 +395,10 @@ func (s *userService) UpdateReview(ctx context.Context, userID string, review *u
 	oldReview.Rating = review.Rating
 	oldReview.Updated = time.Now().Unix()
 	err = s.reviewRepo.Update(ctx, oldReview)
+	if err != nil {
+		return nil, err
+	}
+	oldReview.UserBy, err = s.userRepo.GetByID(ctx, oldReview.UserIDBy)
 	if err != nil {
 		return nil, err
 	}
