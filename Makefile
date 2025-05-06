@@ -44,7 +44,7 @@ build-image-moderator:
 	docker build -t petr09mitin/ml_image_moderator:latest -f ml_image_moderator/Dockerfile .
 
 build-ai-tags:
-	docker build -t ai_tags:latest -f ai_tags/Dockerfile .
+	docker build -t petr09mitin/ai_tags:latest -f ai_tags/Dockerfile .
 
 start-ai-tags:
 	docker-compose up ai_tags minio-xb
