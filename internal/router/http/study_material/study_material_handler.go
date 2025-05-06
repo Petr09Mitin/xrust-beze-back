@@ -19,17 +19,22 @@ func NewStudyMaterialHandler(router *gin.Engine, studyMaterialService study_mate
 		studyMaterialService: studyMaterialService,
 	}
 
-	materialGroup := router.Group("/api/v1/study-materials")
-	{
-		materialGroup.GET("/:id", handler.GetByID)
-		materialGroup.GET("/by-tags", handler.GetByTags)
-		materialGroup.GET("", handler.GetByName)
-		materialGroup.GET("/by-author-id/:author_id", handler.GetByAuthorID)
-	}
+	// materialGroup := router.Group("/api/v1/study-materials")
+	// {
+	// 	materialGroup.GET("/:id", handler.GetByID)
+	// 	materialGroup.GET("/by-tags", handler.GetByTags)
+	// 	materialGroup.GET("", handler.GetByName)
+	// 	materialGroup.GET("/by-author-id/:author_id", handler.GetByAuthorID)
+	// }
 
 	secure := router.Group("/api/v1/study-materials")
 	secure.Use(middleware.AuthMiddleware(authClient))
 	{
+		secure.GET("/:id", handler.GetByID)
+		secure.GET("/by-tags", handler.GetByTags)
+		secure.GET("", handler.GetByName)
+		secure.GET("/by-author-id/:author_id", handler.GetByAuthorID)
+
 		secure.DELETE("/:id", handler.Delete)
 	}
 }

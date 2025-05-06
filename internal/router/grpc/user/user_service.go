@@ -3,7 +3,8 @@ package user_grpc
 import (
 	"context"
 	"errors"
-	"fmt"
+
+	"go.mongodb.org/mongo-driver/v2/bson"
 
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
@@ -11,7 +12,6 @@ import (
 	pb "github.com/Petr09Mitin/xrust-beze-back/proto/user"
 	"github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -142,7 +142,7 @@ func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 	// 	return nil, status.Errorf(codes.PermissionDenied, "can only update own profile")
 	// }
 
-	objectID, err := primitive.ObjectIDFromHex(req.Id)
+	objectID, err := bson.ObjectIDFromHex(req.Id)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid ID format: %v", err)
 	}
@@ -253,6 +253,22 @@ func (s *UserService) FindMatchingUsers(ctx context.Context, req *pb.FindMatchin
 	}, nil
 }
 
+func (s *UserService) FindBySkillsToShare(ctx context.Context, req *pb.FindBySkillsToShareRequest) (*pb.ListUsersResponse, error) {
+	users, err := s.userService.FindBySkillsToShare(ctx, req.Query, int64(req.Limit), int64(req.Offset))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to find users by skills: %v", err)
+	}
+
+	var pbUsers []*pb.User
+	for _, u := range users {
+		pbUsers = append(pbUsers, convertDomainToProto(u))
+	}
+
+	return &pb.ListUsersResponse{
+		Users: pbUsers,
+	}, nil
+}
+
 // convertDomainToProto конвертирует доменную модель в protobuf
 func convertDomainToProto(u *user_model.User) *pb.User {
 	var skillsToLearn []*pb.Skill
@@ -316,9 +332,8 @@ func ConvertProtoToDomain(u *pb.User) (*user_model.User, error) {
 
 	hrefs = append(hrefs, u.GetHrefs()...)
 
-	id, err := primitive.ObjectIDFromHex(u.Id)
+	id, err := bson.ObjectIDFromHex(u.Id)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 

@@ -1,10 +1,14 @@
 package user_http
 
 import (
+	"context"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"go.mongodb.org/mongo-driver/v2/bson"
 
 	"github.com/Petr09Mitin/xrust-beze-back/internal/middleware"
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
@@ -15,7 +19,6 @@ import (
 	user_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/user"
 	authpb "github.com/Petr09Mitin/xrust-beze-back/proto/auth"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type UserHandler struct {
@@ -28,19 +31,32 @@ func NewUserHandler(router *gin.Engine, userService user_service.UserService, au
 	}
 
 	router.Use(middleware2.CORSMiddleware())
-	userGroup := router.Group("/api/v1/users")
-	{
-		userGroup.GET("/:id", handler.GetByID)
-		userGroup.GET("", handler.List)
-		userGroup.GET("/match/:id", handler.FindMatchingUsers)
-		userGroup.GET("/by-name", handler.FindByUsername)
-	}
+	// userGroup := router.Group("/api/v1/users")
+	// userGroup.Use(middleware.CheckAuthMiddleware(authClient))
+	// {
+	// 	userGroup.GET("/:id", handler.GetByID)
+	// 	userGroup.GET("", handler.List)
+	// 	userGroup.GET("/match/:id", handler.FindMatchingUsers)
+	// 	userGroup.GET("/by-name", handler.FindByUsername)
+	// 	userGroup.GET("/by-skills-to-share", handler.FindBySkillsToShare)
+	// 	userGroup.GET("/by-skills-to-learn", handler.FindBySkillsToLearn)
+	// }
 
 	secure := router.Group("/api/v1/users")
 	secure.Use(middleware.AuthMiddleware(authClient))
 	{
+		secure.GET("/:id", handler.GetByID)
+		secure.GET("", handler.List)
+		secure.GET("/match/:id", handler.FindMatchingUsers)
+		secure.GET("/by-name", handler.FindByUsername)
+		secure.GET("/by-skills-to-share", handler.FindBySkillsToShare)
+		secure.GET("/by-skills-to-learn", handler.FindBySkillsToLearn)
+
 		secure.PUT("/:id", handler.Update)
 		secure.DELETE("/:id", handler.Delete)
+		secure.POST("/review", handler.CreateReview)
+		secure.PUT("/review/:id", handler.UpdateReview)
+		secure.DELETE("/review/:id", handler.DeleteReview)
 	}
 }
 
@@ -114,6 +130,92 @@ func (h *UserHandler) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "user deleted successfully"})
 }
 
+func (h *UserHandler) CreateReview(c *gin.Context) {
+	ctx := c.Request.Context()
+	userIDCtx, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	userIDStr, ok := userIDCtx.(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	var input user_model.Review
+	if err := c.ShouldBindJSON(&input); err != nil {
+		custom_errors.WriteHTTPError(c, custom_errors.ErrBadRequest)
+		return
+	}
+	input.UserIDBy = strings.TrimSpace(userIDStr)
+	input.UserIDTo = strings.TrimSpace(input.UserIDTo)
+	if input.UserIDBy == input.UserIDTo {
+		custom_errors.WriteHTTPError(c, custom_errors.ErrCanNotSelfReview)
+		return
+	}
+	if err := validation.Validate.Struct(input); err != nil {
+		if validationResp := validation.BuildValidationError(err); validationResp != nil {
+			c.JSON(http.StatusBadRequest, validationResp)
+			return
+		}
+		custom_errors.WriteHTTPError(c, err)
+		return
+	}
+	review, err := h.userService.CreateReview(ctx, &input)
+	if err != nil {
+		custom_errors.WriteHTTPError(c, err)
+		return
+	}
+	c.JSON(http.StatusCreated, review)
+}
+
+func (h *UserHandler) UpdateReview(c *gin.Context) {
+	ctx := c.Request.Context()
+	userIDCtx, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	userIDStr, ok := userIDCtx.(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	id := c.Param("id")
+	var input user_model.Review
+	if err := c.ShouldBindJSON(&input); err != nil {
+		custom_errors.WriteHTTPError(c, custom_errors.ErrBadRequest)
+		return
+	}
+	input.ID = id
+	review, err := h.userService.UpdateReview(ctx, userIDStr, &input)
+	if err != nil {
+		custom_errors.WriteHTTPError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, review)
+}
+
+func (h *UserHandler) DeleteReview(c *gin.Context) {
+	ctx := c.Request.Context()
+	userIDCtx, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	userIDStr, ok := userIDCtx.(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	id := c.Param("id")
+	if err := h.userService.DeleteReview(ctx, userIDStr, id); err != nil {
+		custom_errors.WriteHTTPError(c, err)
+		return
+	}
+	c.JSON(http.StatusNoContent, gin.H{"message": "review deleted successfully"})
+}
+
 // Получение списка пользователей
 func (h *UserHandler) List(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -169,50 +271,69 @@ func (h *UserHandler) FindByUsername(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"users": users})
 }
 
+func (h *UserHandler) FindBySkillsToShare(c *gin.Context) {
+	skills := c.QueryArray("skill")
+	if len(skills) == 0 {
+		custom_errors.WriteHTTPError(c, custom_errors.ErrBadRequest)
+		return
+	}
+	limit, offset := httpparser.GetLimitAndOffset(c)
+	ctx := c.Request.Context()
+	// если user_id есть — добавляем в context
+	if userID, ok := middleware.GetUserIDFromGinContext(c); ok {
+		log.Println("userID", userID) // TODO
+		ctx = context.WithValue(ctx, "user_id", userID)
+	}
+	users, err := h.userService.FindBySkillsToShare(ctx, skills, limit, offset)
+	if err != nil {
+		custom_errors.WriteHTTPError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"users": users})
+}
+
+func (h *UserHandler) FindBySkillsToLearn(c *gin.Context) {
+	skills := c.QueryArray("skill")
+	if len(skills) == 0 {
+		custom_errors.WriteHTTPError(c, custom_errors.ErrBadRequest)
+		return
+	}
+	limit, offset := httpparser.GetLimitAndOffset(c)
+	ctx := c.Request.Context()
+	// если user_id есть — добавляем в context
+	if userID, ok := middleware.GetUserIDFromGinContext(c); ok {
+		log.Println("userID", userID) // TODO
+		ctx = context.WithValue(ctx, "user_id", userID)
+	}
+	users, err := h.userService.FindBySkillsToLearn(ctx, skills, limit, offset)
+	if err != nil {
+		custom_errors.WriteHTTPError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"users": users})
+}
+
 // Извлекает user_id из контекста и проверяет соответствие параметру запроса
-func extractAndValidateUserID(c *gin.Context) (primitive.ObjectID, error) {
+func extractAndValidateUserID(c *gin.Context) (bson.ObjectID, error) {
 	userIDCtx, exists := c.Get("user_id")
 	if !exists {
-		return primitive.NilObjectID, custom_errors.ErrMissingUserID
+		return bson.NilObjectID, custom_errors.ErrMissingUserID
 	}
 
 	userIDStr, ok := userIDCtx.(string)
 	if !ok {
-		return primitive.NilObjectID, custom_errors.ErrInvalidUserIDType
+		return bson.NilObjectID, custom_errors.ErrInvalidUserIDType
 	}
 
 	paramID := c.Param("id")
 	if userIDStr != paramID {
-		return primitive.NilObjectID, custom_errors.ErrUserIDMismatch
+		return bson.NilObjectID, custom_errors.ErrUserIDMismatch
 	}
 
-	userObjectID, err := primitive.ObjectIDFromHex(userIDStr)
+	userObjectID, err := bson.ObjectIDFromHex(userIDStr)
 	if err != nil {
-		return primitive.NilObjectID, custom_errors.ErrInvalidUserID
+		return bson.NilObjectID, custom_errors.ErrInvalidUserID
 	}
 
 	return userObjectID, nil
 }
-
-// ручка для тестов, регистрация в сервисе auth
-// func (h *UserHandler) Create(c *gin.Context) {
-// 	ctx := c.Request.Context()
-// 	var input user_model.User
-// 	if err := c.ShouldBindJSON(&input); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
-
-// 	hashedPassword := "dummy"
-// if err := h.userService.Create(ctx, &input, hashedPassword); err != nil {
-// 		// Проверяем, является ли ошибка ошибкой валидации
-// 		if _, ok := err.(validator.ValidationErrors); ok {
-// 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 			return
-// 		}
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusCreated, input)
-// }

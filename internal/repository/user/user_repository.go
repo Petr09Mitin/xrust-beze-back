@@ -10,10 +10,9 @@ import (
 
 	auth_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/auth"
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type UserRepo interface {
@@ -28,6 +27,8 @@ type UserRepo interface {
 	List(ctx context.Context, page, limit int) ([]*user_model.User, error)
 	FindBySkills(ctx context.Context, skillsToLearn []string) ([]*user_model.User, error)
 	FindByUsername(ctx context.Context, currUserID, name string, limit, offset int64) ([]*user_model.User, error)
+	FindBySkillsToShare(ctx context.Context, skills []string, limit, offset int64) ([]*user_model.User, error)
+	FindBySkillsToLearn(ctx context.Context, skills []string, limit, offset int64) ([]*user_model.User, error)
 }
 
 type userRepository struct {
@@ -73,7 +74,7 @@ func (r *userRepository) Create(ctx context.Context, user *user_model.User, hash
 		return err
 	}
 
-	user.ID = result.InsertedID.(primitive.ObjectID)
+	user.ID = result.InsertedID.(bson.ObjectID)
 	return nil
 }
 
@@ -81,7 +82,7 @@ func (r *userRepository) GetByID(ctx context.Context, id string) (*user_model.Us
 	ctx, cancel := context.WithTimeout(ctx, r.timeout)
 	defer cancel()
 
-	objectID, err := primitive.ObjectIDFromHex(id)
+	objectID, err := bson.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +168,7 @@ func (r *userRepository) Delete(ctx context.Context, id string) error {
 	ctx, cancel := context.WithTimeout(ctx, r.timeout)
 	defer cancel()
 
-	objectID, err := primitive.ObjectIDFromHex(id)
+	objectID, err := bson.ObjectIDFromHex(id)
 	if err != nil {
 		return err
 	}
@@ -241,7 +242,7 @@ func (r *userRepository) FindBySkills(ctx context.Context, skillsToLearn []strin
 func (r *userRepository) FindByUsername(ctx context.Context, currUserID, name string, limit, offset int64) ([]*user_model.User, error) {
 	ctx, cancel := context.WithTimeout(ctx, r.timeout)
 	defer cancel()
-	id, err := primitive.ObjectIDFromHex(currUserID)
+	id, err := bson.ObjectIDFromHex(currUserID)
 	if err != nil {
 		return nil, err
 	}
@@ -289,6 +290,7 @@ func (r *userRepository) getUserWithPasswordByFilter(ctx context.Context, filter
 
 	var user user_model.User
 	if err := r.collection.FindOne(ctx, filter).Decode(&user); err != nil {
+		r.logger.Error().Err(err).Msg("failed to find user")
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, custom_errors.ErrUserNotExists
 		}
@@ -308,4 +310,51 @@ func (r *userRepository) getUserWithPasswordByFilter(ctx context.Context, filter
 		User:     user,
 		Password: password,
 	}, nil
+}
+
+func (r *userRepository) FindBySkillsToShare(ctx context.Context, skills []string, limit, offset int64) ([]*user_model.User, error) {
+	return r.findUsersBySkillField(ctx, "skills_to_share.name", skills, limit, offset)
+}
+
+func (r *userRepository) FindBySkillsToLearn(ctx context.Context, skills []string, limit, offset int64) ([]*user_model.User, error) {
+	return r.findUsersBySkillField(ctx, "skills_to_learn.name", skills, limit, offset)
+}
+
+func (r *userRepository) findUsersBySkillField(ctx context.Context, field string, skills []string, limit, offset int64) ([]*user_model.User, error) {
+	ctx, cancel := context.WithTimeout(ctx, r.timeout)
+	defer cancel()
+
+	filter := bson.D{
+		{Key: field, Value: bson.D{
+			{Key: "$in", Value: skills},
+		}},
+	}
+
+	// исключаем текущего пользователя, если user_id есть в контексте
+	if currentUserIDStr, ok := ctx.Value("user_id").(string); ok {
+		if currentUserID, err := bson.ObjectIDFromHex(currentUserIDStr); err == nil {
+			filter = append(filter, bson.E{
+				Key: "_id", Value: bson.D{
+					{Key: "$ne", Value: currentUserID},
+				},
+			})
+		}
+	}
+
+	findOptions := options.Find().SetSkip(offset).SetLimit(limit).SetSort(bson.D{{Key: "created_at", Value: -1}})
+
+	cursor, err := r.collection.Find(ctx, filter, findOptions)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := cursor.Close(ctx); err != nil {
+			r.logger.Error().Err(err).Msg("failed to close cursor")
+		}
+	}()
+	users := make([]*user_model.User, 0, cursor.RemainingBatchLength())
+	if err = cursor.All(ctx, &users); err != nil {
+		return nil, err
+	}
+	return users, nil
 }

@@ -2,8 +2,11 @@ package user_service
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
+
+	review_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/review"
 
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	authpb "github.com/Petr09Mitin/xrust-beze-back/proto/auth"
@@ -28,21 +31,28 @@ type UserService interface {
 	List(ctx context.Context, page, limit int) ([]*user_model.User, error)
 	FindMatchingUsers(ctx context.Context, userID string) ([]*user_model.User, error)
 	FindUsersByUsername(ctx context.Context, userID, username string, limit, offset int64) ([]*user_model.User, error)
+	CreateReview(ctx context.Context, review *user_model.Review) (*user_model.Review, error)
+	UpdateReview(ctx context.Context, userID string, review *user_model.Review) (*user_model.Review, error)
+	DeleteReview(ctx context.Context, userID string, reviewID string) error
+	FindBySkillsToShare(ctx context.Context, skills []string, limit, offset int64) ([]*user_model.User, error)
+	FindBySkillsToLearn(ctx context.Context, skills []string, limit, offset int64) ([]*user_model.User, error)
 }
 
 type userService struct {
 	userRepo       user_repo.UserRepo
 	moderationRepo moderation_repo.ModerationRepo
+	reviewRepo     review_repo.ReviewRepo
 	fileGRPC       filepb.FileServiceClient
 	authGRPC       authpb.AuthServiceClient
 	timeout        time.Duration
 	logger         zerolog.Logger
 }
 
-func NewUserService(userRepo user_repo.UserRepo, moderationRepo moderation_repo.ModerationRepo, fileGRPC filepb.FileServiceClient, authGRPC authpb.AuthServiceClient, timeout time.Duration, logger zerolog.Logger) UserService {
+func NewUserService(userRepo user_repo.UserRepo, moderationRepo moderation_repo.ModerationRepo, reviewRepo review_repo.ReviewRepo, fileGRPC filepb.FileServiceClient, authGRPC authpb.AuthServiceClient, timeout time.Duration, logger zerolog.Logger) UserService {
 	return &userService{
 		userRepo:       userRepo,
 		moderationRepo: moderationRepo,
+		reviewRepo:     reviewRepo,
 		fileGRPC:       fileGRPC,
 		authGRPC:       authGRPC,
 		timeout:        timeout,
@@ -79,11 +89,27 @@ func (s *userService) Create(ctx context.Context, user *user_model.User, hashedP
 }
 
 func (s *userService) GetByID(ctx context.Context, id string) (*user_model.User, error) {
-	return s.userRepo.GetByID(ctx, id)
+	user, err := s.userRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	user, err = s.fillUserReviews(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func (s *userService) GetByEmail(ctx context.Context, email string) (*user_model.User, error) {
-	return s.userRepo.GetByEmail(ctx, email)
+	user, err := s.userRepo.GetByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+	user, err = s.fillUserReviews(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func (s *userService) GetByEmailWithPassword(ctx context.Context, email string) (*auth_model.RegisterRequest, error) {
@@ -91,7 +117,15 @@ func (s *userService) GetByEmailWithPassword(ctx context.Context, email string) 
 }
 
 func (s *userService) GetByUsername(ctx context.Context, username string) (*user_model.User, error) {
-	return s.userRepo.GetByUsername(ctx, username)
+	user, err := s.userRepo.GetByUsername(ctx, username)
+	if err != nil {
+		return nil, err
+	}
+	user, err = s.fillUserReviews(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func (s *userService) GetByUsernameWithPassword(ctx context.Context, username string) (*auth_model.RegisterRequest, error) {
@@ -140,7 +174,15 @@ func (s *userService) Update(ctx context.Context, user *user_model.User) error {
 		}
 	}
 
-	return s.userRepo.Update(ctx, user)
+	err = s.userRepo.Update(ctx, user)
+	if err != nil {
+		return err
+	}
+	user, err = s.fillUserReviews(ctx, user)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *userService) Delete(ctx context.Context, id string) error {
@@ -163,7 +205,15 @@ func (s *userService) Delete(ctx context.Context, id string) error {
 }
 
 func (s *userService) List(ctx context.Context, page, limit int) ([]*user_model.User, error) {
-	return s.userRepo.List(ctx, page, limit)
+	users, err := s.userRepo.List(ctx, page, limit)
+	if err != nil {
+		return nil, err
+	}
+	err = s.fillUsersRatings(ctx, users)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
 }
 
 func (s *userService) FindMatchingUsers(ctx context.Context, userID string) ([]*user_model.User, error) {
@@ -196,6 +246,10 @@ func (s *userService) FindMatchingUsers(ctx context.Context, userID string) ([]*
 		}
 	}
 
+	err = s.fillUsersRatings(ctx, filteredUsers)
+	if err != nil {
+		return nil, err
+	}
 	return filteredUsers, nil
 }
 
@@ -206,7 +260,15 @@ func (s *userService) FindUsersByUsername(ctx context.Context, userID, username 
 	if offset < 0 {
 		offset = 0
 	}
-	return s.userRepo.FindByUsername(ctx, userID, username, limit, offset)
+	users, err := s.userRepo.FindByUsername(ctx, userID, username, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	err = s.fillUsersRatings(ctx, users)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
 }
 
 // func (s *userService) checkForProfanity(ctx context.Context, fieldName, text string) error {
@@ -252,4 +314,139 @@ func (s *userService) checkUserForProfanity(ctx context.Context, user *user_mode
 		return profanityErr
 	}
 	return nil
+}
+
+func (s *userService) CreateReview(ctx context.Context, review *user_model.Review) (*user_model.Review, error) {
+	_, err := s.userRepo.GetByID(ctx, review.UserIDBy)
+	if err != nil {
+		return nil, custom_errors.ErrUserNotExists
+	}
+	_, err = s.userRepo.GetByID(ctx, review.UserIDTo)
+	if err != nil {
+		return nil, custom_errors.ErrUserNotExists
+	}
+	_, err = s.reviewRepo.GetByUserIDByAndUserIDTo(ctx, review.UserIDBy, review.UserIDTo)
+	if !errors.Is(err, custom_errors.ErrNotFound) {
+		return nil, custom_errors.ErrDuplicateReview
+	}
+	created := time.Now().Unix()
+	review.Created = created
+	review.Updated = created
+	newReview, err := s.reviewRepo.Create(ctx, review)
+	if err != nil {
+		return nil, err
+	}
+	newReview.UserBy, err = s.userRepo.GetByID(ctx, newReview.UserIDBy)
+	if err != nil {
+		return nil, err
+	}
+	return newReview, nil
+}
+
+func (s *userService) fillUserReviews(ctx context.Context, user *user_model.User) (*user_model.User, error) {
+	reviews, err := s.reviewRepo.GetReviewsByUserIDTo(ctx, user.ID.Hex())
+	if err != nil {
+		return nil, err
+	}
+	if len(reviews) == 0 {
+		reviews = make([]*user_model.Review, 0)
+	}
+	for _, review := range reviews {
+		review.UserBy, err = s.userRepo.GetByID(ctx, review.UserIDBy)
+		if err != nil {
+			s.logger.Error().Err(err).Msg("failed to get user by id")
+			return nil, err
+		}
+	}
+	user.Reviews = reviews
+	ratings, err := s.reviewRepo.GetAvgRatingsByUserIDs(ctx, []string{user.ID.Hex()})
+	if err != nil {
+		return nil, err
+	}
+	// если у юзера нет отзывов, и, соответственно, нет значения в мапе ratings - проставится null value = 0
+	user.Rating = ratings[user.ID.Hex()]
+	return user, nil
+}
+
+func (s *userService) fillUsersRatings(ctx context.Context, users []*user_model.User) error {
+	if len(users) == 0 {
+		return nil
+	}
+	userIDs := make([]string, len(users))
+	for i, user := range users {
+		userIDs[i] = user.ID.Hex()
+	}
+	ratings, err := s.reviewRepo.GetAvgRatingsByUserIDs(ctx, userIDs)
+	if err != nil {
+		return err
+	}
+	for _, user := range users {
+		user.Rating = ratings[user.ID.Hex()]
+	}
+	return nil
+}
+
+func (s *userService) UpdateReview(ctx context.Context, userID string, review *user_model.Review) (*user_model.Review, error) {
+	oldReview, err := s.reviewRepo.GetByID(ctx, review.ID)
+	if err != nil {
+		return nil, err
+	}
+	if oldReview.UserIDBy != userID {
+		return nil, custom_errors.ErrUnauthorized
+	}
+	oldReview.Text = review.Text
+	oldReview.Rating = review.Rating
+	oldReview.Updated = time.Now().Unix()
+	err = s.reviewRepo.Update(ctx, oldReview)
+	if err != nil {
+		return nil, err
+	}
+	oldReview.UserBy, err = s.userRepo.GetByID(ctx, oldReview.UserIDBy)
+	if err != nil {
+		return nil, err
+	}
+	return oldReview, nil
+}
+
+func (s *userService) DeleteReview(ctx context.Context, userID string, reviewID string) error {
+	oldReview, err := s.reviewRepo.GetByID(ctx, reviewID)
+	if err != nil {
+		return err
+	}
+	if oldReview.UserIDBy != userID {
+		return custom_errors.ErrUnauthorized
+	}
+	err = s.reviewRepo.DeleteByID(ctx, reviewID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *userService) FindBySkillsToShare(ctx context.Context, skills []string, limit, offset int64) ([]*user_model.User, error) {
+	users, err := s.userRepo.FindBySkillsToShare(ctx, skills, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	for i := range users {
+		users[i], err = s.fillUserReviews(ctx, users[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return users, nil
+}
+
+func (s *userService) FindBySkillsToLearn(ctx context.Context, skills []string, limit, offset int64) ([]*user_model.User, error) {
+	users, err := s.userRepo.FindBySkillsToLearn(ctx, skills, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	for i := range users {
+		users[i], err = s.fillUserReviews(ctx, users[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return users, nil
 }

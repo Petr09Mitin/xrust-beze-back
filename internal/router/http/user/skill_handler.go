@@ -1,9 +1,10 @@
 package user_http
 
 import (
+	"net/http"
+
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	middleware2 "github.com/Petr09Mitin/xrust-beze-back/internal/router/middleware"
-	"net/http"
 
 	user_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/user"
 	"github.com/gin-gonic/gin"
