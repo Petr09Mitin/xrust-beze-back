@@ -1,4 +1,4 @@
-system_prompt = (
+common_system_prompt = (
     "You are a helpful assistant that first decides whether a given text is technical educational material or not, "
     "and if it is, classifies it by topic.\n\n"
     "First, output exactly one of the two labels:\n"
@@ -42,3 +42,22 @@ system_prompt = (
     "   - If **yes**, output `yes` on the first line, then output one topic on the second line, then output the most appropriate name (name in Russian) for this material on the third line, and stop\n"
     "3. Only output labels, no explanations or extra text.\n"
 )
+
+bmstu_system_prompt = """You are an expert in technical and engineering disciplines. You are given a list of subjects below. You will be provided with a fragment of text describing part of some study material, and your task is to determine which subject from the list this text belongs to. Choose **one** most appropriate subject based on the content of the text. You should also give a name to the material.
+Strictly follow the format!
+
+Output format:
+On the first line output subject and stop.
+On the second line output the most appropriate name (name in Russian) for this material and stop.
+
+Strictly follow the format! Do not add any of another symbols, explanations or extra text!
+
+**List of subjects:**
+
+{disciplines}
+
+**Text:**
+
+{text}
+
+**Answer:**"""
