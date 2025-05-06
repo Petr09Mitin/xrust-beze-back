@@ -49,13 +49,13 @@ build-ai-tags:
 start-ai-tags:
 	docker-compose up ai_tags minio-xb
 
-start-user-only: build-user build-file build-moderator
-	docker-compose up -d mongo_db user_service
+start-user-only: build-user build-file
+	docker-compose up -d mongo_db user_service auth_service study_material
 
 build-auth:
 	docker build -t petr09mitin/xrust_beze_auth:latest -f cmd/auth/Dockerfile .
 
-start-auth-only: build-user build-auth  build-moderator
+start-auth-only: build-user build-auth build-moderator
 	docker-compose up -d redis_xb auth_service ml_moderator
 
 build-study-material:

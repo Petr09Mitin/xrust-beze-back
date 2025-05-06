@@ -3,9 +3,10 @@ package user_service
 import (
 	"context"
 	"errors"
-	review_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/review"
 	"strings"
 	"time"
+
+	review_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/review"
 
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	authpb "github.com/Petr09Mitin/xrust-beze-back/proto/auth"
@@ -33,6 +34,8 @@ type UserService interface {
 	CreateReview(ctx context.Context, review *user_model.Review) (*user_model.Review, error)
 	UpdateReview(ctx context.Context, userID string, review *user_model.Review) (*user_model.Review, error)
 	DeleteReview(ctx context.Context, userID string, reviewID string) error
+	FindBySkillsToShare(ctx context.Context, skills []string, limit, offset int64) ([]*user_model.User, error)
+	FindBySkillsToLearn(ctx context.Context, skills []string, limit, offset int64) ([]*user_model.User, error)
 }
 
 type userService struct {
@@ -418,4 +421,32 @@ func (s *userService) DeleteReview(ctx context.Context, userID string, reviewID 
 		return err
 	}
 	return nil
+}
+
+func (s *userService) FindBySkillsToShare(ctx context.Context, skills []string, limit, offset int64) ([]*user_model.User, error) {
+	users, err := s.userRepo.FindBySkillsToShare(ctx, skills, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	for i := range users {
+		users[i], err = s.fillUserReviews(ctx, users[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return users, nil
+}
+
+func (s *userService) FindBySkillsToLearn(ctx context.Context, skills []string, limit, offset int64) ([]*user_model.User, error) {
+	users, err := s.userRepo.FindBySkillsToLearn(ctx, skills, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	for i := range users {
+		users[i], err = s.fillUserReviews(ctx, users[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return users, nil
 }

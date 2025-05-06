@@ -3,6 +3,7 @@ package user_grpc
 import (
 	"context"
 	"errors"
+
 	"go.mongodb.org/mongo-driver/v2/bson"
 
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
@@ -240,6 +241,22 @@ func (s *UserService) FindMatchingUsers(ctx context.Context, req *pb.FindMatchin
 	if err != nil {
 		s.logger.Error().Err(err).Msg("failed to find matching users")
 		return nil, status.Errorf(codes.Internal, "failed to find matching users: %v", err)
+	}
+
+	var pbUsers []*pb.User
+	for _, u := range users {
+		pbUsers = append(pbUsers, convertDomainToProto(u))
+	}
+
+	return &pb.ListUsersResponse{
+		Users: pbUsers,
+	}, nil
+}
+
+func (s *UserService) FindBySkillsToShare(ctx context.Context, req *pb.FindBySkillsToShareRequest) (*pb.ListUsersResponse, error) {
+	users, err := s.userService.FindBySkillsToShare(ctx, req.Query, int64(req.Limit), int64(req.Offset))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to find users by skills: %v", err)
 	}
 
 	var pbUsers []*pb.User

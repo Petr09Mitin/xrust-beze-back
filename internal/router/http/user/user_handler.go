@@ -1,11 +1,14 @@
 package user_http
 
 import (
+	"context"
 	"errors"
-	"go.mongodb.org/mongo-driver/v2/bson"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"go.mongodb.org/mongo-driver/v2/bson"
 
 	"github.com/Petr09Mitin/xrust-beze-back/internal/middleware"
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
@@ -28,17 +31,27 @@ func NewUserHandler(router *gin.Engine, userService user_service.UserService, au
 	}
 
 	router.Use(middleware2.CORSMiddleware())
-	userGroup := router.Group("/api/v1/users")
-	{
-		userGroup.GET("/:id", handler.GetByID)
-		userGroup.GET("", handler.List)
-		userGroup.GET("/match/:id", handler.FindMatchingUsers)
-		userGroup.GET("/by-name", handler.FindByUsername)
-	}
+	// userGroup := router.Group("/api/v1/users")
+	// userGroup.Use(middleware.CheckAuthMiddleware(authClient))
+	// {
+	// 	userGroup.GET("/:id", handler.GetByID)
+	// 	userGroup.GET("", handler.List)
+	// 	userGroup.GET("/match/:id", handler.FindMatchingUsers)
+	// 	userGroup.GET("/by-name", handler.FindByUsername)
+	// 	userGroup.GET("/by-skills-to-share", handler.FindBySkillsToShare)
+	// 	userGroup.GET("/by-skills-to-learn", handler.FindBySkillsToLearn)
+	// }
 
 	secure := router.Group("/api/v1/users")
 	secure.Use(middleware.AuthMiddleware(authClient))
 	{
+		secure.GET("/:id", handler.GetByID)
+		secure.GET("", handler.List)
+		secure.GET("/match/:id", handler.FindMatchingUsers)
+		secure.GET("/by-name", handler.FindByUsername)
+		secure.GET("/by-skills-to-share", handler.FindBySkillsToShare)
+		secure.GET("/by-skills-to-learn", handler.FindBySkillsToLearn)
+
 		secure.PUT("/:id", handler.Update)
 		secure.DELETE("/:id", handler.Delete)
 		secure.POST("/review", handler.CreateReview)
@@ -251,6 +264,48 @@ func (h *UserHandler) FindByUsername(c *gin.Context) {
 	}
 	limit, offset := httpparser.GetLimitAndOffset(c)
 	users, err := h.userService.FindUsersByUsername(c.Request.Context(), userID, username, limit, offset)
+	if err != nil {
+		custom_errors.WriteHTTPError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"users": users})
+}
+
+func (h *UserHandler) FindBySkillsToShare(c *gin.Context) {
+	skills := c.QueryArray("skill")
+	if len(skills) == 0 {
+		custom_errors.WriteHTTPError(c, custom_errors.ErrBadRequest)
+		return
+	}
+	limit, offset := httpparser.GetLimitAndOffset(c)
+	ctx := c.Request.Context()
+	// если user_id есть — добавляем в context
+	if userID, ok := middleware.GetUserIDFromGinContext(c); ok {
+		log.Println("userID", userID) // TODO
+		ctx = context.WithValue(ctx, "user_id", userID)
+	}
+	users, err := h.userService.FindBySkillsToShare(ctx, skills, limit, offset)
+	if err != nil {
+		custom_errors.WriteHTTPError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"users": users})
+}
+
+func (h *UserHandler) FindBySkillsToLearn(c *gin.Context) {
+	skills := c.QueryArray("skill")
+	if len(skills) == 0 {
+		custom_errors.WriteHTTPError(c, custom_errors.ErrBadRequest)
+		return
+	}
+	limit, offset := httpparser.GetLimitAndOffset(c)
+	ctx := c.Request.Context()
+	// если user_id есть — добавляем в context
+	if userID, ok := middleware.GetUserIDFromGinContext(c); ok {
+		log.Println("userID", userID) // TODO
+		ctx = context.WithValue(ctx, "user_id", userID)
+	}
+	users, err := h.userService.FindBySkillsToLearn(ctx, skills, limit, offset)
 	if err != nil {
 		custom_errors.WriteHTTPError(c, err)
 		return

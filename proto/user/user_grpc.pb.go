@@ -27,6 +27,7 @@ const (
 	UserService_DeleteUser_FullMethodName               = "/user.UserService/DeleteUser"
 	UserService_ListUsers_FullMethodName                = "/user.UserService/ListUsers"
 	UserService_FindMatchingUsers_FullMethodName        = "/user.UserService/FindMatchingUsers"
+	UserService_FindBySkillsToShare_FullMethodName      = "/user.UserService/FindBySkillsToShare"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -41,6 +42,7 @@ type UserServiceClient interface {
 	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*DeleteUserResponse, error)
 	ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (*ListUsersResponse, error)
 	FindMatchingUsers(ctx context.Context, in *FindMatchingUsersRequest, opts ...grpc.CallOption) (*ListUsersResponse, error)
+	FindBySkillsToShare(ctx context.Context, in *FindBySkillsToShareRequest, opts ...grpc.CallOption) (*ListUsersResponse, error)
 }
 
 type userServiceClient struct {
@@ -131,6 +133,16 @@ func (c *userServiceClient) FindMatchingUsers(ctx context.Context, in *FindMatch
 	return out, nil
 }
 
+func (c *userServiceClient) FindBySkillsToShare(ctx context.Context, in *FindBySkillsToShareRequest, opts ...grpc.CallOption) (*ListUsersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListUsersResponse)
+	err := c.cc.Invoke(ctx, UserService_FindBySkillsToShare_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -143,6 +155,7 @@ type UserServiceServer interface {
 	DeleteUser(context.Context, *DeleteUserRequest) (*DeleteUserResponse, error)
 	ListUsers(context.Context, *ListUsersRequest) (*ListUsersResponse, error)
 	FindMatchingUsers(context.Context, *FindMatchingUsersRequest) (*ListUsersResponse, error)
+	FindBySkillsToShare(context.Context, *FindBySkillsToShareRequest) (*ListUsersResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -176,6 +189,9 @@ func (UnimplementedUserServiceServer) ListUsers(context.Context, *ListUsersReque
 }
 func (UnimplementedUserServiceServer) FindMatchingUsers(context.Context, *FindMatchingUsersRequest) (*ListUsersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FindMatchingUsers not implemented")
+}
+func (UnimplementedUserServiceServer) FindBySkillsToShare(context.Context, *FindBySkillsToShareRequest) (*ListUsersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FindBySkillsToShare not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -342,6 +358,24 @@ func _UserService_FindMatchingUsers_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_FindBySkillsToShare_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindBySkillsToShareRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).FindBySkillsToShare(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_FindBySkillsToShare_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).FindBySkillsToShare(ctx, req.(*FindBySkillsToShareRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -380,6 +414,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FindMatchingUsers",
 			Handler:    _UserService_FindMatchingUsers_Handler,
+		},
+		{
+			MethodName: "FindBySkillsToShare",
+			Handler:    _UserService_FindBySkillsToShare_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -3,6 +3,7 @@ package study_material_repo
 import (
 	"context"
 	"errors"
+
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	study_material_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/study_material"
 	"github.com/rs/zerolog"
@@ -87,7 +88,12 @@ func (r *studyMaterialAPIRepository) find(ctx context.Context, filter interface{
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(ctx)
+	defer func() {
+		err = cursor.Close(ctx)
+		if err != nil {
+			r.logger.Error().Err(err).Msg("failed to close cursor")
+		}
+	}()
 
 	materials := make([]*study_material_models.StudyMaterial, 0, cursor.RemainingBatchLength())
 	for cursor.Next(ctx) {
