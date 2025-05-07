@@ -49,7 +49,7 @@ Strictly follow the format!
 Output format:
 On the first line output subject and stop.
 On the second line output the most appropriate name (name in Russian) for this material and stop.
-
+Note that the response should contain only 2 lines!
 Strictly follow the format! Do not add any of another symbols, explanations or extra text!
 
 **List of subjects:**

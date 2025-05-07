@@ -6,7 +6,6 @@ import os
 from docx import Document
 
 import tags_utilities
-import mistral_api
 import s3_utils
 
 logging.basicConfig(level=logging.INFO)
@@ -84,31 +83,11 @@ async def tag(input_data: TextInput):
                     }}
         
         return response
-
-        # is_study_material_bool, main_tag, name = await tags_utilities.set_common_tag(extracted_text.strip())
-
-        # if is_study_material_bool:
-
-        #     additional_tags = tags_utilities.extract_relevant_skills(extracted_text, main_tag)
-
-        #     logging.info(f'additional_tags: {additional_tags}')
-
-        #     response = {"is_study_material": is_study_material_bool,
-        #     "study_material": {
-        #         "name": name,
-        #         "tags": [main_tag] + additional_tags
-        #     }}
-        # else:
-        #     response = {"is_study_material": is_study_material_bool,
-        #     "study_material": {
-        #         "name": "",
-        #         "tags": []
-        #     }}
-
-        # return response
+    
     except Exception as e:
         logging.error(e)
         raise e
+    
     finally:
         os.remove(local_path)
         if not os.path.exists(local_path):

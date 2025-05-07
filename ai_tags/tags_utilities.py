@@ -5,7 +5,7 @@ from typing import List, Dict
 import logging
 import prompts
 import mistral_api
-from fastapi import FastAPI, HTTPException
+from fastapi import HTTPException
 
 
 valid_tags = set(['analytics', 'backend', 'architecture', 'database', 'design', 'devops', 'hardware', 'frontend', 'gamedev', 'integration', 'natural_languages', 'management', 'tools_for_business', 'ml', 'mobile', 'tools', 'testing', 'lowcode', 'math', 'security', 'other'])
@@ -18,6 +18,7 @@ with open('skills_by_category.json', 'r', encoding='utf-8') as f:
 categories = json.loads(json_data)
 # ----------------------------------------------------
 
+
 # --Строим поисковый движок на основе ключевых слов---
 BMSTU_STRING = ['bmstu', 'мгту', 'баумана', 'иу1', 'иу2', 'иу3', 'иу4', 'иу5', 'иу6', 'иу7', 'иу8', 'иу9', 'иу10', 'иу11',
                 'иу-1', 'иу-2', 'иу-3', 'иу-4', 'иу-5', 'иу-6', 'иу-7', 'иу-8', 'иу-9', 'иу-10', 'иу-11', 'информатика искусственный интеллект и системы управления', 'информатика и системы управления']
@@ -29,11 +30,13 @@ for idx, key in enumerate(BMSTU_STRING):
 A.make_automaton()
 # ---------------------------------------------------
 
+
 # ------Загружаем список Бауманских категорий--------
 with open('bmstu_tags.txt', 'r') as f:
     bmstu_categories = [string.strip() for string in f.readlines()]
     bmstu_categories_string = f'[{', '.join(bmstu_categories)}]'
 # ----------------------------------------------------
+
 
 def extract_relevant_skills(
     text: str,
@@ -71,7 +74,7 @@ def extract_relevant_skills(
 
 
 async def set_common_tag(text, max_len=1000):
-
+    """Функция присваивает главный тег, в случае, если материал не относится к BMSTU"""
     if len(text) > max_len:
         text = text[:max_len]
     
@@ -105,12 +108,14 @@ async def set_common_tag(text, max_len=1000):
 
 
 def is_bmstu_text(text):
+    """Ищет вхождение ключевых слов"""
     for end_index, (idx, found) in A.iter(text.lower()):
         return True
     return False
 
 
 async def set_bmstu_tag(text, max_len=1000):
+    """Отдельная задача для LLM выставить BMSTU тег"""
     if len(text) > max_len:
             text = text[:max_len]
 
@@ -132,6 +137,7 @@ async def set_bmstu_tag(text, max_len=1000):
 
 
 async def set_tags(text):
+    """Общая функция для присваивания тегов тексту"""
     if len(text) == 0:
         raise HTTPException(status_code=500, detail="Text can't be empty")
     
@@ -163,9 +169,4 @@ async def set_tags(text):
         name = ""
     
     return is_study_material_bool, tag_list, name
-
-
-# if __name__ == "__main__":
-#     is_bmstu = is_bmstu_text(text)
-#     print(is_bmstu)
     
