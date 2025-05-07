@@ -31,7 +31,7 @@ func NewStudyMaterialService(studyMaterialRepo study_material_repo.StudyMaterial
 }
 
 func (s *StudyMaterialServiceImpl) ProcessAttachmentToParse(ctx context.Context, attachment *study_material_models.AttachmentToParse) error {
-	if !strings.HasSuffix(attachment.Filename, ".pdf") {
+	if !strings.HasSuffix(attachment.Filename, ".pdf") && !strings.HasSuffix(attachment.Filename, ".docx") {
 		s.logger.Info().Interface("attachment", attachment).Msg("attachment is not a pdf file")
 		return nil
 	}
