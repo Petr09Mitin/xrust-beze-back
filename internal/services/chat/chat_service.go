@@ -147,7 +147,16 @@ func (c *ChatServiceImpl) ProcessStructurizationRequest(ctx context.Context, mes
 		return err
 	}
 	question := c.concatenateMessages(prevMessages)
-	structurized, err := c.trySendStructurizationRequest(ctx, question, oldMessage.Payload)
+	var answer string
+	if oldMessage.Event == chat_models.VoiceMessageEvent {
+		answer = oldMessage.RecognizedVoice
+	} else {
+		answer = oldMessage.Payload
+	}
+	if answer == "" {
+		return custom_errors.ErrCannotStructurizeEmptyAnswer
+	}
+	structurized, err := c.trySendStructurizationRequest(ctx, question, answer)
 	if err != nil {
 		return err
 	}
@@ -534,6 +543,10 @@ func (c *ChatServiceImpl) GetChannelsByUserID(ctx context.Context, userID string
 func (c *ChatServiceImpl) concatenateMessages(messages []chat_models.Message) string {
 	res := ""
 	for _, msg := range messages {
+		if msg.Event == chat_models.VoiceMessageEvent {
+			res += msg.RecognizedVoice + " \n"
+			continue
+		}
 		res += msg.Payload + " \n"
 	}
 	return res

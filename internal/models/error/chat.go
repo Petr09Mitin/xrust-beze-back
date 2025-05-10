@@ -15,4 +15,5 @@ var (
 	ErrStructurizationUnavailable       = errors.New("structurization is temporary unavailable, try again later")
 	ErrNoUserIDOrPeerID                 = fmt.Errorf("%w: no user id or peer id", ErrBadRequest)
 	ErrParsingStudyMaterialsUnavailable = errors.New("parsing study materials is temporary unavailable, try again later")
+	ErrCannotStructurizeEmptyAnswer     = fmt.Errorf("%w: cannot structurize empty answer", ErrBadRequest)
 )
