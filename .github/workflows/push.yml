@@ -92,6 +92,14 @@ jobs:
           push: true
           tags: petr09mitin/xrust_beze_studymateriald:latest
 
+      - name: Build and push voicerecognitiond
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./cmd/voicerecognitiond/Dockerfile
+          push: true
+          tags: petr09mitin/xrust_beze_voicerecognitiond:latest
+
       - name: Build and push study_material
         uses: docker/build-push-action@v4
         with:
