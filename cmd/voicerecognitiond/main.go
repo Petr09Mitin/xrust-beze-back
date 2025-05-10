@@ -59,7 +59,7 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to initialize kafka msg_router")
 		return
 	}
-	voiceRecognitionService := voice_recognition.NewVoiceRecognitionService(aiVoiceRecognitionRepo, messagesRepo, log)
+	voiceRecognitionService := voice_recognition.NewVoiceRecognitionService(aiVoiceRecognitionRepo, messagesRepo, log, cfg)
 	d := voicerecognitiond.NewVoiceRecognitionD(
 		voiceRecognitionService,
 		cfg.Kafka.VoiceRecognitionNewVoiceTopic,
