@@ -2,7 +2,13 @@ package main
 
 import (
 	"context"
+	"fmt"
+	message_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/chat"
+	voice_recognition_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/voice_recognition"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/router/daemons/voicerecognitiond"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/services/voice_recognition"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/config"
 	infrakafka "github.com/Petr09Mitin/xrust-beze-back/internal/pkg/kafka"
@@ -21,19 +27,20 @@ func main() {
 	}
 
 	// init mongo
-	//client, err := mongo.Connect(options.Client().ApplyURI(fmt.Sprintf(
-	//	"mongodb://%s:%s@%s:%d",
-	//	cfg.Mongo.Username,
-	//	cfg.Mongo.Password,
-	//	cfg.Mongo.Host,
-	//	cfg.Mongo.Port,
-	//)))
-	//if err != nil {
-	//	log.Fatal().Err(err).Msg("failed to connect to mongodb")
-	//	return
-	//}
-	//messagesCollection := client.Database(cfg.Mongo.Database).Collection("messages")
-	//messagesRepo := message_repo.NewMessageRepo(messagesCollection, log)
+	client, err := mongo.Connect(options.Client().ApplyURI(fmt.Sprintf(
+		"mongodb://%s:%s@%s:%d",
+		cfg.Mongo.Username,
+		cfg.Mongo.Password,
+		cfg.Mongo.Host,
+		cfg.Mongo.Port,
+	)))
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to connect to mongodb")
+		return
+	}
+	messagesCollection := client.Database(cfg.Mongo.Database).Collection("messages")
+	messagesRepo := message_repo.NewMessageRepo(messagesCollection, log)
+	aiVoiceRecognitionRepo := voice_recognition_repo.NewVoiceRecognitionRepo(cfg.Services.AIVoiceRecognition, log)
 
 	// init kafka sub
 	kafkaSub, err := infrakafka.NewKafkaSubscriber(cfg.Kafka)
@@ -52,8 +59,9 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to initialize kafka msg_router")
 		return
 	}
-
+	voiceRecognitionService := voice_recognition.NewVoiceRecognitionService(aiVoiceRecognitionRepo, messagesRepo, log)
 	d := voicerecognitiond.NewVoiceRecognitionD(
+		voiceRecognitionService,
 		cfg.Kafka.VoiceRecognitionNewVoiceTopic,
 		cfg.Kafka.VoiceRecognitionVoiceProcessedTopic,
 		brokerRouter,

@@ -12,23 +12,8 @@ mongo:
   database: "xrust_beze"
 
 services:
-  file_service:
-    host: file_service
-    port: 50051
-    timeout: 10
-    max_retries: 3
-  auth_service:
-    host: auth_service
-    port: 50051
-    timeout: 10
-    max_retries: 3
-  user_service:
-    host: user_service
-    port: 50051
-    timeout: 10
-    max_retries: 3
   ai_voice_recognition_service:
-    host: "ai_tags"
+    host: "TODO"
     port: 8087
     timeout: 120
     max_retries: 3

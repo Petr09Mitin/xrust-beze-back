@@ -96,12 +96,13 @@ func (m *MessageRepoImpl) DeleteMessage(ctx context.Context, msg chat_models.Mes
 func (m *MessageRepoImpl) getUpdateDocumentFromMsg(msg chat_models.Message) bson.M {
 	return bson.M{
 		"$set": bson.M{
-			"payload":        msg.Payload,
-			"structurized":   msg.Structurized,
-			"updated_at":     msg.UpdatedAt,
-			"attachments":    msg.Attachments,
-			"voice":          msg.Voice,
-			"voice_duration": msg.VoiceDuration,
+			"payload":          msg.Payload,
+			"structurized":     msg.Structurized,
+			"updated_at":       msg.UpdatedAt,
+			"attachments":      msg.Attachments,
+			"voice":            msg.Voice,
+			"voice_duration":   msg.VoiceDuration,
+			"recognized_voice": msg.RecognizedVoice,
 		},
 	}
 }

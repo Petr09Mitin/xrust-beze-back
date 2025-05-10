@@ -3,23 +3,25 @@ package voicerecognitiond
 import (
 	"context"
 	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/services/voice_recognition"
 	"github.com/ThreeDotsLabs/watermill"
 
-	study_material_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/study_material"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/rs/zerolog"
 )
 
 type VoiceRecognitionD struct {
-	subTopicID string
-	pubTopicID string
-	router     *message.Router
-	sub        message.Subscriber
-	pub        message.Publisher
-	logger     zerolog.Logger
+	voiceRecognitionService voice_recognition.VoiceRecognitionService
+	subTopicID              string
+	pubTopicID              string
+	router                  *message.Router
+	sub                     message.Subscriber
+	pub                     message.Publisher
+	logger                  zerolog.Logger
 }
 
 func NewVoiceRecognitionD(
+	voiceRecognitionService voice_recognition.VoiceRecognitionService,
 	subTopicID string,
 	pubTopicID string,
 	router *message.Router,
@@ -28,12 +30,13 @@ func NewVoiceRecognitionD(
 	logger zerolog.Logger,
 ) *VoiceRecognitionD {
 	return &VoiceRecognitionD{
-		subTopicID: subTopicID,
-		pubTopicID: pubTopicID,
-		router:     router,
-		sub:        sub,
-		pub:        pub,
-		logger:     logger,
+		voiceRecognitionService: voiceRecognitionService,
+		subTopicID:              subTopicID,
+		pubTopicID:              pubTopicID,
+		router:                  router,
+		sub:                     sub,
+		pub:                     pub,
+		logger:                  logger,
 	}
 }
 
@@ -58,14 +61,16 @@ func (s *VoiceRecognitionD) registerHandler() {
 }
 
 func (s *VoiceRecognitionD) handleMessage(msg *message.Message) ([]*message.Message, error) {
-	decodedMsg, err := study_material_models.DecodeToAttachmentToParse(msg.Payload)
+	decodedMsg, err := chat_models.DecodeToMessage(msg.Payload)
 	if err != nil {
 		s.logger.Err(err).Msg("failed to decode message")
 		return nil, nil // need to send ack to watermill
 	}
 	s.logger.Info().Interface("decodedMsg", decodedMsg).Msg("decoded message")
-	newMsg := &chat_models.Message{
-		Payload: "xdd voice",
+	newMsg, err := s.voiceRecognitionService.ProcessVoiceMessage(context.Background(), decodedMsg)
+	if err != nil {
+		s.logger.Err(err).Msg("failed to process message")
+		return nil, nil
 	}
 	return []*message.Message{
 		message.NewMessage(

@@ -3,7 +3,6 @@ package config
 import "github.com/spf13/viper"
 
 type VoiceRecognitionDServices struct {
-	FileService        *GRPCService `mapstructure:"file_service"`
 	AIVoiceRecognition *GRPCService `mapstructure:"ai_voice_recognition_service"`
 }
 
