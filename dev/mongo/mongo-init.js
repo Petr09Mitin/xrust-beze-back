@@ -1,4 +1,3 @@
-use admin
 db.auth("root", "root")
 db.createUser(
     {

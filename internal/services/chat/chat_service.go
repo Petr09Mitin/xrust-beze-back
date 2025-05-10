@@ -7,6 +7,7 @@ import (
 	study_material_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/study_material"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/repository/file_client"
 	study_material_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/study_material"
+	voice_recognition_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/voice_recognition"
 	"time"
 
 	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
@@ -37,31 +38,37 @@ type UserService interface {
 
 type ChatServiceImpl struct {
 	msgRepo             message_repo.MessageRepo
+	msgPubRepo          message_repo.MessagePubRepo
 	channelRepo         channelrepo.ChannelRepository
 	fileServiceClient   file_client.FileServiceClient
 	structurizationRepo structurization_repo.StructurizationRepository
 	userService         UserService
 	studyMaterialPub    study_material_repo.StudyMaterialPub
+	voiceRecognitionPub voice_recognition_repo.VoiceRecognitionPubRepo
 	cfg                 *config.Chat
 	logger              zerolog.Logger
 }
 
 func NewChatService(
 	msgRepo message_repo.MessageRepo,
+	msgPubRepo message_repo.MessagePubRepo,
 	channelRepo channelrepo.ChannelRepository,
 	fileServiceClient file_client.FileServiceClient,
 	structurizationRepo structurization_repo.StructurizationRepository,
 	userService UserService,
 	studyMaterialPub study_material_repo.StudyMaterialPub,
+	voiceRecognitionPub voice_recognition_repo.VoiceRecognitionPubRepo,
 	logger zerolog.Logger,
 	cfg *config.Chat) ChatService {
 	return &ChatServiceImpl{
 		msgRepo:             msgRepo,
+		msgPubRepo:          msgPubRepo,
 		channelRepo:         channelRepo,
 		fileServiceClient:   fileServiceClient,
 		structurizationRepo: structurizationRepo,
 		userService:         userService,
 		studyMaterialPub:    studyMaterialPub,
+		voiceRecognitionPub: voiceRecognitionPub,
 		cfg:                 cfg,
 		logger:              logger,
 	}
@@ -91,7 +98,7 @@ func (c *ChatServiceImpl) ProcessTextMessage(ctx context.Context, msg chat_model
 		return custom_errors.ErrInvalidMessageType
 	}
 
-	if err := c.msgRepo.PublishMessage(ctx, newMsg); err != nil {
+	if err := c.msgPubRepo.PublishMessage(ctx, newMsg); err != nil {
 		c.logger.Err(err)
 		return custom_errors.ErrBroadcastingTextMessage
 	}
@@ -117,7 +124,7 @@ func (c *ChatServiceImpl) ProcessVoiceMessage(ctx context.Context, msg chat_mode
 		return custom_errors.ErrInvalidMessageType
 	}
 
-	if err := c.msgRepo.PublishMessage(ctx, newMsg); err != nil {
+	if err := c.msgPubRepo.PublishMessage(ctx, newMsg); err != nil {
 		c.logger.Err(err)
 		return custom_errors.ErrBroadcastingTextMessage
 	}
@@ -154,7 +161,7 @@ func (c *ChatServiceImpl) ProcessStructurizationRequest(ctx context.Context, mes
 	newMsg.Type = chat_models.UpdateMessageType
 	newMsg.Event = chat_models.StructurizationEvent
 
-	err = c.msgRepo.PublishMessage(ctx, newMsg)
+	err = c.msgPubRepo.PublishMessage(ctx, newMsg)
 	if err != nil {
 		return err
 	}
@@ -305,6 +312,12 @@ func (c *ChatServiceImpl) createVoiceMessage(ctx context.Context, msg chat_model
 		return msg, custom_errors.ErrBroadcastingTextMessage
 	}
 	c.logger.Printf("new message saved: %+v\n", newMsg)
+	err = c.voiceRecognitionPub.PublishMessage(ctx, newMsg)
+	if err != nil {
+		c.logger.Err(err)
+		return msg, err
+	}
+	c.logger.Printf("new voice message published for recognition: %+v\n", newMsg)
 	return newMsg, nil
 }
 
