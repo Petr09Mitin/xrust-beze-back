@@ -46,12 +46,6 @@ def process_audio(audio_file: str):
         # 3. Подготовка результатов
         full_text = whisper_result["text"]
 
-        # Транскрипция по таймкодам
-        # timestamps = [
-        #     {"start": chunk["timestamp"][0], "end": chunk["timestamp"][1], "text": chunk["text"]}
-        #     for chunk in whisper_result["chunks"]
-        # ]
-
         timestamps = [f'[{chunk["timestamp"][0]}-{chunk["timestamp"][1]}] {chunk["text"]}' for chunk in whisper_result["chunks"]]
         timestamps_str = "\n".join(timestamps)
 
@@ -80,12 +74,6 @@ async def transcribe_audio(input_data: TextInput):
         if not success:
             logging.error('Something went wrong')
             raise HTTPException(status_code=400, detail="Can't download file from S3")
-
-        # task_id = str(uuid.uuid4())
-        # temp_file_path = f"temp_{task_id}_{file.filename}"
-
-        # with open(temp_file_path, "wb") as buffer:
-        #     buffer.write(file.file.read())
         
         text, text_ts = process_audio(local_path)
         logging.info(f'Extracted text: {text}')
@@ -101,9 +89,3 @@ async def transcribe_audio(input_data: TextInput):
         os.remove(local_path)
         if not os.path.exists(local_path):
             logging.info(f'Файл успешно удалён')
-
-
-
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run(app, host="0.0.0.0", port=8000, timeout_keep_alive=600)
