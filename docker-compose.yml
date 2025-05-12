@@ -214,9 +214,25 @@ services:
       - S3_ENDPOINT_URL=http://minio-xb:9000
     depends_on:
       - minio-xb
+  
+  transcript:
+    image: petr09mitin/transcript:latest
+    container_name: transcript
+    ports:
+      - "8199:8199"
+    env_file:
+      - ./ai_tags.env
+      - ./.env
+    environment:
+      - S3_ENDPOINT_URL=http://minio-xb:9000
+    depends_on:
+      - minio-xb
+    volumes:
+      - hf_cache:/root/.cache/huggingface
 
 volumes:
   mongo_data:
   kafka_data:
   minio_data:
   redis_data:
+  hf_cache:

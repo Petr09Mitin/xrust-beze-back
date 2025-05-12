@@ -49,6 +49,12 @@ build-ai-tags:
 start-ai-tags:
 	docker-compose up ai_tags minio-xb
 
+build-transcript:
+	docker build -t petr09mitin/transcript:latest -f transcript/Dockerfile .
+
+start-transcript:
+	docker-compose up transcript minio-xb
+
 start-user-only: build-user build-file
 	docker-compose up -d mongo_db user_service auth_service study_material
 
