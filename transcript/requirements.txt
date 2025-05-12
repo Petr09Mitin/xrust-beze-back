@@ -1,0 +1,7 @@
+fastapi==0.115.0
+transformers==4.45.1
+uvicorn==0.31.0
+# python-multipart==0.0.12
+pyannote.audio
+requests==2.32.3
+boto3==1.37.33
