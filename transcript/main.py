@@ -75,11 +75,13 @@ async def transcribe_audio(input_data: TextInput):
             logging.error('Something went wrong')
             raise HTTPException(status_code=400, detail="Can't download file from S3")
         
-        text, text_ts = process_audio(local_path)
+        text, _ = process_audio(local_path)
         logging.info(f'Extracted text: {text}')
 
 
-        return {"text": text, "text_ts": text_ts}
+        return {"text": text, 
+                # "text_ts": text_ts
+                }
     
     except Exception as e:
         logging.error(e)
