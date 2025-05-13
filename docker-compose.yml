@@ -213,6 +213,8 @@ services:
       - mongo_db
       - kafka_xb
       - file_service
+      - minio-xb
+      - transcript
 
   ai_tags:
     image: petr09mitin/ai_tags:latest

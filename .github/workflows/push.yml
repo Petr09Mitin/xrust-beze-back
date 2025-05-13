@@ -68,6 +68,14 @@ jobs:
           push: true
           tags: petr09mitin/ml_moderator:latest
 
+      - name: Build and push transcript
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./transcript/Dockerfile
+          push: true
+          tags: petr09mitin/transcript:latest
+
 #      - name: Build and push ml_image_moderator
 #        uses: docker/build-push-action@v4
 #        with:

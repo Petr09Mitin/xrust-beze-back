@@ -13,7 +13,7 @@ mongo:
 
 services:
   ai_voice_recognition_service:
-    host: "TODO"
-    port: 8087
+    host: "transcript"
+    port: 8199
     timeout: 120
     max_retries: 3
