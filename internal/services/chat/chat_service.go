@@ -148,7 +148,7 @@ func (c *ChatServiceImpl) ProcessStructurizationRequest(ctx context.Context, mes
 	}
 	question := c.concatenateMessages(prevMessages)
 	var answer string
-	if oldMessage.Event == chat_models.VoiceMessageEvent {
+	if oldMessage.RecognizedVoice != "" {
 		answer = oldMessage.RecognizedVoice
 	} else {
 		answer = oldMessage.Payload
