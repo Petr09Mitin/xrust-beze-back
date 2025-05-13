@@ -25,3 +25,5 @@ kafka:
   addresses: ["kafka_xb:9092"]
   version: "3.8.0"
   study_material_topic: "xb.studymaterial.pub"
+  voice_recognition_new_voice_topic: "xb.voice_recognition.new_voice"
+  voice_recognition_voice_processed_topic: "xb.voice_recognition.voice_processed"

@@ -1,0 +1,19 @@
+kafka:
+  addresses: ["kafka_xb:9092"]
+  version: "3.8.0"
+  voice_recognition_new_voice_topic: "xb.voice_recognition.new_voice"
+  voice_recognition_voice_processed_topic: "xb.voice_recognition.voice_processed"
+
+mongo:
+  host: "mongo_db"
+  port: 27017
+  username: "admin"
+  password: "admin"
+  database: "xrust_beze"
+
+services:
+  ai_voice_recognition_service:
+    host: "TODO"
+    port: 8087
+    timeout: 120
+    max_retries: 3

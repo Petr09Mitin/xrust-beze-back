@@ -19,6 +19,7 @@ start:
 	&& docker build -t petr09mitin/xrust_beze_auth:latest -f cmd/auth/Dockerfile . \
 	&& docker build -t petr09mitin/xrust_beze_study_material:latest -f cmd/study_material/Dockerfile . \
 	&& docker build -t petr09mitin/xrust_beze_studymateriald:latest -f cmd/studymateriald/Dockerfile . \
+	&& docker build -t petr09mitin/xrust_beze_voicerecognitiond:latest -f cmd/voicerecognitiond/Dockerfile . \
 	&& docker-compose up
 
 stop:

@@ -23,21 +23,23 @@ const (
 )
 
 type Chat struct {
-	R             *gin.Engine
-	M             *melody.Melody
-	msgSubscriber *MessageSubscriber
-	ChatService   chat_service.ChatService
-	logger        zerolog.Logger
-	cfg           *config.Chat
+	R                   *gin.Engine
+	M                   *melody.Melody
+	msgSubscriber       *MessageSubscriber
+	voiceRecognitionSub *VoiceRecognitionSubscriber
+	ChatService         chat_service.ChatService
+	logger              zerolog.Logger
+	cfg                 *config.Chat
 }
 
-func NewChat(chatService chat_service.ChatService, msgSub *MessageSubscriber, m *melody.Melody, logger zerolog.Logger, cfg *config.Chat) (*Chat, error) {
+func NewChat(chatService chat_service.ChatService, msgSub *MessageSubscriber, voiceRecognitionSub *VoiceRecognitionSubscriber, m *melody.Melody, logger zerolog.Logger, cfg *config.Chat) (*Chat, error) {
 	ch := &Chat{
-		ChatService:   chatService,
-		msgSubscriber: msgSub,
-		M:             m,
-		logger:        logger,
-		cfg:           cfg,
+		ChatService:         chatService,
+		msgSubscriber:       msgSub,
+		voiceRecognitionSub: voiceRecognitionSub,
+		M:                   m,
+		logger:              logger,
+		cfg:                 cfg,
 	}
 	err := ch.InitWS()
 	if err != nil {
@@ -64,6 +66,7 @@ func (ch *Chat) InitRouter() {
 
 func (ch *Chat) InitWS() error {
 	ch.msgSubscriber.RegisterHandler()
+	ch.voiceRecognitionSub.RegisterHandler()
 	ch.M.HandleConnect(ch.handleNewChatJoin)
 
 	ch.M.HandleDisconnect(func(s *melody.Session) {
@@ -89,6 +92,14 @@ func (ch *Chat) InitWS() error {
 
 	go func() {
 		err := ch.msgSubscriber.Run()
+		if err != nil {
+			ch.logger.Err(err)
+			return
+		}
+	}()
+
+	go func() {
+		err := ch.voiceRecognitionSub.Run()
 		if err != nil {
 			ch.logger.Err(err)
 			return
@@ -149,6 +160,10 @@ func (ch *Chat) handleMessage(ctx context.Context, msg []byte) error {
 
 func (ch *Chat) Stop() error {
 	err := ch.msgSubscriber.GracefulStop()
+	if err != nil {
+		return err
+	}
+	err = ch.voiceRecognitionSub.GracefulStop()
 	if err != nil {
 		return err
 	}

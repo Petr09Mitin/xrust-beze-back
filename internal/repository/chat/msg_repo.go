@@ -5,16 +5,10 @@ import (
 	"errors"
 	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
-	"github.com/ThreeDotsLabs/watermill"
-	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/rs/zerolog"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
-)
-
-const (
-	MessagePubTopic = "xb.msg.pub"
 )
 
 type MessageRepo interface {
@@ -24,18 +18,15 @@ type MessageRepo interface {
 	InsertMessage(ctx context.Context, msg chat_models.Message) (chat_models.Message, error)
 	UpdateMessage(ctx context.Context, msg chat_models.Message) error
 	DeleteMessage(ctx context.Context, msg chat_models.Message) error
-	PublishMessage(ctx context.Context, msg chat_models.Message) error
 }
 
 type MessageRepoImpl struct {
-	p       message.Publisher
 	mongoDB *mongo.Collection
 	logger  zerolog.Logger
 }
 
-func NewMessageRepo(p message.Publisher, mongoDB *mongo.Collection, logger zerolog.Logger) MessageRepo {
+func NewMessageRepo(mongoDB *mongo.Collection, logger zerolog.Logger) MessageRepo {
 	return &MessageRepoImpl{
-		p:       p,
 		mongoDB: mongoDB,
 		logger:  logger,
 	}
@@ -102,22 +93,16 @@ func (m *MessageRepoImpl) DeleteMessage(ctx context.Context, msg chat_models.Mes
 	return nil
 }
 
-func (m *MessageRepoImpl) PublishMessage(_ context.Context, msg chat_models.Message) error {
-	return m.p.Publish(MessagePubTopic, message.NewMessage(
-		watermill.NewUUID(),
-		msg.Encode(),
-	))
-}
-
 func (m *MessageRepoImpl) getUpdateDocumentFromMsg(msg chat_models.Message) bson.M {
 	return bson.M{
 		"$set": bson.M{
-			"payload":        msg.Payload,
-			"structurized":   msg.Structurized,
-			"updated_at":     msg.UpdatedAt,
-			"attachments":    msg.Attachments,
-			"voice":          msg.Voice,
-			"voice_duration": msg.VoiceDuration,
+			"payload":          msg.Payload,
+			"structurized":     msg.Structurized,
+			"updated_at":       msg.UpdatedAt,
+			"attachments":      msg.Attachments,
+			"voice":            msg.Voice,
+			"voice_duration":   msg.VoiceDuration,
+			"recognized_voice": msg.RecognizedVoice,
 		},
 	}
 }
