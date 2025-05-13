@@ -28,6 +28,8 @@ var (
 		ErrInvalidMessageEvent: http.StatusBadRequest,
 		ErrNoChannelID:         http.StatusBadRequest,
 		ErrNoMessageID:         http.StatusBadRequest,
+		ErrNoAuthUserID:        http.StatusUnauthorized,
+		ErrAccessDenied:        http.StatusForbidden,
 
 		// file
 		ErrFileNotFound:      http.StatusNotFound,

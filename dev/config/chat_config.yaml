@@ -13,6 +13,9 @@ services:
     port: 8091
     timeout: 120
     max_retries: 3
+  auth_service:
+    host: auth_service
+    port: 50051
 
 mongo:
   host: "mongo_db"

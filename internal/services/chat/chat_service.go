@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	study_material_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/study_material"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/repository/file_client"
 	study_material_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/study_material"
-	"time"
 
 	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
@@ -125,6 +126,11 @@ func (c *ChatServiceImpl) ProcessVoiceMessage(ctx context.Context, msg chat_mode
 }
 
 func (c *ChatServiceImpl) ProcessStructurizationRequest(ctx context.Context, message chat_models.Message) error {
+	authUserID, ok := ctx.Value("user_id").(string)
+	if !ok {
+		return custom_errors.ErrNoAuthUserID
+	}
+
 	oldMessage, err := c.msgRepo.GetMessageByID(ctx, message.MessageID)
 	if err != nil {
 		return err
@@ -133,6 +139,11 @@ func (c *ChatServiceImpl) ProcessStructurizationRequest(ctx context.Context, mes
 	if err != nil {
 		return err
 	}
+
+	if !contains(channel.UserIDs, authUserID) {
+		return custom_errors.ErrAccessDenied
+	}
+
 	oldMessage.SetReceiverIDs(channel.UserIDs)
 
 	prevMessages, err := c.msgRepo.GetPreviousMessagesByMessageCreatedAt(ctx, channel.ID, oldMessage.CreatedAt, 1)
@@ -309,6 +320,11 @@ func (c *ChatServiceImpl) createVoiceMessage(ctx context.Context, msg chat_model
 }
 
 func (c *ChatServiceImpl) updateTextMessage(ctx context.Context, msg chat_models.Message) (chat_models.Message, error) {
+	authUserID, ok := ctx.Value("user_id").(string)
+	if !ok {
+		return msg, custom_errors.ErrNoAuthUserID
+	}
+
 	var channel chat_models.Channel
 	var err error
 
@@ -328,6 +344,10 @@ func (c *ChatServiceImpl) updateTextMessage(ctx context.Context, msg chat_models
 	oldMsg, err := c.msgRepo.GetMessageByID(ctx, msg.MessageID)
 	if err != nil {
 		return msg, err
+	}
+
+	if oldMsg.UserID != authUserID {
+		return msg, custom_errors.ErrAccessDenied
 	}
 
 	newAttachmentsMap := make(map[string]any, len(msg.Attachments))
@@ -400,6 +420,11 @@ func (c *ChatServiceImpl) updateTextMessage(ctx context.Context, msg chat_models
 }
 
 func (c *ChatServiceImpl) deleteTextMessage(ctx context.Context, msg chat_models.Message) (chat_models.Message, error) {
+	authUserID, ok := ctx.Value("user_id").(string)
+	if !ok {
+		return msg, custom_errors.ErrNoAuthUserID
+	}
+
 	var channel chat_models.Channel
 	var err error
 
@@ -409,6 +434,10 @@ func (c *ChatServiceImpl) deleteTextMessage(ctx context.Context, msg chat_models
 	oldMsg, err := c.msgRepo.GetMessageByID(ctx, msg.MessageID)
 	if err != nil {
 		return msg, err
+	}
+
+	if oldMsg.UserID != authUserID {
+		return msg, custom_errors.ErrAccessDenied
 	}
 
 	if msg.ChannelID == "" {
@@ -437,6 +466,11 @@ func (c *ChatServiceImpl) deleteTextMessage(ctx context.Context, msg chat_models
 }
 
 func (c *ChatServiceImpl) deleteVoiceMessage(ctx context.Context, msg chat_models.Message) (chat_models.Message, error) {
+	authUserID, ok := ctx.Value("user_id").(string)
+	if !ok {
+		return msg, custom_errors.ErrNoAuthUserID
+	}
+
 	var channel chat_models.Channel
 	var err error
 
@@ -447,6 +481,10 @@ func (c *ChatServiceImpl) deleteVoiceMessage(ctx context.Context, msg chat_model
 	oldMsg, err := c.msgRepo.GetMessageByID(ctx, msg.MessageID)
 	if err != nil {
 		return msg, err
+	}
+
+	if oldMsg.UserID != authUserID {
+		return msg, custom_errors.ErrAccessDenied
 	}
 
 	if oldMsg.ChannelID == "" {
@@ -479,6 +517,19 @@ func (c *ChatServiceImpl) GetMessagesByChatID(ctx context.Context, chatID string
 	if offset < 0 {
 		offset = 0
 	}
+
+	userID, ok := ctx.Value("user_id").(string)
+	if !ok {
+		return nil, custom_errors.ErrNoAuthUserID
+	}
+	channel, err := c.channelRepo.GetChannelByID(ctx, chatID)
+	if err != nil {
+		return nil, err
+	}
+	if !contains(channel.UserIDs, userID) {
+		return nil, custom_errors.ErrAccessDenied
+	}
+
 	return c.msgRepo.GetMessagesByChannelID(ctx, chatID, limit, offset)
 }
 
@@ -580,7 +631,27 @@ func (c *ChatServiceImpl) GetChannelByUserAndPeerIDs(ctx context.Context, userID
 }
 
 func (c *ChatServiceImpl) GetMessageByID(ctx context.Context, messageID string) (*chat_models.Message, error) {
-	return c.msgRepo.GetMessageByID(ctx, messageID)
+	// return c.msgRepo.GetMessageByID(ctx, messageID)
+
+	userID, ok := ctx.Value("user_id").(string)
+	if !ok {
+		return nil, custom_errors.ErrNoAuthUserID
+	}
+
+	message, err := c.msgRepo.GetMessageByID(ctx, messageID)
+	if err != nil {
+		return nil, err
+	}
+
+	channel, err := c.channelRepo.GetChannelByID(ctx, message.ChannelID)
+	if err != nil {
+		return nil, err
+	}
+	if !contains(channel.UserIDs, userID) {
+		return nil, custom_errors.ErrAccessDenied
+	}
+
+	return message, nil
 }
 
 func (c *ChatServiceImpl) publishAttachmentsToProcess(ctx context.Context, msg *chat_models.Message, prevMsgs []chat_models.Message) error {
@@ -602,4 +673,13 @@ func (c *ChatServiceImpl) publishAttachmentsToProcess(ctx context.Context, msg *
 	}
 
 	return nil
+}
+
+func contains(arr []string, val string) bool {
+	for _, v := range arr {
+		if v == val {
+			return true
+		}
+	}
+	return false
 }

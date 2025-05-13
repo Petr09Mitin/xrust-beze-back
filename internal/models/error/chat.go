@@ -15,4 +15,6 @@ var (
 	ErrStructurizationUnavailable       = errors.New("structurization is temporary unavailable, try again later")
 	ErrNoUserIDOrPeerID                 = fmt.Errorf("%w: no user id or peer id", ErrBadRequest)
 	ErrParsingStudyMaterialsUnavailable = errors.New("parsing study materials is temporary unavailable, try again later")
+	ErrNoAuthUserID                     = errors.New("unable to extract authorized user_id from context")
+	ErrAccessDenied                     = errors.New("cannot access other user's data")
 )

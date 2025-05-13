@@ -8,12 +8,12 @@ import (
 )
 
 const (
-	skillSharingTokenCookieKey = "skill_sharing_token"
+	SkillSharingTokenCookieKey = "skill_sharing_token"
 )
 
 func AuthMiddleware(authClient authpb.AuthServiceClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		sessionID, err := c.Cookie(skillSharingTokenCookieKey) // хардкод, придумать, как избавиться
+		sessionID, err := c.Cookie(SkillSharingTokenCookieKey)
 		if err != nil || sessionID == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 			return
@@ -35,7 +35,7 @@ func AuthMiddleware(authClient authpb.AuthServiceClient) gin.HandlerFunc {
 
 func CheckAuthMiddleware(authClient authpb.AuthServiceClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		sessionID, err := c.Cookie(skillSharingTokenCookieKey)
+		sessionID, err := c.Cookie(SkillSharingTokenCookieKey)
 		if err != nil || sessionID == "" {
 			c.Next()
 			return

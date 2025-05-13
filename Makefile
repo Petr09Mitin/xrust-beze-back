@@ -63,3 +63,9 @@ build-study-material:
 
 start-study-material-only: build-study-material # build-user build-file build-auth 
 	docker-compose up -d mongo_db auth_service user_service file_service study_material
+
+build-chat:
+	docker build -t petr09mitin/xrust_beze_chat:latest -f cmd/chat/Dockerfile .
+
+start-chat-only: build-chat
+	docker-compose up -d chat_service mongo_db kafka_xb auth_service user_service file_service

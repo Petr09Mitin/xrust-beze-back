@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/Petr09Mitin/xrust-beze-back/internal/repository/file_client"
 	study_material_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/study_material"
+	authpb "github.com/Petr09Mitin/xrust-beze-back/proto/auth"
 	filepb "github.com/Petr09Mitin/xrust-beze-back/proto/file"
 
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/config"
@@ -81,6 +83,18 @@ func main() {
 		log.Err(err).Msg("failed to connect to kafka sub")
 		return
 	}
+
+	authGRPCConn, err := grpc.NewClient(
+		fmt.Sprintf("%s:%d", cfg.Services.AuthService.Host, cfg.Services.AuthService.Port),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to connect to auth_service")
+		return
+	}
+	authClient := authpb.NewAuthServiceClient(authGRPCConn)
+	defer authGRPCConn.Close()
+
 	msgRouter, err := infrakafka.NewBrokerRouter()
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to initialize kafka msg_router")
@@ -91,7 +105,7 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to connect to kafka msg_sub")
 		return
 	}
-	c, err := chat.NewChat(chatService, msgSub, m, log, cfg)
+	c, err := chat.NewChat(chatService, msgSub, authClient, m, log, cfg)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create chat")
 		return
