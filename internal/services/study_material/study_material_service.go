@@ -5,6 +5,7 @@ import (
 
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	study_material_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/study_material"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/defaults"
 	study_material_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/study_material"
 	filepb "github.com/Petr09Mitin/xrust-beze-back/proto/file"
 	userpb "github.com/Petr09Mitin/xrust-beze-back/proto/user"
@@ -98,6 +99,7 @@ func (s *studyMaterialAPIService) fillAuthorInfo(ctx context.Context, mat *study
 	if err == nil && userResp.User != nil {
 		mat.Author.Username = userResp.User.Username
 		mat.Author.Avatar = userResp.User.AvatarUrl
+		mat.Author.Avatar = defaults.ApplyDefaultIfEmptyAvatar(mat.Author.Avatar)
 	}
 
 	// Код ниже не реализован, чтобы не возвращать ошибку "not found", если пользователь не найден

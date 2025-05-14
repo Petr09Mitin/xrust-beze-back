@@ -16,3 +16,5 @@ ml_moderator/__pycache__
 ml_image_moderator/__pycache__
 ml_image_moderator/src/__pycache__
 research
+
+docker-compose.override.yml

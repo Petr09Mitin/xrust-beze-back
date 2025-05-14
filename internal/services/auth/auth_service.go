@@ -7,6 +7,7 @@ import (
 	auth_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/auth"
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/defaults"
 	session_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/auth"
 	user_grpc "github.com/Petr09Mitin/xrust-beze-back/internal/router/grpc/user"
 	user_pb "github.com/Petr09Mitin/xrust-beze-back/proto/user"
@@ -55,6 +56,7 @@ func (s *authService) Register(ctx context.Context, req *auth_model.RegisterRequ
 	if err != nil {
 		return nil, err
 	}
+	user.Avatar = defaults.ApplyDefaultIfEmptyAvatar(user.Avatar)
 	return user, nil
 }
 
@@ -99,6 +101,7 @@ func (s *authService) Login(ctx context.Context, req *auth_model.LoginRequest) (
 	if err != nil {
 		return nil, nil, err
 	}
+	convertedUser.Avatar = defaults.ApplyDefaultIfEmptyAvatar(convertedUser.Avatar)
 
 	session, err := s.CreateSession(ctx, userWithPassword.UserToLogin.Id)
 	if err != nil {
@@ -140,6 +143,7 @@ func (s *authService) ValidateSession(ctx context.Context, sessionID string) (*a
 	if err != nil {
 		return nil, nil, err
 	}
+	convertedUser.Avatar = defaults.ApplyDefaultIfEmptyAvatar(convertedUser.Avatar)
 	return sess, convertedUser, nil
 }
 

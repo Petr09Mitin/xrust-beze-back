@@ -13,6 +13,7 @@ import (
 	"github.com/Petr09Mitin/xrust-beze-back/internal/middleware"
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	user_model "github.com/Petr09Mitin/xrust-beze-back/internal/models/user"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/defaults"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/httpparser"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/validation"
 	middleware2 "github.com/Petr09Mitin/xrust-beze-back/internal/router/middleware"
@@ -108,6 +109,8 @@ func (h *UserHandler) Update(c *gin.Context) {
 		custom_errors.WriteHTTPError(c, err)
 		return
 	}
+
+	input.Avatar = defaults.ApplyDefaultIfEmptyAvatar(input.Avatar)
 
 	c.JSON(http.StatusOK, input)
 }

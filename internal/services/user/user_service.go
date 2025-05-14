@@ -9,6 +9,7 @@ import (
 	review_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/review"
 
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/defaults"
 	authpb "github.com/Petr09Mitin/xrust-beze-back/proto/auth"
 	filepb "github.com/Petr09Mitin/xrust-beze-back/proto/file"
 	"github.com/rs/zerolog"
@@ -97,6 +98,7 @@ func (s *userService) GetByID(ctx context.Context, id string) (*user_model.User,
 	if err != nil {
 		return nil, err
 	}
+	user.Avatar = defaults.ApplyDefaultIfEmptyAvatar(user.Avatar)
 	return user, nil
 }
 
@@ -109,6 +111,7 @@ func (s *userService) GetByEmail(ctx context.Context, email string) (*user_model
 	if err != nil {
 		return nil, err
 	}
+	user.Avatar = defaults.ApplyDefaultIfEmptyAvatar(user.Avatar)
 	return user, nil
 }
 
@@ -125,6 +128,7 @@ func (s *userService) GetByUsername(ctx context.Context, username string) (*user
 	if err != nil {
 		return nil, err
 	}
+	user.Avatar = defaults.ApplyDefaultIfEmptyAvatar(user.Avatar)
 	return user, nil
 }
 
@@ -213,6 +217,9 @@ func (s *userService) List(ctx context.Context, page, limit int) ([]*user_model.
 	if err != nil {
 		return nil, err
 	}
+	for _, user := range users {
+		user.Avatar = defaults.ApplyDefaultIfEmptyAvatar(user.Avatar)
+	}
 	return users, nil
 }
 
@@ -242,6 +249,7 @@ func (s *userService) FindMatchingUsers(ctx context.Context, userID string) ([]*
 	filteredUsers := make([]*user_model.User, 0)
 	for _, u := range matchingUsers {
 		if u.ID != currentUser.ID {
+			u.Avatar = defaults.ApplyDefaultIfEmptyAvatar(u.Avatar)
 			filteredUsers = append(filteredUsers, u)
 		}
 	}
@@ -267,6 +275,9 @@ func (s *userService) FindUsersByUsername(ctx context.Context, userID, username 
 	err = s.fillUsersRatings(ctx, users)
 	if err != nil {
 		return nil, err
+	}
+	for _, user := range users {
+		user.Avatar = defaults.ApplyDefaultIfEmptyAvatar(user.Avatar)
 	}
 	return users, nil
 }
@@ -433,6 +444,7 @@ func (s *userService) FindBySkillsToShare(ctx context.Context, skills []string, 
 		if err != nil {
 			return nil, err
 		}
+		users[i].Avatar = defaults.ApplyDefaultIfEmptyAvatar(users[i].Avatar)
 	}
 	return users, nil
 }
@@ -447,6 +459,7 @@ func (s *userService) FindBySkillsToLearn(ctx context.Context, skills []string, 
 		if err != nil {
 			return nil, err
 		}
+		users[i].Avatar = defaults.ApplyDefaultIfEmptyAvatar(users[i].Avatar)
 	}
 	return users, nil
 }

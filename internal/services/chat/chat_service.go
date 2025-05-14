@@ -4,15 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	study_material_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/study_material"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/repository/file_client"
 	study_material_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/study_material"
 	voice_recognition_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/voice_recognition"
-	"time"
 
 	chat_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/chat"
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/config"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/defaults"
 	channelrepo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/channel"
 	message_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/chat"
 	structurization_repo "github.com/Petr09Mitin/xrust-beze-back/internal/repository/structurization"
@@ -533,6 +535,7 @@ func (c *ChatServiceImpl) GetChannelsByUserID(ctx context.Context, userID string
 				c.logger.Error().Err(err).Msg(fmt.Sprintf("unable to convert to domain user %s", userID))
 				continue
 			}
+			user.Avatar = defaults.ApplyDefaultIfEmptyAvatar(user.Avatar)
 			channels[i].Users = append(channels[i].Users, *user)
 		}
 	}
@@ -596,6 +599,7 @@ func (c *ChatServiceImpl) GetChannelByUserAndPeerIDs(ctx context.Context, userID
 			c.logger.Error().Err(err).Msg(fmt.Sprintf("unable to convert to domain user %s", userID))
 			continue
 		}
+		user.Avatar = defaults.ApplyDefaultIfEmptyAvatar(user.Avatar)
 		channel.Users = append(channel.Users, *user)
 	}
 	msgs, err := c.msgRepo.GetMessagesByChannelID(ctx, channel.ID, 200, 0)
