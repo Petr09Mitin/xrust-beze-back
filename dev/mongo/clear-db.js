@@ -3,4 +3,5 @@ xb_db = db.getSiblingDB('xrust_beze')
 xb_db.messages.deleteMany({})
 xb_db.channels.deleteMany({})
 xb_db.users.deleteMany({})
-
+xb_db.reviews.deleteMany({})
+xb_db.study_materials.deleteMany({})

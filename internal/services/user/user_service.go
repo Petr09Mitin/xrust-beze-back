@@ -62,10 +62,9 @@ func NewUserService(userRepo user_repo.UserRepo, moderationRepo moderation_repo.
 }
 
 func (s *userService) Create(ctx context.Context, user *user_model.User, hashedPassword string) error {
-	if err := s.checkUserForProfanity(ctx, user); err != nil {
-		return err
-	}
-
+	//if err := s.checkUserForProfanity(ctx, user); err != nil {
+	//	return err
+	//}
 	existingUser, err := s.userRepo.GetByEmail(ctx, user.Email)
 	if err == nil && existingUser != nil {
 		return custom_errors.ErrEmailAlreadyExists
@@ -137,9 +136,9 @@ func (s *userService) GetByUsernameWithPassword(ctx context.Context, username st
 }
 
 func (s *userService) Update(ctx context.Context, user *user_model.User) error {
-	if err := s.checkUserForProfanity(ctx, user); err != nil {
-		return err
-	}
+	//if err := s.checkUserForProfanity(ctx, user); err != nil {
+	//	return err
+	//}
 	// Проверяем существование пользователя
 	existingUser, err := s.userRepo.GetByID(ctx, user.ID.Hex())
 	if err != nil {
@@ -162,7 +161,7 @@ func (s *userService) Update(ctx context.Context, user *user_model.User) error {
 		}
 	}
 
-	if existingUser.Avatar != user.Avatar {
+	if existingUser.Avatar != user.Avatar && user.Avatar != defaults.DefaultAvatarPath {
 		_, err = s.fileGRPC.MoveTempFileToAvatars(ctx, &filepb.MoveTempFileToAvatarsRequest{
 			Filename: user.Avatar,
 		})
@@ -282,20 +281,20 @@ func (s *userService) FindUsersByUsername(ctx context.Context, userID, username 
 	return users, nil
 }
 
-// func (s *userService) checkForProfanity(ctx context.Context, fieldName, text string) error {
-// 	if text == "" {
-// 		return nil
-// 	}
-// 	hasProfanity, err := s.moderationRepo.CheckSwearing(ctx, text)
-// 	if err != nil {
-// 		s.logger.Error().Err(err).Str("field", fieldName).Msg("failed to check field for profanity")
-// 		return custom_errors.ErrModerationUnavailable
-// 	}
-// 	if hasProfanity {
-// 		return &custom_errors.ProfanityError{FieldName: fieldName}
-// 	}
-// 	return nil
-// }
+//func (s *userService) checkForProfanity(ctx context.Context, fieldName, text string) error {
+//	if text == "" {
+//		return nil
+//	}
+//	hasProfanity, err := s.moderationRepo.CheckSwearing(ctx, text)
+//	if err != nil {
+//		s.logger.Error().Err(err).Str("field", fieldName).Msg("failed to check field for profanity")
+//		return custom_errors.ErrModerationUnavailable
+//	}
+//	if hasProfanity {
+//		return &custom_errors.ProfanityError{FieldName: fieldName}
+//	}
+//	return nil
+//}
 
 func (s *userService) checkForProfanity(ctx context.Context, text string) (bool, error) {
 	if text == "" {
