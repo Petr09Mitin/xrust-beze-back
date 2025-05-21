@@ -3,7 +3,6 @@ package study_material_repo
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	study_material_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/study_material"
@@ -51,18 +50,9 @@ func (r *studyMaterialAPIRepository) GetByID(ctx context.Context, id string) (*s
 	return bsonMaterial.ToStudyMaterial(), nil
 }
 
-// func (r *studyMaterialAPIRepository) GetByTags(ctx context.Context, tags []string) ([]*study_material_models.StudyMaterial, error) {
-// 	// filter := bson.M{"tags": tag}
-// 	filter := bson.M{"tags": bson.M{"$in": tags}}
-// 	return r.find(ctx, filter)
-// }
-
 func (r *studyMaterialAPIRepository) GetByTags(ctx context.Context, tags []string) ([]*study_material_models.StudyMaterial, error) {
-	var regexes []interface{}
-	for _, tag := range tags {
-		regexes = append(regexes, bson.M{"$regex": fmt.Sprintf("^%s$", tag), "$options": "i"})
-	}
-	filter := bson.M{"tags": bson.M{"$in": regexes}}
+	// filter := bson.M{"tags": tag}
+	filter := bson.M{"tags": bson.M{"$in": tags}}
 	return r.find(ctx, filter)
 }
 
