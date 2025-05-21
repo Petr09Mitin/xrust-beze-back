@@ -446,7 +446,8 @@ func (c *ChatServiceImpl) deleteTextMessage(ctx context.Context, msg chat_models
 	if len(oldMsg.Attachments) > 0 {
 		err = c.fileServiceClient.DeleteAttachments(ctx, oldMsg.Attachments)
 		if err != nil {
-			return msg, err
+			c.logger.Error().Err(err).Msg("unable to delete attachments")
+			// продолжаем - не крит
 		}
 	}
 
