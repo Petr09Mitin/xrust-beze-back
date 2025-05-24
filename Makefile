@@ -50,6 +50,12 @@ build-ai-tags:
 start-ai-tags:
 	docker-compose up ai_tags minio-xb
 
+build-RAG:
+	docker build -t petr09mitin/rag_service:latest -f RAG_service/Dockerfile .
+
+start-RAG:
+	docker-compose up RAG_service minio-xb
+
 build-transcript:
 	docker build -t petr09mitin/transcript:latest -f transcript/Dockerfile .
 

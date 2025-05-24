@@ -243,6 +243,22 @@ services:
       - minio-xb
     volumes:
       - hf_cache:/root/.cache/huggingface
+  
+  RAG_service:
+    image: petr09mitin/rag_service:latest
+    container_name: RAG_service
+    ports:
+      - "8929:8929"
+    env_file:
+      - ./ai_tags.env
+      - ./.env
+    environment:
+      - S3_ENDPOINT_URL=http://minio-xb:9000
+    depends_on:
+      - minio-xb
+    volumes:
+      - RAG_data:/data
+
 
 volumes:
   mongo_data:
@@ -250,3 +266,4 @@ volumes:
   minio_data:
   redis_data:
   hf_cache:
+  RAG_data:
