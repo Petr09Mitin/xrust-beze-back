@@ -1,136 +1,453 @@
-import os
-import json
-import faiss
-import boto3
-import fitz  # PyMuPDF
-from docx import Document
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
 from pydantic import BaseModel
-from sentence_transformers import SentenceTransformer
+from typing import List
+from pathlib import Path
+from tqdm import tqdm
+import os
+import numpy as np
+import faiss
 
-# --- Настройки ---
-MODEL_NAME = "all-MiniLM-L6-v2"
-INDEX_PATH = "index.faiss"
-META_PATH = "doc_metadata.json"
-BUCKET_NAME = "raw-data"
-LOCAL_TMP_DIR = "tmp"
 
-# --- Инициализация ---
-os.makedirs(LOCAL_TMP_DIR, exist_ok=True)
-s3 = boto3.client("s3",
-    aws_access_key_id=os.getenv("MINIO_ROOT_USER"),
-    aws_secret_access_key=os.getenv("MINIO_ROOT_PASSWORD"),
-    endpoint_url=os.getenv("S3_ENDPOINT_URL")  # можно использовать кастомный URL для S3-совместимого хранилища
+import boto3
+from tempfile import TemporaryDirectory
+from langchain_community.docstore.in_memory import InMemoryDocstore
+
+from pymongo import MongoClient
+from langchain_community.vectorstores import FAISS
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import TextLoader, PyPDFLoader
+from langchain.docstore.document import Document
+from langchain_community.vectorstores import FAISS
+
+from threading import Lock
+import threading
+import time
+
+import logging
+
+# Настройка базового логгера
+logging.basicConfig(
+    level=logging.INFO,  # Уровень логирования (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    format='%(asctime)s - %(levelname)s - %(message)s',  # Формат сообщения
+    datefmt='%Y-%m-%d %H:%M:%S'  # Формат времени
 )
-model = SentenceTransformer(MODEL_NAME)
 
-app = FastAPI()
 
-# --- Глобальные переменные ---
-index = None
-metadata = None
 
-# --- Работа с индексом ---
-def load_index():
-    if os.path.exists(INDEX_PATH):
-        return faiss.read_index(INDEX_PATH)
-    return faiss.IndexFlatL2(model.get_sentence_embedding_dimension())
+FAISS_REBUILD_INTERVAL = 100  # секунд (например, 5 минут)
 
-def save_index(idx):
-    faiss.write_index(idx, INDEX_PATH)
 
-def load_metadata():
-    if os.path.exists(META_PATH):
-        with open(META_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
+# os.environ["NO_PROXY"] = "http://localhost:9000"
 
-def save_metadata(meta):
-    with open(META_PATH, "w", encoding="utf-8") as f:
-        json.dump(meta, f, ensure_ascii=False, indent=2)
+# os.environ["NO_PROXY"] = "mongodb://localhost:27025"
 
-# --- Работа с файлами ---
-def list_s3_files(prefix=""):
-    response = s3.list_objects_v2(Bucket=BUCKET_NAME, Prefix=prefix)
-    return [obj["Key"] for obj in response.get("Contents", []) if obj["Key"].endswith((".pdf", ".docx"))]
 
-def download_file(key, local_path):
-    s3.download_file(BUCKET_NAME, key, local_path)
 
-def extract_text(path):
-    if path.endswith(".pdf"):
-        return "\n".join([p.get_text() for p in fitz.open(path)])
-    elif path.endswith(".docx"):
-        return "\n".join([p.text for p in Document(path).paragraphs])
-    return ""
+S3_BUCKET = "raw-data"
+S3_PREFIX = ""
+# S3_CONFIG = {
+#     "endpoint_url": "http://localhost:9000",  # если MinIO
+#     "aws_access_key_id": "admin",
+#     "aws_secret_access_key": "adminadmin",
+# }
 
-def chunk_text(text, size=1500):
-    return [text[i:i+size] for i in range(0, len(text), size)]
+S3_CONFIG = {
+    'aws_access_key_id': os.getenv("MINIO_ROOT_USER"),
+    'aws_secret_access_key': os.getenv("MINIO_ROOT_PASSWORD"),
+    'endpoint_url': os.getenv("S3_ENDPOINT_URL")  # можно использовать кастомный URL для S3-совместимого хранилища
+}
 
-# --- Индексация ---
-def sync_index_from_s3():
-    global index, metadata
-    new_metadata = {}
+# --- Конфигурация ---
+# DATA_DIR = Path("./docs")
+INDEX_DIR = Path("./vectorstore/faiss_index")
+EMBEDDING_MODEL_NAME = "intfloat/e5-base-v2"
 
-    for key in list_s3_files():
-        if key in metadata:
-            continue
 
-        local_path = os.path.join(LOCAL_TMP_DIR, os.path.basename(key))
-        download_file(key, local_path)
+MONGO_URI = os.getenv("MONGO_DB_URL")
+MONGO_DB = os.getenv("MONGO_DB")
+MONGO_COLLECTION = os.getenv("MONGO_COLLECTION")
 
-        text = extract_text(local_path)
-        chunks = chunk_text(text)
-        if not chunks:
-            continue
+# logging.info(f'MONGO_URI {MONGO_URI}')
+# logging.info(f'MONGO_DB {MONGO_DB}')
+# logging.info(f'MONGO_COLLECTION {MONGO_COLLECTION}')
 
-        embeddings = model.encode(chunks, convert_to_numpy=True)
-        index.add(embeddings)
-        new_metadata[key] = {"chunks": len(chunks)}
+CHUNK_SIZE = 800
+CHUNK_OVERLAP = 50
 
-        os.remove(local_path)
+# --- FastAPI ---
 
-    metadata.update(new_metadata)
-    save_metadata(metadata)
-    save_index(index)
-    return len(new_metadata)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_vectorstore()
+    start_faiss_rebuilder()
+    yield  # здесь запускается сервер
+    # Здесь можно закрыть ресурсы при завершении
 
-# --- Поиск ---
-def search_local_docs(query: str, top_k: int = 5):
-    global index, metadata
-    query_vec = model.encode([query])
-    D, I = index.search(query_vec, top_k)
+# --- Инициализация при запуске ---
+# @app.on_event("startup")
+# def startup_event():
+#     init_vectorstore()
+#     start_faiss_rebuilder()
+app = FastAPI(lifespan=lifespan, title="RAG FastAPI with MongoDB")
 
-    flat_index = 0
-    results = []
-    for key, meta in metadata.items():
-        for i in range(meta["chunks"]):
-            if flat_index in I[0]:
-                results.append(key)
-            flat_index += 1
-    return list(set(results))
 
-# --- API ---
+# --- MongoDB ---
+mongo_client = MongoClient(MONGO_URI)
+db = mongo_client[MONGO_DB]
+collection = db[MONGO_COLLECTION]
+
+# --- Модель эмбеддингов ---
+embedding_model = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
+
+# --- Инициализация FAISS ---
+vectorstore = None
+
+
+# --- Подготовка документов ---
+def clean_text(text: str) -> str:
+    text = text.replace("-\n", "").replace("\n", " ")
+    return text
+
+
+def sync_mongo_with_s3(bucket: str, prefix: str, s3_config: dict) -> bool:
+    """
+    Синхронизирует Mongo и S3:
+    - Удаляет из Mongo чанки, если исходный файл исчез из S3
+    - Загружает новые документы
+    - Возвращает: были ли изменения
+    """
+    s3 = boto3.client("s3", **s3_config)
+
+    # 1. Получаем список файлов из S3
+    response = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
+    s3_keys = set()
+    for obj in response.get("Contents", []):
+        key = obj["Key"]
+        if not key.endswith("/"):
+            s3_keys.add(key)
+
+    # 2. Получаем список уникальных source из Mongo
+    mongo_sources = set(collection.distinct("metadata.source"))
+
+    # 3. Удаляем из Mongo документы, которых больше нет на S3
+    to_delete = mongo_sources - s3_keys
+    # print(f'To delete: {to_delete}')
+    logging.debug(f'To delete: {to_delete}')
+    updated = False
+
+    for missing_file in to_delete:
+        logging.debug(f"[CLEANUP] Удаляю чанки из Mongo для: {missing_file}")
+        # print(f"[CLEANUP] Удаляю чанки из Mongo для: {missing_file}")
+        collection.delete_many({"metadata.source": missing_file})
+        updated = True
+
+    # 4. Обрабатываем новые файлы (лениво, по одному)
+    with TemporaryDirectory() as temp_dir:
+        for key in s3_keys:
+            if key in mongo_sources:
+                logging.debug(f"[SKIP] Уже обработано: {key}")
+                # print(f"[SKIP] Уже обработано: {key}")
+                continue
+            
+            logging.info(f"[PROCESS] Новый файл: {key}")
+            # print(f"[PROCESS] Новый файл: {key}")
+            local_path = os.path.join(temp_dir, os.path.basename(key))
+            s3.download_file(bucket, key, local_path)
+
+            if key.lower().endswith(".pdf"):
+                loader = PyPDFLoader(local_path)
+            elif key.lower().endswith(".txt"):
+                loader = TextLoader(local_path)
+            else:
+                logging.warning(f"[SKIP] Неизвестный тип файла: {key}")
+                # print(f"[SKIP] Неизвестный тип файла: {key}")
+                continue
+
+            docs = []
+            for doc in loader.load():
+                doc.page_content = clean_text(doc.page_content)
+                doc.metadata["source"] = key
+                docs.append(doc)
+
+            chunks = split_documents(docs)
+            compute_and_store_embeddings(chunks)
+            updated = True
+
+    return updated
+
+
+
+# def load_and_embed_from_s3_if_new(bucket: str, prefix: str, s3_config: dict):
+#     print("[INFO] Проверка и загрузка новых документов из S3...")
+
+#     s3 = boto3.client("s3", **s3_config)
+
+#     response = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
+#     if "Contents" not in response:
+#         print("[WARN] Нет файлов по префиксу")
+#         return
+
+#     with TemporaryDirectory() as temp_dir:
+#         for obj in response["Contents"]:
+#             key = obj["Key"]
+#             if key.endswith("/"):
+#                 continue
+
+#             # Проверка наличия чанков этого файла в Mongo
+#             if collection.count_documents({"metadata.source": key}) > 0:
+#                 print(f"[SKIP] Уже есть в Mongo: {key}")
+#                 continue
+
+#             print(f"[PROCESS] Новый файл: {key}")
+#             local_path = os.path.join(temp_dir, os.path.basename(key))
+#             s3.download_file(bucket, key, local_path)
+
+#             # Чтение и разбиение
+#             if key.lower().endswith(".pdf"):
+#                 loader = PyPDFLoader(local_path)
+#             elif key.lower().endswith(".txt"):
+#                 loader = TextLoader(local_path)
+#             else:
+#                 print(f"[SKIP] Неизвестный тип файла: {key}")
+#                 continue
+
+#             docs = []
+#             for doc in loader.load():
+#                 doc.page_content = clean_text(doc.page_content)
+#                 doc.metadata["source"] = key  # сохраняем путь в S3
+#                 docs.append(doc)
+
+#             chunks = split_documents(docs)
+
+#             # Векторизация и запись в Mongo
+#             compute_and_store_embeddings(chunks)
+
+
+
+def split_documents(documents):
+    splitter = RecursiveCharacterTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
+    return splitter.split_documents(documents)
+
+
+def compute_and_store_embeddings(chunks: List[Document]):
+    embeddings = []
+    new_chunks = []
+    for chunk in tqdm(chunks, desc="Embedding"):
+        text = chunk.page_content
+        metadata = chunk.metadata
+        if collection.find_one({"text": text}):
+            continue  # уже есть
+        try:
+            vector = embedding_model.embed_query(text)
+            doc = {
+                "text": text,
+                "embedding": vector,
+                "metadata": metadata,
+            }
+            collection.insert_one(doc)
+            embeddings.append(vector)
+            new_chunks.append(chunk)
+        except:
+            return None
+    return embeddings, new_chunks
+
+
+def build_faiss_from_mongo():
+    logging.info("[FAISS] Чтение эмбеддингов из MongoDB...")
+    # print("[INFO] Чтение эмбеддингов из MongoDB...")
+    embeddings = []
+    documents = []
+
+    for i, doc in enumerate(collection.find({}, {"embedding": 1, "text": 1, "metadata": 1})):
+        vector = doc["embedding"]
+        text = doc["text"]
+        metadata = doc.get("metadata", {})
+        document = Document(page_content=text, metadata=metadata)
+        documents.append(document)
+        embeddings.append(vector)
+
+    logging.info("[FAISS] Построение FAISS индекса ...")
+    # print("[INFO] Построение FAISS вручную...")
+    dim = len(embeddings[0])
+    index = faiss.IndexFlatL2(dim)
+    index.add(np.array(embeddings).astype("float32"))
+
+    docstore = InMemoryDocstore({str(i): documents[i] for i in range(len(documents))})
+    index_to_docstore_id = {i: str(i) for i in range(len(documents))}
+
+    return FAISS(
+        embedding_function=embedding_model,
+        index=index,
+        docstore=docstore,
+        index_to_docstore_id=index_to_docstore_id
+    )
+
+
+def init_vectorstore():
+    global vectorstore
+    logging.info("[INFO] Синхронизация Mongo <-> S3")
+    # print("[INFO] Синхронизация Mongo <-> S3")
+    updated = sync_mongo_with_s3(S3_BUCKET, S3_PREFIX, S3_CONFIG)
+
+    if INDEX_DIR.exists() and not updated:
+        logging.info("[INFO] Загружаю FAISS из диска (индекс не изменился)...")
+        # print("[INFO] Загружаю FAISS из диска (индекс не изменился)...")
+        vectorstore = FAISS.load_local(str(INDEX_DIR), embeddings=embedding_model, allow_dangerous_deserialization=True)
+    else:
+        logging.info("[INFO] Перестраиваю FAISS из Mongo...")
+        # print("[INFO] Перестраиваю FAISS из Mongo...")
+        vectorstore = build_faiss_from_mongo()
+        vectorstore.save_local(str(INDEX_DIR))
+
+    logging.info("[INFO] Индекс готов.")
+    # print("[INFO] Индекс готов.")
+
+
+
+def build_prompt(query: str, docs: List[Document]) -> str:
+    parts = []
+    for i, doc in enumerate(docs):
+        # print(doc.metadata.keys())  # ← покажет точные ключи
+        # print(doc.metadata)         # ← покажет всю структуру
+        source = doc.metadata.get("source", "неизвестный документ")
+        parts.append(f"[{i+1}] Источник: {source}\n{doc.page_content}")
+    context = "\n\n".join(parts)
+    return f"""Используй следующий контекст для ответа на вопрос.
+
+Контекст:
+{context}
+
+Вопрос:
+{query}
+
+Ответ:"""
+
+
+# --- Модель запроса ---
 class QueryRequest(BaseModel):
     query: str
-    top_k: int = 5
+    k: int = 3
 
-@app.post("/search")
-def query_documents(request: QueryRequest):
-    matches = search_local_docs(request.query, request.top_k)
-    return {"matches": matches}
 
-@app.post("/sync")
-def sync_documents():
-    new_docs = sync_index_from_s3()
-    return {"new_documents_added": new_docs}
+class NotifyRequest(BaseModel):
+    key: str  # S3 путь к файлу
 
-@app.on_event("startup")
-def on_startup():
-    global index, metadata
-    index = load_index()
-    metadata = load_metadata()
 
-@app.get("/")
-def root():
-    return {"status": "RAG system with S3 is ready."}
+# --- Endpoint ---
+@app.post("/query")
+def query_rag(request: QueryRequest):
+    with vectorstore_lock:
+        vs = vectorstore
+
+    docs = vs.similarity_search(request.query, k=request.k)
+    prompt = build_prompt(request.query, docs)
+    return {"prompt": prompt}
+
+
+
+@app.post("/delete")
+def delete_file_from_db(request: NotifyRequest):
+    # to_delete = request.key
+    # # for missing_file in to_delete:
+    # #     print(f"[CLEANUP] Удаляю чанки из Mongo для: {missing_file}")
+    try:
+        collection.delete_many({"metadata.source": request.key})
+        logging.info(f"[DELETED]: {request.key}")
+        # print(f"[DELETED]: {request.key}")
+    except HTTPException as e:
+        logging.error(e)
+        # print(e)
+        raise HTTPException(status_code=500, detail="Can't delete file")
+        # updated = True
+    
+tetet = 4
+
+
+@app.post("/add")
+def notify_new_document(request: NotifyRequest):
+    key = request.key
+
+    # Проверяем, есть ли уже такой файл в Mongo
+    if collection.count_documents({"metadata.source": key}) > 0:
+        return {"status": "skipped", "message": f"{key} уже обработан."}
+
+    logging.info(f"[NOTIFY] Обработка нового документа: {key}")
+    # print(f"[NOTIFY] Обработка нового документа: {key}")
+
+    # Скачиваем файл
+    with TemporaryDirectory() as temp_dir:
+        local_path = os.path.join(temp_dir, os.path.basename(key))
+
+        s3 = boto3.client("s3", **S3_CONFIG)
+        try:
+            s3.download_file(S3_BUCKET, key, local_path)
+        except Exception as e:
+            raise HTTPException(status_code=404, detail=f"Ошибка при скачивании {key}: {str(e)}")
+
+        # Выбираем загрузчик
+        if key.lower().endswith(".pdf"):
+            loader = PyPDFLoader(local_path)
+        elif key.lower().endswith(".txt"):
+            loader = TextLoader(local_path)
+        else:
+            raise HTTPException(status_code=400, detail=f"Неподдерживаемый формат: {key}")
+
+        # Обработка
+        docs = []
+        for doc in loader.load():
+            doc.page_content = clean_text(doc.page_content)
+            doc.metadata["source"] = key
+            docs.append(doc)
+
+        chunks = split_documents(docs)
+        compute_and_store_embeddings(chunks)
+
+    # # Перестроим FAISS (можно — только при необходимости)
+    # global vectorstore
+    # vectorstore = build_faiss_from_mongo()
+    # vectorstore.save_local(str(INDEX_DIR))
+
+    return {"status": "success", "message": f"{key} обработан и добавлен в базу"}
+
+
+
+
+
+
+
+vectorstore_lock = Lock()
+
+def start_faiss_rebuilder():
+    # print("[FAISS] 🔁 Поток запущен")
+    # time.sleep(FAISS_REBUILD_INTERVAL)
+
+    def background_rebuild():
+        logging.info("[FAISS] 🔁 Поток запущен")
+        # print("[FAISS] 🔁 Поток запущен")
+        time.sleep(FAISS_REBUILD_INTERVAL)
+        global vectorstore
+        while True:
+            logging.info("[FAISS] ⏳ Плановая пересборка индекса из Mongo...")
+            # print("[FAISS] ⏳ Плановая пересборка индекса из Mongo...")
+            new_vs = build_faiss_from_mongo()
+            new_vs.save_local(str(INDEX_DIR))
+
+            with vectorstore_lock:
+                vectorstore = new_vs  # безопасная подмена
+
+            logging.info("[FAISS] ✅ Индекс обновлён")
+            # print("[FAISS] ✅ Индекс обновлён")
+            time.sleep(FAISS_REBUILD_INTERVAL)
+
+            # time.sleep(FAISS_REBUILD_INTERVAL)
+
+    # Запускаем в фоне как daemon
+    thread = threading.Thread(target=background_rebuild, daemon=True)
+    thread.start()
+
+
+
+

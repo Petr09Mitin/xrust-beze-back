@@ -250,14 +250,19 @@ services:
     ports:
       - "8929:8929"
     env_file:
-      - ./ai_tags.env
       - ./.env
+      # - ./ai_tags.env
     environment:
       - S3_ENDPOINT_URL=http://minio-xb:9000
+      - MONGO_DB_URL=mongodb://mongo_db:27017
+      - MONGO_DB=root
+      - MONGO_COLLECTION=embeddings
     depends_on:
       - minio-xb
+      - mongo_db
     volumes:
-      - RAG_data:/data
+      - ./rag_data:/data
+      - hf_RAG_cache:/root/.cache/huggingface
 
 
 volumes:
@@ -267,3 +272,4 @@ volumes:
   redis_data:
   hf_cache:
   RAG_data:
+  hf_RAG_cache:
