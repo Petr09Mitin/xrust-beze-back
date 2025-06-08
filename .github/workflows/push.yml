@@ -52,13 +52,13 @@ jobs:
       #     push: true
       #     tags: petr09mitin/xrust_beze_user:latest
 
-      - name: Build and push ml_explanator
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: ./ml_explanator/Dockerfile
-          push: true
-          tags: petr09mitin/ml_explanator:latest
+      # - name: Build and push ml_explanator
+      #   uses: docker/build-push-action@v4
+      #   with:
+      #     context: .
+      #     file: ./ml_explanator/Dockerfile
+      #     push: true
+      #     tags: petr09mitin/ml_explanator:latest
 
 #      - name: Build and push ml_moderator
 #        uses: docker/build-push-action@v4
