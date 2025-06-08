@@ -123,9 +123,13 @@ services:
     container_name: ml_explanator
     ports:
       - "8091:8091"
+    environment:
+      - RAG_URL=http://RAG_service:8929/query
     restart: always
     env_file:
       - ./ml_explanator.env
+    depends_on:
+      - RAG_service
 
   ml_moderator:
     image: petr09mitin/ml_moderator:latest
@@ -243,6 +247,27 @@ services:
       - minio-xb
     volumes:
       - hf_cache:/root/.cache/huggingface
+  
+  RAG_service:
+    image: petr09mitin/rag_service:latest
+    container_name: RAG_service
+    ports:
+      - "8929:8929"
+    env_file:
+      - ./.env
+      # - ./ai_tags.env
+    environment:
+      - S3_ENDPOINT_URL=http://minio-xb:9000
+      - MONGO_DB_URL=mongodb://mongo_db:27017
+      - MONGO_DB=admin
+      - MONGO_COLLECTION=embeddings
+    depends_on:
+      - minio-xb
+      - mongo_db
+    volumes:
+      - ./rag_data:/data
+      - hf_RAG_cache:/root/.cache/huggingface
+
 
 volumes:
   mongo_data:
@@ -250,3 +275,5 @@ volumes:
   minio_data:
   redis_data:
   hf_cache:
+  RAG_data:
+  hf_RAG_cache:

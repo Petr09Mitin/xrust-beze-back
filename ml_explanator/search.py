@@ -13,4 +13,10 @@ async def search_google(query, api_key=GOOGLE_API_KEY, cx=GOOGLE_CX):
     response = requests.get(search_url)
     results = response.json().get("items", [])
 
-    return [f"{item['title']} - {item['link']}" for item in results]
+    array_of_names_links = []
+    for res in results:
+        array_of_names_links.append((res['title'], res['link']))
+        # names.append(res['title'])
+        # links.append()
+
+    return array_of_names_links
