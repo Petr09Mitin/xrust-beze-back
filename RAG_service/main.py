@@ -37,11 +37,11 @@ logging.basicConfig(
 
 
 
-FAISS_REBUILD_INTERVAL = 100  # секунд (например, 5 минут)
+FAISS_REBUILD_INTERVAL = 300  # секунд (например, 5 минут)
 
 
-S3_BUCKET = "raw-data"
-S3_PREFIX = ""
+S3_BUCKET = "materials"
+S3_PREFIX = "materials"
 
 S3_CONFIG = {
     'aws_access_key_id': os.getenv("MINIO_ROOT_USER"),
