@@ -21,6 +21,8 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import TextLoader, PyPDFLoader
 from langchain.docstore.document import Document
 from langchain_community.vectorstores import FAISS
+from langchain_community.document_loaders import UnstructuredWordDocumentLoader
+
 
 from threading import Lock
 import threading
@@ -30,7 +32,7 @@ import logging
 
 # Настройка базового логгера
 logging.basicConfig(
-    level=logging.DEBUG,  # Уровень логирования (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    level=logging.INFO,  # Уровень логирования (DEBUG, INFO, WARNING, ERROR, CRITICAL)
     format='%(asctime)s - %(levelname)s - %(message)s',  # Формат сообщения
     datefmt='%Y-%m-%d %H:%M:%S'  # Формат времени
 )
@@ -41,7 +43,7 @@ FAISS_REBUILD_INTERVAL = 300  # секунд (например, 5 минут)
 
 
 S3_BUCKET = "materials"
-S3_PREFIX = "materials"
+S3_PREFIX = ""
 
 S3_CONFIG = {
     'aws_access_key_id': os.getenv("MINIO_ROOT_USER"),
@@ -142,6 +144,8 @@ def sync_mongo_with_s3(bucket: str, prefix: str, s3_config: dict) -> bool:
                 loader = PyPDFLoader(local_path)
             elif key.lower().endswith(".txt"):
                 loader = TextLoader(local_path)
+            elif key.lower().endswith(".docx"):
+                loader = UnstructuredWordDocumentLoader(local_path)
             else:
                 logging.warning(f"[SKIP] Неизвестный тип файла: {key}")
                 # print(f"[SKIP] Неизвестный тип файла: {key}")
@@ -241,9 +245,14 @@ def init_vectorstore():
         # logging.info("[INFO] Перестраиваю FAISS из Mongo...")
         # print("[INFO] Перестраиваю FAISS из Mongo...")
         vectorstore = build_faiss_from_mongo()
-        vectorstore.save_local(str(INDEX_DIR))
+        if vectorstore is not None:
+            vectorstore.save_local(str(INDEX_DIR))
+            logging.info("[FAISS] Индекс создан и сохранён")
+        else:
+            logging.info(f'[FAISS] Индекс отсутствует')
+        
 
-    logging.info("[FAISS] Индекс готов.")
+    
     # print("[INFO] Индекс готов.")
 
 
@@ -349,6 +358,8 @@ def notify_new_document(request: NotifyRequest):
             loader = PyPDFLoader(local_path)
         elif key.lower().endswith(".txt"):
             loader = TextLoader(local_path)
+        elif key.lower().endswith(".docx"):
+                loader = UnstructuredWordDocumentLoader(local_path)
         else:
             raise HTTPException(status_code=400, detail=f"Неподдерживаемый формат: {key}")
 
