@@ -123,9 +123,13 @@ services:
     container_name: ml_explanator
     ports:
       - "8091:8091"
+    environment:
+      - RAG_URL=http://RAG_service:8929/query
     restart: always
     env_file:
       - ./ml_explanator.env
+    depends_on:
+      - RAG_service
 
   ml_moderator:
     image: petr09mitin/ml_moderator:latest
@@ -255,7 +259,7 @@ services:
     environment:
       - S3_ENDPOINT_URL=http://minio-xb:9000
       - MONGO_DB_URL=mongodb://mongo_db:27017
-      - MONGO_DB=root
+      - MONGO_DB=admin
       - MONGO_COLLECTION=embeddings
     depends_on:
       - minio-xb
