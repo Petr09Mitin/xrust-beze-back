@@ -30,7 +30,7 @@ import logging
 
 # Настройка базового логгера
 logging.basicConfig(
-    level=logging.INFO,  # Уровень логирования (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    level=logging.DEBUG,  # Уровень логирования (DEBUG, INFO, WARNING, ERROR, CRITICAL)
     format='%(asctime)s - %(levelname)s - %(message)s',  # Формат сообщения
     datefmt='%Y-%m-%d %H:%M:%S'  # Формат времени
 )
@@ -107,6 +107,8 @@ def sync_mongo_with_s3(bucket: str, prefix: str, s3_config: dict) -> bool:
         key = obj["Key"]
         if not key.endswith("/"):
             s3_keys.add(key)
+    
+    logging.info(f'[S3] ListObjects: {response}')
 
     # 2. Получаем список уникальных source из Mongo
     mongo_sources = set(collection.distinct("metadata.source"))
@@ -202,6 +204,14 @@ def build_faiss_from_mongo():
 
     logging.info("[FAISS] Построение FAISS индекса ...")
     # print("[INFO] Построение FAISS вручную...")
+
+    if len(embeddings) <= 0:
+
+        logging.info(f'[FAISS] В базе нет эмбеддингов, построение отменено')
+        return None
+
+    logging.info(f'[FAISS] В базе {len(embeddings)} эмбеддингов')
+
     dim = len(embeddings[0])
     index = faiss.IndexFlatL2(dim)
     index.add(np.array(embeddings).astype("float32"))
@@ -219,21 +229,21 @@ def build_faiss_from_mongo():
 
 def init_vectorstore():
     global vectorstore
-    logging.info("[INFO] Синхронизация Mongo <-> S3")
+    logging.info("[SYNC] Синхронизация Mongo <-> S3")
     # print("[INFO] Синхронизация Mongo <-> S3")
     updated = sync_mongo_with_s3(S3_BUCKET, S3_PREFIX, S3_CONFIG)
 
     if INDEX_DIR.exists() and not updated:
-        logging.info("[INFO] Загружаю FAISS из диска (индекс не изменился)...")
+        logging.info("[LOAD] Загружаю FAISS из диска (индекс не изменился)...")
         # print("[INFO] Загружаю FAISS из диска (индекс не изменился)...")
         vectorstore = FAISS.load_local(str(INDEX_DIR), embeddings=embedding_model, allow_dangerous_deserialization=True)
     else:
-        logging.info("[INFO] Перестраиваю FAISS из Mongo...")
+        # logging.info("[INFO] Перестраиваю FAISS из Mongo...")
         # print("[INFO] Перестраиваю FAISS из Mongo...")
         vectorstore = build_faiss_from_mongo()
         vectorstore.save_local(str(INDEX_DIR))
 
-    logging.info("[INFO] Индекс готов.")
+    logging.info("[FAISS] Индекс готов.")
     # print("[INFO] Индекс готов.")
 
 
@@ -321,7 +331,7 @@ def notify_new_document(request: NotifyRequest):
     if collection.count_documents({"metadata.source": key}) > 0:
         return {"status": "skipped", "message": f"{key} уже обработан."}
 
-    logging.info(f"[NOTIFY] Обработка нового документа: {key}")
+    logging.info(f"[ADD] Обработка нового документа: {key}")
     # print(f"[NOTIFY] Обработка нового документа: {key}")
 
     # Скачиваем файл
