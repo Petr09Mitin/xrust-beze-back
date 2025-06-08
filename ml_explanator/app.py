@@ -43,12 +43,15 @@ async def summarize(input_data: TextInput):
     search_keywords_main = search_keywords if len(search_keywords) <= 7 else search_keywords[:7]
     search_keywords_string = " ".join(search_keywords_main)
 
-    links = await search.search_google(search_keywords_string)
+    array_of_names_links = await search.search_google(search_keywords_string)
 
     # Красиво отформатируем ссылки в Markdown
     mk_links = "\n\n## Полезные ссылки  \n"
-    for i, link in enumerate(links):
-        mk_links += f'{i+1}. {link}  \n'
+    for i, link in enumerate(array_of_names_links):
+
+        mk_links += f'{i+1}. [{link[0]}]({link[1]} Нажмите, чтобы перейти на сайт)  \n'
+    
+    
 
     # Объединим описание и ссылки
     all_text = explanation_text + '\n  ' + mk_links
