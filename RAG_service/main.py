@@ -40,19 +40,8 @@ logging.basicConfig(
 FAISS_REBUILD_INTERVAL = 100  # секунд (например, 5 минут)
 
 
-# os.environ["NO_PROXY"] = "http://localhost:9000"
-
-# os.environ["NO_PROXY"] = "mongodb://localhost:27025"
-
-
-
 S3_BUCKET = "raw-data"
 S3_PREFIX = ""
-# S3_CONFIG = {
-#     "endpoint_url": "http://localhost:9000",  # если MinIO
-#     "aws_access_key_id": "admin",
-#     "aws_secret_access_key": "adminadmin",
-# }
 
 S3_CONFIG = {
     'aws_access_key_id': os.getenv("MINIO_ROOT_USER"),
@@ -61,7 +50,6 @@ S3_CONFIG = {
 }
 
 # --- Конфигурация ---
-# DATA_DIR = Path("./docs")
 INDEX_DIR = Path("./vectorstore/faiss_index")
 EMBEDDING_MODEL_NAME = "intfloat/e5-base-v2"
 
@@ -69,10 +57,6 @@ EMBEDDING_MODEL_NAME = "intfloat/e5-base-v2"
 MONGO_URI = os.getenv("MONGO_DB_URL")
 MONGO_DB = os.getenv("MONGO_DB")
 MONGO_COLLECTION = os.getenv("MONGO_COLLECTION")
-
-# logging.info(f'MONGO_URI {MONGO_URI}')
-# logging.info(f'MONGO_DB {MONGO_DB}')
-# logging.info(f'MONGO_COLLECTION {MONGO_COLLECTION}')
 
 CHUNK_SIZE = 800
 CHUNK_OVERLAP = 50
@@ -86,11 +70,6 @@ async def lifespan(app: FastAPI):
     yield  # здесь запускается сервер
     # Здесь можно закрыть ресурсы при завершении
 
-# --- Инициализация при запуске ---
-# @app.on_event("startup")
-# def startup_event():
-#     init_vectorstore()
-#     start_faiss_rebuilder()
 app = FastAPI(lifespan=lifespan, title="RAG FastAPI with MongoDB")
 
 
@@ -177,54 +156,6 @@ def sync_mongo_with_s3(bucket: str, prefix: str, s3_config: dict) -> bool:
             updated = True
 
     return updated
-
-
-
-# def load_and_embed_from_s3_if_new(bucket: str, prefix: str, s3_config: dict):
-#     print("[INFO] Проверка и загрузка новых документов из S3...")
-
-#     s3 = boto3.client("s3", **s3_config)
-
-#     response = s3.list_objects_v2(Bucket=bucket, Prefix=prefix)
-#     if "Contents" not in response:
-#         print("[WARN] Нет файлов по префиксу")
-#         return
-
-#     with TemporaryDirectory() as temp_dir:
-#         for obj in response["Contents"]:
-#             key = obj["Key"]
-#             if key.endswith("/"):
-#                 continue
-
-#             # Проверка наличия чанков этого файла в Mongo
-#             if collection.count_documents({"metadata.source": key}) > 0:
-#                 print(f"[SKIP] Уже есть в Mongo: {key}")
-#                 continue
-
-#             print(f"[PROCESS] Новый файл: {key}")
-#             local_path = os.path.join(temp_dir, os.path.basename(key))
-#             s3.download_file(bucket, key, local_path)
-
-#             # Чтение и разбиение
-#             if key.lower().endswith(".pdf"):
-#                 loader = PyPDFLoader(local_path)
-#             elif key.lower().endswith(".txt"):
-#                 loader = TextLoader(local_path)
-#             else:
-#                 print(f"[SKIP] Неизвестный тип файла: {key}")
-#                 continue
-
-#             docs = []
-#             for doc in loader.load():
-#                 doc.page_content = clean_text(doc.page_content)
-#                 doc.metadata["source"] = key  # сохраняем путь в S3
-#                 docs.append(doc)
-
-#             chunks = split_documents(docs)
-
-#             # Векторизация и запись в Mongo
-#             compute_and_store_embeddings(chunks)
-
 
 
 def split_documents(documents):
@@ -336,6 +267,24 @@ class NotifyRequest(BaseModel):
     key: str  # S3 путь к файлу
 
 
+def extraction_data(docs):
+
+    result = {
+        'list_docs': []
+    }
+    for doc in docs:
+        source = doc.metadata.get("source", "invalid")
+        if source == "invalid":
+            continue
+
+        text = doc.page_content
+        result['list_docs'].append({
+            'doc_name': source,
+            'text_fragment': text
+        })
+    return result
+
+
 # --- Endpoint ---
 @app.post("/query")
 def query_rag(request: QueryRequest):
@@ -343,9 +292,9 @@ def query_rag(request: QueryRequest):
         vs = vectorstore
 
     docs = vs.similarity_search(request.query, k=request.k)
-    prompt = build_prompt(request.query, docs)
-    return {"prompt": prompt}
-
+    result = extraction_data(docs)
+    # prompt = build_prompt(request.query, docs)
+    return result
 
 
 @app.post("/delete")
@@ -362,8 +311,6 @@ def delete_file_from_db(request: NotifyRequest):
         # print(e)
         raise HTTPException(status_code=500, detail="Can't delete file")
         # updated = True
-    
-tetet = 4
 
 
 @app.post("/add")
