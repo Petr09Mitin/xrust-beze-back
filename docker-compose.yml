@@ -256,6 +256,7 @@ services:
     env_file:
       - ./.env
       # - ./ai_tags.env
+    cpu_count: 5
     environment:
       - S3_ENDPOINT_URL=http://minio-xb:9000
       - MONGO_DB_URL=mongodb://mongo_db:27017
