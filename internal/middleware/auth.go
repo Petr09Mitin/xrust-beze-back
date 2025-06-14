@@ -1,10 +1,9 @@
 package middleware
 
 import (
-	"net/http"
-
 	authpb "github.com/Petr09Mitin/xrust-beze-back/proto/auth"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 const (

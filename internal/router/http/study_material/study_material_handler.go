@@ -1,9 +1,9 @@
 package study_material_http
 
 import (
+	"github.com/Petr09Mitin/xrust-beze-back/internal/middleware"
 	"net/http"
 
-	"github.com/Petr09Mitin/xrust-beze-back/internal/middleware"
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	study_material_service "github.com/Petr09Mitin/xrust-beze-back/internal/services/study_material"
 	authpb "github.com/Petr09Mitin/xrust-beze-back/proto/auth"

@@ -2,6 +2,7 @@ package study_material_service
 
 import (
 	"context"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/repository/rag_client"
 
 	custom_errors "github.com/Petr09Mitin/xrust-beze-back/internal/models/error"
 	study_material_models "github.com/Petr09Mitin/xrust-beze-back/internal/models/study_material"
@@ -24,15 +25,21 @@ type studyMaterialAPIService struct {
 	studyMaterialRepo study_material_repo.StudyMaterialAPIRepository
 	userGRPC          userpb.UserServiceClient
 	fileGRPC          filepb.FileServiceClient
+	ragRepo           rag_client.RagRepo
 	logger            zerolog.Logger
 }
 
-func NewStudyMaterialAPIService(studyMaterialRepo study_material_repo.StudyMaterialAPIRepository, userGRPC userpb.UserServiceClient,
-	fileGRPC filepb.FileServiceClient, logger zerolog.Logger) StudyMaterialAPIService {
+func NewStudyMaterialAPIService(
+	studyMaterialRepo study_material_repo.StudyMaterialAPIRepository,
+	userGRPC userpb.UserServiceClient,
+	fileGRPC filepb.FileServiceClient,
+	ragRepo rag_client.RagRepo,
+	logger zerolog.Logger) StudyMaterialAPIService {
 	return &studyMaterialAPIService{
 		studyMaterialRepo: studyMaterialRepo,
 		userGRPC:          userGRPC,
 		fileGRPC:          fileGRPC,
+		ragRepo:           ragRepo,
 		logger:            logger,
 	}
 }
@@ -91,7 +98,23 @@ func (s *studyMaterialAPIService) Delete(ctx context.Context, materialID string,
 		// Продолжаем удаление из БД, даже если не удалось удалить файл
 	}
 
-	return s.studyMaterialRepo.Delete(ctx, materialID)
+	err = s.studyMaterialRepo.Delete(ctx, materialID)
+	if err != nil {
+		s.logger.Error().Err(err).Msg("failed to delete study material from mongo")
+		return err
+	}
+
+	err = s.ragRepo.NotifyStudyMaterialDeleted(ctx, &study_material_models.DeleteMaterialRAGData{
+		Key:     material.Filename,
+		MongoID: material.ID,
+	})
+	if err != nil {
+		// тут если не получилось послать уведомление - это крит,
+		// так как учебные материалы, которые уже удалены, могут быть помещены в полезные ссылки
+		s.logger.Error().Err(err).Msg("failed to notify RAG about deleted material")
+		return err
+	}
+	return nil
 }
 
 func (s *studyMaterialAPIService) fillAuthorInfo(ctx context.Context, mat *study_material_models.StudyMaterial) {

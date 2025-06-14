@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/repository/rag_client"
 	"net/http"
 	"os"
 	"os/signal"
@@ -81,9 +82,11 @@ func main() {
 	userClient := userpb.NewUserServiceClient(userGRPCConn)
 	fileClient := filepb.NewFileServiceClient(fileGRPCConn)
 	authClient := authpb.NewAuthServiceClient(authGRPCConn)
+	
+	ragClient := rag_client.NewRagClient(cfg.Services.RAGService, log)
 
 	repo := study_material_repo.NewStudyMaterialAPIRepository(db, log)
-	service := study_material_service.NewStudyMaterialAPIService(repo, userClient, fileClient, log)
+	service := study_material_service.NewStudyMaterialAPIService(repo, userClient, fileClient, ragClient, log)
 
 	// Каналы для сигналов завершения
 	errChan := make(chan error)
