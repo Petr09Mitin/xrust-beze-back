@@ -37,6 +37,7 @@ var (
 	ErrMissingPassword       = errors.New("password field missing or not a string")
 	ErrValidationFailed      = errors.New("validation failed: one or more fields are invalid")
 	ErrModerationUnavailable = errors.New("ml moderation service unavailable")
+	ErrRAGUnavailable        = errors.New("RAG service unavailable")
 	// ErrUsernameProfanityDetected = errors.New("profanity detected in username")
 	// ErrBioProfanityDetected      = errors.New("profanity detected in bio")
 	// ErrProfanityDetected = &ProfanityError{FieldName: ""}

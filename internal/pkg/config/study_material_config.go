@@ -7,6 +7,7 @@ type StudyMaterialServices struct {
 	UserService *GRPCService `mapstructure:"user_service"`
 	AuthService *GRPCService `mapstructure:"auth_service"`
 	MLTags      *GRPCService `mapstructure:"ai_tags_service"`
+	RAGService  *GRPCService `mapstructure:"rag_service"`
 }
 
 type StudyMaterial struct {

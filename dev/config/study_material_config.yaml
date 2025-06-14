@@ -37,3 +37,8 @@ services:
     port: 8087
     timeout: 120
     max_retries: 3
+  rag_service:
+    host: "RAG_service"
+    port: 8929
+    timeout: 120
+    max_retries: 3

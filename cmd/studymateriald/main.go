@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/repository/rag_client"
 
 	"github.com/Petr09Mitin/xrust-beze-back/internal/pkg/config"
 	infrakafka "github.com/Petr09Mitin/xrust-beze-back/internal/pkg/kafka"
@@ -70,7 +71,10 @@ func main() {
 	// init ML repo
 	mlTaggerRepo := study_material_repo.NewMLTaggerRepo(cfg.Services.MLTags, log)
 
-	studyMaterialService := study_material_service.NewStudyMaterialService(studyMaterialRepo, mlTaggerRepo, fileServiceClient, log)
+	// init RAG repo
+	RAGRepo := rag_client.NewRagClient(cfg.Services.RAGService, log)
+
+	studyMaterialService := study_material_service.NewStudyMaterialService(studyMaterialRepo, mlTaggerRepo, fileServiceClient, RAGRepo, log)
 	d := study_materiald.NewStudyMaterialD(studyMaterialService, cfg.Kafka.StudyMaterialTopic, brokerRouter, kafkaSub, log)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer func() {

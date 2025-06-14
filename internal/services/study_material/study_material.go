@@ -2,6 +2,7 @@ package study_material_service
 
 import (
 	"context"
+	"github.com/Petr09Mitin/xrust-beze-back/internal/repository/rag_client"
 	"strings"
 	"time"
 
@@ -18,14 +19,21 @@ type StudyMaterialServiceImpl struct {
 	studyMaterialRepo study_material_repo.StudyMaterialRepo
 	mlTaggerRepo      study_material_repo.MLTaggerRepo
 	fileRepo          study_material_repo.FileRepo
+	ragRepo           rag_client.RagRepo
 	logger            zerolog.Logger
 }
 
-func NewStudyMaterialService(studyMaterialRepo study_material_repo.StudyMaterialRepo, mlTaggerRepo study_material_repo.MLTaggerRepo, fileRepo study_material_repo.FileRepo, logger zerolog.Logger) StudyMaterialService {
+func NewStudyMaterialService(
+	studyMaterialRepo study_material_repo.StudyMaterialRepo,
+	mlTaggerRepo study_material_repo.MLTaggerRepo,
+	fileRepo study_material_repo.FileRepo,
+	ragRepo rag_client.RagRepo,
+	logger zerolog.Logger) StudyMaterialService {
 	return &StudyMaterialServiceImpl{
 		studyMaterialRepo: studyMaterialRepo,
 		mlTaggerRepo:      mlTaggerRepo,
 		fileRepo:          fileRepo,
+		ragRepo:           ragRepo,
 		logger:            logger,
 	}
 }
@@ -59,6 +67,14 @@ func (s *StudyMaterialServiceImpl) ProcessAttachmentToParse(ctx context.Context,
 	})
 	if err != nil {
 		return err
+	}
+	err = s.ragRepo.NotifyStudyMaterialAdded(ctx, &study_material_models.NewMaterialRAGData{
+		Key:     material.Filename,
+		MongoID: material.ID,
+	})
+	if err != nil {
+		// if we are unable to notify RAG right away, it will achieve eventual consistency when rebooted
+		s.logger.Error().Interface("material", material).Err(err).Msg("unable to notify study material added")
 	}
 	s.logger.Debug().Interface("material", material).Msg("study material created")
 	return nil
