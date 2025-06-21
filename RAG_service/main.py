@@ -60,7 +60,8 @@ MONGO_URI = os.getenv("MONGO_DB_URL")
 MONGO_DB = os.getenv("MONGO_DB")
 MONGO_COLLECTION = os.getenv("MONGO_COLLECTION")
 
-MONGO_COLLECTION_DOCS = os.getenv('MONGO_COLLECTION_DOCS')
+MONGO_MATERIALS_DB = os.getenv('MONGO_MATERIALS_DB')
+MONGO_MATERIALS_COLLECTION = os.getenv('MONGO_MATERIALS_COLLECTION')
 
 CHUNK_SIZE = 800
 CHUNK_OVERLAP = 50
@@ -81,7 +82,9 @@ app = FastAPI(lifespan=lifespan, title="RAG FastAPI with MongoDB")
 mongo_client = MongoClient(MONGO_URI)
 db = mongo_client[MONGO_DB]
 collection = db[MONGO_COLLECTION]
-collection_materials_metadata = db[MONGO_COLLECTION_DOCS]
+
+materials_db = mongo_client[MONGO_MATERIALS_DB]
+collection_materials_metadata = materials_db[MONGO_MATERIALS_COLLECTION]
 
 # --- Модель эмбеддингов ---
 embedding_model = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)

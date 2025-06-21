@@ -262,7 +262,8 @@ services:
       - MONGO_DB_URL=mongodb://mongo_db:27017
       - MONGO_DB=admin
       - MONGO_COLLECTION=embeddings
-      - MONGO_COLLECTION_DOCS=study_materials
+      - MONGO_MATERIALS_DB=xrust_beze
+      - MONGO_MATERIALS_COLLECTION=study_materials
     depends_on:
       - minio-xb
       - mongo_db
