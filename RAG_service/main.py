@@ -60,6 +60,8 @@ MONGO_URI = os.getenv("MONGO_DB_URL")
 MONGO_DB = os.getenv("MONGO_DB")
 MONGO_COLLECTION = os.getenv("MONGO_COLLECTION")
 
+MONGO_COLLECTION_DOCS = os.getenv('MONGO_COLLECTION_DOCS')
+
 CHUNK_SIZE = 800
 CHUNK_OVERLAP = 50
 
@@ -79,6 +81,7 @@ app = FastAPI(lifespan=lifespan, title="RAG FastAPI with MongoDB")
 mongo_client = MongoClient(MONGO_URI)
 db = mongo_client[MONGO_DB]
 collection = db[MONGO_COLLECTION]
+collection_materials_metadata = db[MONGO_COLLECTION_DOCS]
 
 # --- Модель эмбеддингов ---
 embedding_model = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
@@ -286,6 +289,11 @@ class NotifyRequest(BaseModel):
     key: str  # S3 путь к файлу
 
 
+def get_material_id_from_mongo(name: str):
+    doc = collection_materials_metadata.find_one({'filename': name})
+    return doc['_id']
+
+
 def extraction_data(docs):
 
     result = {
@@ -298,7 +306,7 @@ def extraction_data(docs):
 
         text = doc.page_content
         result['list_docs'].append({
-            'doc_name': source,
+            'doc_name': get_material_id_from_mongo(source),
             'text_fragment': text
         })
     return result
