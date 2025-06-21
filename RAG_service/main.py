@@ -1,3 +1,4 @@
+# import re
 from fastapi import FastAPI, HTTPException
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
@@ -181,9 +182,10 @@ def compute_and_store_embeddings(chunks: List[Document]):
     for chunk in tqdm(chunks, desc="Embedding"):
         text = chunk.page_content
         metadata = chunk.metadata
-        if collection.find_one({"text": text}):
-            logging.info(f'[compute_and_store_embeddings] Уже есть.')
-            continue  # уже есть
+        source = metadata['source']
+        # if collection.find_one({"metadata.source": source}):
+        #     logging.info(f'[compute_and_store_embeddings] Уже есть {source}')
+        #     continue  # уже есть
         try:
             vector = embedding_model.embed_query(text)
             doc = {
@@ -195,7 +197,7 @@ def compute_and_store_embeddings(chunks: List[Document]):
             embeddings.append(vector)
             new_chunks.append(chunk)
         except Exception as e:
-            logging.info(f'[compute_and_store_embeddings] Не удалось сохранить: ошибка {e}')
+            logging.info(f'[compute_and_store_embeddings] Не удалось сохранить чанк {source}: ошибка {e}')
             return None
     return embeddings, new_chunks
 
@@ -296,6 +298,8 @@ class NotifyRequest(BaseModel):
 
 def get_material_id_from_mongo(name: str):
     doc = collection_materials_metadata.find_one({'filename': name})
+    if doc is None:
+        return None
     logging.info(f'[get_material_id_from_mongo] Doc: {doc}')
     return doc['_id']
 
@@ -310,6 +314,11 @@ def extraction_data(docs):
         if source == "invalid":
             continue
         logging.info(f'[extraction_data] Найденный документ: {source}')
+
+        doc_id = get_material_id_from_mongo(source)
+
+        if doc_id is None:
+            continue
 
         text = doc.page_content
         result['list_docs'].append({
