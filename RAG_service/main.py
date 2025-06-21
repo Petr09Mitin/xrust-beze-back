@@ -301,7 +301,7 @@ def get_material_id_from_mongo(name: str):
     if doc is None:
         return None
     logging.info(f'[get_material_id_from_mongo] Doc: {doc}')
-    return doc['_id']
+    return str(doc['_id'])
 
 
 def extraction_data(docs):
@@ -322,7 +322,7 @@ def extraction_data(docs):
 
         text = doc.page_content
         result['list_docs'].append({
-            'doc_name': get_material_id_from_mongo(source),
+            'doc_name': doc_id,
             'text_fragment': text
         })
     return result
