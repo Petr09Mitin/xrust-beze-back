@@ -124,11 +124,11 @@ def sync_mongo_with_s3(bucket: str, prefix: str, s3_config: dict) -> bool:
     # 3. Удаляем из Mongo документы, которых больше нет на S3
     to_delete = mongo_sources - s3_keys
     # print(f'To delete: {to_delete}')
-    logging.debug(f'To delete: {to_delete}')
+    logging.info(f'To delete: {to_delete}')
     updated = False
 
     for missing_file in to_delete:
-        logging.debug(f"[CLEANUP] Удаляю чанки из Mongo для: {missing_file}")
+        logging.info(f"[CLEANUP] Удаляю чанки из Mongo для: {missing_file}")
         # print(f"[CLEANUP] Удаляю чанки из Mongo для: {missing_file}")
         collection.delete_many({"metadata.source": missing_file})
         updated = True
@@ -137,7 +137,7 @@ def sync_mongo_with_s3(bucket: str, prefix: str, s3_config: dict) -> bool:
     with TemporaryDirectory() as temp_dir:
         for key in s3_keys:
             if key in mongo_sources:
-                logging.debug(f"[SKIP] Уже обработано: {key}")
+                logging.info(f"[SKIP] Уже обработано: {key}")
                 # print(f"[SKIP] Уже обработано: {key}")
                 continue
             
@@ -182,6 +182,7 @@ def compute_and_store_embeddings(chunks: List[Document]):
         text = chunk.page_content
         metadata = chunk.metadata
         if collection.find_one({"text": text}):
+            logging.info(f'[compute_and_store_embeddings] Уже есть.')
             continue  # уже есть
         try:
             vector = embedding_model.embed_query(text)
@@ -193,7 +194,8 @@ def compute_and_store_embeddings(chunks: List[Document]):
             collection.insert_one(doc)
             embeddings.append(vector)
             new_chunks.append(chunk)
-        except:
+        except Exception as e:
+            logging.info(f'[compute_and_store_embeddings] Не удалось сохранить: ошибка {e}')
             return None
     return embeddings, new_chunks
 
@@ -294,6 +296,7 @@ class NotifyRequest(BaseModel):
 
 def get_material_id_from_mongo(name: str):
     doc = collection_materials_metadata.find_one({'filename': name})
+    logging.info(f'[get_material_id_from_mongo] Doc: {doc}')
     return doc['_id']
 
 
@@ -306,6 +309,7 @@ def extraction_data(docs):
         source = doc.metadata.get("source", "invalid")
         if source == "invalid":
             continue
+        logging.info(f'[extraction_data] Найденный документ: {source}')
 
         text = doc.page_content
         result['list_docs'].append({
