@@ -16,5 +16,5 @@ ml_moderator/__pycache__
 ml_image_moderator/__pycache__
 ml_image_moderator/src/__pycache__
 research
-
+DOWNLOAD_FROM_S3(recovery)
 docker-compose.override.yml

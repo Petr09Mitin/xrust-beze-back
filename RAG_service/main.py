@@ -151,8 +151,8 @@ def sync_mongo_with_s3(bucket: str, prefix: str, s3_config: dict) -> bool:
                 loader = PyPDFLoader(local_path)
             elif key.lower().endswith(".txt"):
                 loader = TextLoader(local_path)
-            elif key.lower().endswith(".docx"):
-                loader = UnstructuredWordDocumentLoader(local_path)
+            # elif key.lower().endswith(".docx"):
+            #     loader = UnstructuredWordDocumentLoader(local_path)
             else:
                 logging.warning(f"[SKIP] Неизвестный тип файла: {key}")
                 # print(f"[SKIP] Неизвестный тип файла: {key}")

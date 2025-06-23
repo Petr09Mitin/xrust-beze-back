@@ -102,7 +102,7 @@ async def summarize(input_data: TextInput):
         mk_links += f'{i+1}. [{link[0]}]({link[1]}) \n'
     
 
-    mk_files = "\n\n## Возможно релевантные файлы из нашей базы знаний \n"
+    mk_files = "\n\n## Файлы из нашей базы знаний, которые могут вам пригодиться: \n"
 
     for i, filename in enumerate(filenames, start=1):
         mk_files += f'- [Файл {i}.](https://skill-sharing.ru/materials/{filename}) \n'
